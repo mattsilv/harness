@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 // Harness evaluation: run fixed to-do checks against an app and count its source.
 // Usage: node eval/check.mjs --task create|update <app-dir> [--url URL] [--model M]
-//        [--effort E] [--tokens N] [--harness REV] [--out results.jsonl]
+//        [--effort E] [--tokens N] [--harness REV] [--out results.jsonl] [--shot FILE.png]
 // Needs Node 22+ (built-in WebSocket) and a local Chrome or Chromium; no packages.
 // Exits 0 only when every check passes. See EVAL.md.
 
 import { spawn, execFileSync } from "node:child_process";
 import { createServer } from "node:http";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, appendFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, appendFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const USAGE = "usage: node eval/check.mjs --task create|update <app-dir> [--url URL] [--model M] [--effort E] [--tokens N] [--harness REV] [--out FILE]";
+const USAGE = "usage: node eval/check.mjs --task create|update <app-dir> [--url URL] [--model M] [--effort E] [--tokens N] [--harness REV] [--out FILE] [--shot FILE.png]";
 const args = { model: "unverified", effort: "unverified", tokens: "unavailable" };
 const rest = process.argv.slice(2);
 while (rest.length) {
@@ -275,6 +275,13 @@ async function run(url, task) {
         await act(`filter("All")`);
         return await ev(`shown("Buy milk")`) && await ev(`shown("Walk dog")`);
       });
+    }
+    if (args.shot) {
+      // The final state (one done task, one open), at a fixed size so runs compare side by side.
+      await send("Emulation.setDeviceMetricsOverride", { width: 1024, height: 768, deviceScaleFactor: 1, mobile: false });
+      await sleep(300);
+      const { data } = await send("Page.captureScreenshot", { format: "png" });
+      writeFileSync(args.shot, Buffer.from(data, "base64"));
     }
   } finally {
     await close();
