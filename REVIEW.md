@@ -42,6 +42,10 @@ naming an incident, outweighs your opinion of what you'd do. Say which kind of e
 each decision rests on. A rule whose rationale is "Unknown" or "Incident not recorded" is presumed
 cuttable. Cite the vendor guide wherever it informs a verdict, including a keep.
 
+Revisit the previous review's changes against any failure evidence, and note in the new
+log row whether any need revision: "unknown" without evidence, "n/a" if no earlier
+review changed rules. Planned evaluation prompts are in [EVAL.md](EVAL.md).
+
 ## Don't cut
 
 - The Autonomy list of actions that need operator approval, and the Security and
