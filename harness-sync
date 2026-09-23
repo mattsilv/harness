@@ -298,16 +298,23 @@ def cmd_init():
 def main():
     args = sys.argv[1:]
     cmd = args[0] if args else "check"
-    if cmd == "check":
-        cmd_check()
-    elif cmd == "diff":
-        cmd_diff()
-    elif cmd == "apply":
-        cmd_apply(set(args[1:]))
-    elif cmd == "init":
-        cmd_init()
-    else:
-        sys.exit(__doc__)
+    try:
+        if cmd == "check":
+            cmd_check()
+        elif cmd == "diff":
+            cmd_diff()
+        elif cmd == "apply":
+            cmd_apply(set(args[1:]))
+        elif cmd == "init":
+            cmd_init()
+        else:
+            sys.exit(__doc__)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+        detail = e.stderr.decode() if isinstance(e.stderr, bytes) else e.stderr or ""
+        detail = detail.strip()
+        sys.exit(f"harness-sync: `{' '.join(map(str, e.cmd))}` failed"
+                 f"{': ' + detail if detail else ''}. Check the network and retry; "
+                 f"if it persists, delete {CLONE} to re-clone.")
 
 
 if __name__ == "__main__":
