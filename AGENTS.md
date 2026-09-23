@@ -9,6 +9,8 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
   `PROJECT_CONFIG.md` or an on-demand file) over adding.
 - **Version:** any PR that changes `template/` bumps `VERSION` by one and adds a
   `CHANGELOG.md` line (version, date, PR, what changed). CI enforces the bump.
+- **Style:** one lean sentence per instruction, stating the intent. Rely on the consuming
+  model's judgment for the details, and leave project specifics to each project.
 - **Budget:** CI caps `template/AGENTS.md` by word count (`.github/workflows/budget.yml`).
   Raise the cap only deliberately, with the reason in the PR.
 - **Parsed strings:** `harness-sync` reads "Set during setup", `**Merge policy:**`,

@@ -27,6 +27,7 @@ line in the same PR whenever you add or change a rule.
 | Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness-sync check` enforces it. | design |
 | Delivery: one worktree per parallel writer, from a fresh default branch | A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests. | incident, 2026-09 |
 | Delivery: update before merge; remove worktree and branch after | Unknown. | author |
+| Delivery: scope CI to what changed | Full build and test runs on docs-only changes cost time for no signal. Required checks must still report, and a path-skipped required workflow blocks the merge, so the rule says to still pass them. | operator |
 | Documentation: wiki of small, cross-linked pages indexed by docs/README.md | Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one. | design |
 | Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness-sync check` now nags when it's overdue. | incident, 2026-09 |
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
