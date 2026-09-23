@@ -2,9 +2,7 @@
 
 Defaults and identifiers only; never store secret values here.
 
-- **Secrets manager:** Doppler.
-- **Doppler project and config:** Set during setup (one project per repo or client; distinguish app and environment configs). If unset, stop and ask.
-- **Stack:** TypeScript monorepo (frontend and backend), serverless, SQL (typically Cloudflare D1), Tailwind CSS.
+- **Stack:** TypeScript monorepo (frontend and backend), Tailwind CSS.
 - **Primary model:** OpenAI Sol or Anthropic Opus, medium effort.
 - **Subagent model (research, testing, review):** OpenAI Terra or Anthropic Sonnet, high effort.
 - **Effort levels:** Starting points; their meaning shifts between model generations.
@@ -12,3 +10,15 @@ Defaults and identifiers only; never store secret values here.
 - **Maintenance tracking issue:** Set during setup.
 - **Merge policy:** Set during setup: `auto` (merge when required checks pass; merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`) or `on-request` (open the PR; merge only when asked). If unset, stop and ask.
 - **Docs:** docs/.
+
+## Vendors
+
+Record each choice once, here; adding a vendor is new spend, so ask first.
+
+- **Secrets:** Set during setup (e.g. Doppler, 1Password, a cloud secret manager, or a gitignored .env). If unset, stop and ask.
+- **Secrets location:** Set during setup (project and config, vault, or file path; one per repo or client, separate app and environment configs).
+- **Hosting/deploy:** Serverless (e.g. Cloudflare) unless recorded otherwise.
+- **Database:** SQL (e.g. Cloudflare D1) unless recorded otherwise.
+- **Auth:** Record when chosen.
+- **Email/SMS:** Record when chosen.
+- **Error monitoring/analytics:** Record when chosen.

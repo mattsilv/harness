@@ -37,7 +37,9 @@ line in the same PR whenever you add or change a rule.
 ## PROJECT_CONFIG.md
 
 Values, not rules. Each is the author's default and projects are expected to change
-them. "Set during setup" values block work until answered because guessing them
+them. Vendors get one line each so a choice is recorded once; only the secrets lines
+use "Set during setup", because `harness-sync check` nags about every such line and
+most projects don't need every vendor (operator). "Set during setup" values block work until answered because guessing them
 (merge policy especially) would bring back the 2026-09 conflicts above.
 
 ## docs/MAINTENANCE.md
