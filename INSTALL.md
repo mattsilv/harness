@@ -16,9 +16,10 @@ existing repos; nothing is overwritten.
 5. **Claude Code:** make sure `CLAUDE.md` contains an `@AGENTS.md` line.
 6. **Configure.** Ask the operator for every `PROJECT_CONFIG.md` value marked "Set during
    setup", and for any default that doesn't match this repo (stack, secrets project).
-   Record the answers. Don't guess. `auto` merge only works if the default branch can
-   require CI checks; GitHub's free plan can't on private repos. In that case, say so and
-   suggest `on-request`, or adding CI plus a plan that supports required checks.
+   Record the answers. Don't guess. `auto` merge only takes effect once the default
+   branch requires a CI status check. If the repo has no CI or no such rule, say so and
+   offer to add a CI workflow and a ruleset requiring it (a permission change: ask
+   first), or record `on-request`.
 7. **Languages.** If the repo uses a language with no `docs/languages/<language>.md`,
    tell the operator. Don't write one unasked.
 8. **Ship.** Commit only what init created or you changed (`AGENTS.md`, `CLAUDE.md`,
