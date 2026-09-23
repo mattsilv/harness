@@ -50,6 +50,8 @@ and pares them down, dedupes, or merges them so they don't drift; it also confir
 every page is linked from docs/README.md, fixing orphans and broken links, so a
 stray page doesn't sit unfindable. (design)
 
+The stale-area check (one folder or feature set untouched 4+ months per audit) catches features that are dead or hard to work on before an agent has to touch them under pressure; one area keeps each audit small, in the spirit of kaizen. (operator)
+
 ## docs/languages/python.md
 
 | Rule | Why | Source |
