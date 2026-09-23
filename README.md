@@ -33,7 +33,9 @@ flowchart LR
 | `INSTALL.md` | Steps an agent follows to install the harness into a repo. | no |
 | `harness-sync` | Installs and updates the template in a repo. | no |
 | `REVIEW.md` | Brief for a model reviewing and lightening this harness, plus the review log. | no |
-| `EVAL.md` | Fixed prompts for a planned harness evaluation (issue #13). | no |
+| `EVAL.md` | Harness evaluation: fixed prompts and how to run them (issue #13). | no |
+| `eval/check.mjs` | Evaluator: fixed to-do checks and source counts for one run. | no |
+| `eval/fixture/` | Baseline to-do app that the update task starts from. | no |
 | `RATIONALE.md` | Why each rule exists. | no |
 | `AGENTS.md`, `CLAUDE.md` | Rules for agents working on this repo itself. | no |
 | `.github/workflows/budget.yml` | CI word budget for `template/AGENTS.md`. | no |
