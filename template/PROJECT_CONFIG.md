@@ -1,6 +1,6 @@
 # Project Configuration
 
-Defaults and identifiers only; never store secret values here.
+Defaults and identifiers only; never store secret values here. Every value is a default unless recorded otherwise.
 
 - **Stack:** TypeScript monorepo (frontend and backend), Tailwind CSS.
 - **Primary model:** OpenAI Sol or Anthropic Opus, medium effort.
@@ -19,6 +19,7 @@ Record each choice once, here; adding a vendor is new spend, so ask first.
 - **Secrets location:** Set during setup (project and config, vault, or file path; one per repo or client, separate app and environment configs).
 - **Hosting/deploy:** Serverless (e.g. Cloudflare) unless recorded otherwise.
 - **Database:** SQL (e.g. Cloudflare D1) unless recorded otherwise.
+- **Package managers:** uv (Python), pnpm (TypeScript).
 - **Auth:** Record when chosen.
 - **Email/SMS:** Record when chosen.
 - **Error monitoring/analytics:** Record when chosen.
