@@ -27,7 +27,7 @@ line in the same PR whenever you add or change a rule.
 | Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness-sync check` enforces it. | design |
 | Delivery: one worktree per parallel writer, from a fresh default branch | A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests. | incident, 2026-09 |
 | Delivery: update before merge; remove worktree and branch after | Unknown. | author |
-| Documentation | Unknown. | author |
+| Documentation: wiki of small, cross-linked pages indexed by docs/README.md | Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one. | design |
 | Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness-sync check` now nags when it's overdue. | incident, 2026-09 |
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
 | Model selection: never claim an unverifiable model/effort change | Unknown. | author |
@@ -41,8 +41,14 @@ them. "Set during setup" values block work until answered because guessing them
 
 ## docs/MAINTENANCE.md
 
-A weekly audit, so docs, branches, issues, and live contracts don't rot between
-feature work. The interval is a default.
+A monthly audit, so docs, branches, issues, and live contracts don't rot between
+feature work. The interval is a default; monthly replaces an earlier weekly
+default, which was more cadence than a small project needs (operator preference).
+
+The docs check reviews pages changed since the last completed audit (via git log)
+and pares them down, dedupes, or merges them so they don't drift; it also confirms
+every page is linked from docs/README.md, fixing orphans and broken links, so a
+stray page doesn't sit unfindable. (design)
 
 ## docs/languages/python.md
 
