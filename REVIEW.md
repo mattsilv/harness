@@ -20,10 +20,13 @@ weakness that justified them. Your job is to find both.
    (capitals, "CRITICAL", "NEVER"), and older harnesses shout. Cite the guide
    where it drives a change.
 5. Any evidence the operator attaches: session transcripts, retros, incident notes.
+   Don't go looking outside this repo and what's attached. If there's no evidence,
+   say so and fall back to self-report.
 
 ## Test each rule
 
-For every rule (each bullet or sentence that tells the agent to do something), ask:
+Grade each top-level bullet; split a bullet into rows only where its clauses get
+different verdicts. For every rule, ask:
 **would a current frontier coding agent do the wrong thing without it?**
 
 - **Cut** it if it restates default behavior of capable models, or if its rationale
@@ -36,11 +39,13 @@ For every rule (each bullet or sentence that tells the agent to do something), a
 
 Weigh evidence over self-report. A transcript showing the failure, or `RATIONALE.md`
 naming an incident, outweighs your opinion of what you'd do. Say which kind of evidence
-each decision rests on. A rule whose rationale is "unknown" is presumed cuttable.
+each decision rests on. A rule whose rationale is "Unknown" or "Incident not recorded" is presumed
+cuttable. Cite the vendor guide wherever it informs a verdict, including a keep.
 
 ## Don't cut
 
-- The Autonomy list of actions that need operator approval, and the Secrets rules.
+- The Autonomy list of actions that need operator approval, and the Security and
+  Secrets rules.
   These are safety boundaries set by the operator, not crutches for weak models.
   You may propose clearer wording, never removal or loosening.
 - Anything `harness-sync` parses: "Set during setup", the `**Merge policy:**` and
