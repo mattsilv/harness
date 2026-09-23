@@ -302,10 +302,10 @@ function serve(root) {
   return new Promise((ok) => server.listen(0, "127.0.0.1", () => ok(server)));
 }
 
-function gitRev(cwd, path) {
+function gitRev(cwd, ...paths) {
   try {
-    const rev = execFileSync("git", ["-C", cwd, "log", "-1", "--format=%h", "--", path], { encoding: "utf8" }).trim();
-    const dirty = execFileSync("git", ["-C", cwd, "status", "--porcelain", "--", path], { encoding: "utf8" }).trim();
+    const rev = execFileSync("git", ["-C", cwd, "log", "-1", "--format=%h", "--", ...paths], { encoding: "utf8" }).trim();
+    const dirty = execFileSync("git", ["-C", cwd, "status", "--porcelain", "--", ...paths], { encoding: "utf8" }).trim();
     return rev ? rev + (dirty ? "+dirty" : "") : "uncommitted";
   } catch { return "unknown"; }
 }
@@ -331,7 +331,7 @@ const record = {
   task: args.task,
   app: basename(dir),
   harness: args.harness || (existsSync(harnessFile) ? `v${readFileSync(harnessFile, "utf8").trim()}` : "unknown"),
-  fixture: gitRev(here, "."),
+  fixture: gitRev(here, "check.mjs", "fixture"), // the evaluator's own revision, not stored results
   model: args.model,
   effort: args.effort,
   tokens: args.tokens,
