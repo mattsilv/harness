@@ -11,3 +11,18 @@ jobs:
           words=$(wc -w < template/AGENTS.md)
           echo "template/AGENTS.md: $words / $budget words"
           [ "$words" -le "$budget" ] || { echo "::error::AGENTS.md is $words words, over the $budget budget. Cut, move to an on-demand file, or raise the budget in this PR with a reason."; exit 1; }
+  version-bump:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: template/ changes bump VERSION and add a CHANGELOG line
+        run: |
+          base=${{ github.event.pull_request.base.sha }}
+          git diff --quiet "$base" HEAD -- template/ && { echo "template/ unchanged"; exit 0; }
+          old=$(git show "$base:VERSION" 2>/dev/null || echo 0); new=$(cat VERSION)
+          [ "$new" -eq $((old + 1)) ] || { echo "::error::template/ changed: set VERSION to $((old + 1)) (is $new)."; exit 1; }
+          grep -q "^- \*\*$new\*\* " CHANGELOG.md || { echo "::error::add a CHANGELOG.md line for version $new."; exit 1; }
+          echo "VERSION $old → $new"
