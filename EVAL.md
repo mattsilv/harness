@@ -29,7 +29,8 @@ projects: `harness-sync` copies only `template/`. Model reviews and recurring ru
      [--model M] [--effort E] [--tokens N] [--harness REV] [--out eval/results.jsonl]
    ```
 
-   It serves `<app-dir>` statically, or tests `--url` if the app needs its own server,
+   It serves `<app-dir>` statically (its `index.html`, or the only one below it, such as
+   `src/index.html`), or tests `--url` if the app needs its own server,
    and exits 0 only when every check passes. It prints one JSON record: task, harness
    revision (from `.harness/version`), fixture revision, model, effort and tokens
    (`unverified`/`unavailable` unless given), results for each check, and counts.

@@ -31,7 +31,7 @@ const dir = resolve(args.dir);
 const SOURCE_EXT = new Set([".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".html", ".css",
   ".scss", ".vue", ".svelte", ".py", ".sh"]);
 const SKIP_DIRS = new Set(["node_modules", "dist", "build", "out", "coverage", ".git",
-  ".harness", "vendor", ".venv", "__pycache__", ".next", ".svelte-kit"]);
+  ".harness", "playwright-report", "vendor", ".venv", "__pycache__", ".next", ".svelte-kit"]);
 const SKIP_FILES = /(^|\/)(AGENTS\.md|CLAUDE\.md|PROJECT_CONFIG\.md|docs\/MAINTENANCE\.md|docs\/languages\/.*)$|\.min\.(js|css)$/;
 const TEST_PATH = /(^|\/)(tests?|__tests__|e2e)\/|\.(test|spec)\.[^/]+$/;
 const HASH_COMMENTS = new Set([".py", ".sh"]);
@@ -141,15 +141,21 @@ const HELPERS = `(() => {
   const input = () => all('input:not([type]), input[type=text], input[type=search], textarea')[0];
   const labels = (text) => all("body *").filter((el) =>
     el.textContent.trim() === text && ![...el.children].some((c) => c.textContent.trim() === text));
-  const row = (text) => {
+  const toggleEl = (r) => r.querySelector('input[type=checkbox], [role=checkbox]') ||
+    [...r.querySelectorAll("button")].find((b) => /complete|done|toggle|check|mark/i.test(name(b)));
+  const delEl = (r) => [...r.querySelectorAll("button, [role=button]")].find((b) => /delete|remove|^(×|✕|x)$/i.test(name(b)));
+  // The nearest ancestor of the task's text that holds the control find() looks for, so a
+  // <label> wrapping only the checkbox and text doesn't hide a sibling delete button. It stops
+  // once it spans more than one task, so it never borrows another task's control.
+  const row = (text, find = (r) => r.querySelector('input[type=checkbox], [role=checkbox], button')) => {
     for (let el of labels(text)) {
-      for (; el && el !== document.body; el = el.parentElement)
-        if (el.querySelector('input[type=checkbox], [role=checkbox], button')) return el;
+      for (; el && el !== document.body; el = el.parentElement) {
+        if (el.querySelectorAll('input[type=checkbox], [role=checkbox]').length > 1) break;
+        if (find(el)) return el;
+      }
     }
     return null;
   };
-  const toggleEl = (r) => r.querySelector('input[type=checkbox], [role=checkbox]') ||
-    [...r.querySelectorAll("button")].find((b) => /complete|done|toggle|check|mark/i.test(name(b)));
   return window.__ev = {
     hasInput: () => !!input(),
     focus: () => { const i = input(); i.focus(); i.select && i.select(); return !!i; },
@@ -157,15 +163,15 @@ const HELPERS = `(() => {
     rows: () => all('input[type=checkbox], [role=checkbox]').length,
     shown: (t) => !!row(t),
     done: (t) => {
-      const r = row(t), el = toggleEl(r);
+      const r = row(t, toggleEl), el = toggleEl(r);
       if (el && el.type === "checkbox") return el.checked;
       if (el && el.hasAttribute("aria-checked")) return el.getAttribute("aria-checked") === "true";
       if (el && el.hasAttribute("aria-pressed")) return el.getAttribute("aria-pressed") === "true";
       const l = labels(t)[0];
       return /line-through/.test(getComputedStyle(l).textDecorationLine) || /complete|done/i.test(r.className);
     },
-    toggle: (t) => { toggleEl(row(t)).click(); },
-    del: (t) => { [...row(t).querySelectorAll("button, [role=button]")].find((b) => /delete|remove|^(×|✕|x)$/i.test(name(b))).click(); },
+    toggle: (t) => { toggleEl(row(t, toggleEl)).click(); },
+    del: (t) => { delEl(row(t, delEl)).click(); },
     filter: (f) => {
       const re = new RegExp("^" + f + "\\\\b", "i");
       for (const sel of all("select")) {
@@ -299,8 +305,16 @@ function gitRev(cwd, path) {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const harnessFile = join(dir, ".harness", "version");
+// The page is <app-dir>/index.html, or the only index.html elsewhere in the app (e.g. src/).
+function entry() {
+  if (existsSync(join(dir, "index.html"))) return "";
+  const found = listFiles(dir).filter((f) => basename(f) === "index.html" && !TEST_PATH.test(f));
+  if (found.length === 1) { console.error(`serving ${found[0]}`); return dirname(found[0]) + "/"; }
+  console.error(`no single index.html in ${dir} (found: ${found.join(", ") || "none"}); pass --url`);
+  process.exit(2);
+}
 const server = args.url ? null : await serve(dir);
-const url = args.url || `http://127.0.0.1:${server.address().port}/`;
+const url = args.url || `http://127.0.0.1:${server.address().port}/${entry()}`;
 let checks;
 try { checks = await run(url, args.task); } finally { server?.close(); }
 
