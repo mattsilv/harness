@@ -12,13 +12,17 @@ them up to date without overwriting local edits.
 | `template/PROJECT_CONFIG.md` | Per-project defaults; values marked "Set during setup" must be answered. | yes |
 | `template/docs/MAINTENANCE.md` | The recurring maintenance audit. | yes |
 | `template/docs/languages/*.md` | Language-specific rules, read on demand. | yes |
+| `INSTALL.md` | Steps an agent follows to install the harness into a repo. | no |
 | `harness-sync` | Installs and updates the template in a repo. | no |
-| `REVIEW.md` | Brief for a model reviewing and lightening this harness. | no |
+| `REVIEW.md` | Brief for a model reviewing and lightening this harness, plus the review log. | no |
 | `RATIONALE.md` | Why each rule exists. | no |
+| `AGENTS.md`, `CLAUDE.md` | Rules for agents working on this repo itself. | no |
+| `.github/workflows/budget.yml` | CI word budget for `template/AGENTS.md`. | no |
+| `LICENSE` | MIT. | no |
 
 ## How agents load it (why it's split this way)
 
-- **Always loaded:** `AGENTS.md` (and `CLAUDE.md`, which imports it with `@AGENTS.md`)
+- **Always loaded:** in a project, `AGENTS.md` (and `CLAUDE.md`, which imports it with `@AGENTS.md`)
   goes into the context of every session in full. `@` imports and build steps that
   concatenate files don't save context; they only change how the rules are authored.
 - **On demand:** a plain link costs nothing until the agent opens it. `AGENTS.md`
