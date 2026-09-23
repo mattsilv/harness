@@ -1,0 +1,13 @@
+name: budget
+on: [pull_request, push]
+jobs:
+  agents-md-size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: template/AGENTS.md stays within its word budget
+        run: |
+          budget=810  # ~20% over 675 words on 2026-09-23; raise deliberately, never casually
+          words=$(wc -w < template/AGENTS.md)
+          echo "template/AGENTS.md: $words / $budget words"
+          [ "$words" -le "$budget" ] || { echo "::error::AGENTS.md is $words words, over the $budget budget. Cut, move to an on-demand file, or raise the budget in this PR with a reason."; exit 1; }
