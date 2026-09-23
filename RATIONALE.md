@@ -61,4 +61,4 @@ stray page doesn't sit unfindable. (design)
 | Rule | Why | Source |
 |---|---|---|
 | pnpm, commit the lockfile | Author preference: one package manager across projects. | author |
-| `strict`, no unexplained `any`/`@ts-ignore`, typecheck after shared-type changes | Shared-type edits broke other packages when only one package was checked. | author |
+| `strict`, no unexplained `any`/`@ts-ignore`, typecheck after shared-type changes | Carried over from an existing TypeScript monorepo rule ("type changes require full typecheck"). Incident not recorded. | author |
