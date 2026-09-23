@@ -1,0 +1,192 @@
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..c55ec6a
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,6 @@
++# Documentation
++
++- [To-do app](todo.md)
++- [Maintenance](MAINTENANCE.md)
++- [TypeScript](languages/typescript.md)
++- [Python](languages/python.md)
+diff --git a/docs/todo.md b/docs/todo.md
+new file mode 100644
+index 0000000..00f4c7b
+--- /dev/null
++++ b/docs/todo.md
+@@ -0,0 +1,5 @@
++# To-do app
++
++The page stores tasks under the existing `todos` key in browser `localStorage`. All, Active, and Completed change only the visible list; they do not rewrite or discard hidden tasks. The page starts in All after each reload.
++
++Run `node --test tests/todo.test.mjs` to check filtering, saved tasks, and add, toggle, delete, and reload behavior.
+diff --git a/index.html b/index.html
+index 69be497..8bb3e42 100644
+--- a/index.html
++++ b/index.html
+@@ -4,6 +4,11 @@
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <title>To-do</title>
++  <style>
++    nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
++    nav button { min-height: 2.75rem; padding: 0.5rem 0.75rem; }
++    nav button[aria-pressed="true"] { font-weight: bold; outline: 2px solid currentColor; }
++  </style>
+ </head>
+ <body>
+   <h1>To-do</h1>
+@@ -11,6 +16,11 @@
+     <input id="text" aria-label="New task" autocomplete="off">
+     <button>Add</button>
+   </form>
++  <nav aria-label="Filter tasks">
++    <button type="button" data-filter="all" aria-pressed="true">All</button>
++    <button type="button" data-filter="active" aria-pressed="false">Active</button>
++    <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
++  </nav>
+   <ul id="list"></ul>
+   <script>
+     // Tasks persist in localStorage as [{id, text, done}].
+@@ -18,6 +28,8 @@
+     let todos = JSON.parse(localStorage.getItem(KEY) || "[]");
+     const list = document.getElementById("list");
+     const input = document.getElementById("text");
++    const filterButtons = document.querySelectorAll("[data-filter]");
++    let filter = "all";
+ 
+     function save() {
+       localStorage.setItem(KEY, JSON.stringify(todos));
+@@ -25,7 +37,12 @@
+     }
+ 
+     function render() {
+-      list.replaceChildren(...todos.map((t) => {
++      filterButtons.forEach((button) => {
++        button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
++      });
++      list.replaceChildren(...todos.filter((t) =>
++        filter === "all" || (filter === "completed" ? t.done : !t.done)
++      ).map((t) => {
+         const li = document.createElement("li");
+         const box = document.createElement("input");
+         box.type = "checkbox";
+@@ -52,6 +69,10 @@
+       save();
+     };
+ 
++    filterButtons.forEach((button) => {
++      button.onclick = () => { filter = button.dataset.filter; render(); };
++    });
++
+     render();
+   </script>
+ </body>
+diff --git a/tests/todo.test.mjs b/tests/todo.test.mjs
+new file mode 100644
+index 0000000..f5e9b43
+--- /dev/null
++++ b/tests/todo.test.mjs
+@@ -0,0 +1,101 @@
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import { test } from 'node:test';
++import vm from 'node:vm';
++
++const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
++const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
++assert.ok(script, 'app script exists');
++
++function openApp(storage) {
++  class Element {
++    constructor(tag = 'div') {
++      this.tagName = tag;
++      this.children = [];
++      this.attributes = {};
++      this.dataset = {};
++      this.value = '';
++      this.checked = false;
++      this.textContent = '';
++    }
++    setAttribute(name, value) { this.attributes[name] = value; }
++    replaceChildren(...children) { this.children = children; }
++    append(...children) { this.children.push(...children); }
++  }
++
++  const list = new Element('ul');
++  const input = new Element('input');
++  const form = new Element('form');
++  const filters = ['all', 'active', 'completed'].map((name) => {
++    assert.match(html, new RegExp(`<button[^>]*data-filter="${name}"[^>]*>${name[0].toUpperCase()}${name.slice(1)}</button>`));
++    const button = new Element('button');
++    button.dataset.filter = name;
++    return button;
++  });
++  const elements = { list, text: input, add: form };
++  const document = {
++    getElementById: (id) => elements[id],
++    querySelectorAll: (selector) => {
++      assert.equal(selector, '[data-filter]');
++      return filters;
++    },
++    createElement: (tag) => new Element(tag),
++  };
++  const localStorage = {
++    getItem: (key) => storage.get(key) ?? null,
++    setItem: (key, value) => storage.set(key, value),
++  };
++  vm.runInNewContext(script, { document, localStorage, Date });
++
++  return {
++    list,
++    input,
++    form,
++    filters: Object.fromEntries(filters.map((button) => [button.dataset.filter, button])),
++    visible: () => list.children.map((item) => item.children[2].textContent),
++    add(text) {
++      input.value = text;
++      form.onsubmit({ preventDefault() {} });
++    },
++  };
++}
++
++test('filters saved tasks and preserves add, toggle, delete, and reload behavior', () => {
++  const storage = new Map([['todos', JSON.stringify([
++    { id: 1, text: 'Open task', done: false },
++    { id: 2, text: 'Finished task', done: true },
++  ])]]);
++  let app = openApp(storage);
++  assert.deepEqual(app.visible(), ['Open task', 'Finished task']);
++  assert.equal(app.filters.all.attributes['aria-pressed'], 'true');
++
++  app.filters.active.onclick();
++  assert.deepEqual(app.visible(), ['Open task']);
++  assert.equal(app.filters.active.attributes['aria-pressed'], 'true');
++  assert.equal(app.filters.all.attributes['aria-pressed'], 'false');
++  app.add('New task');
++  assert.deepEqual(app.visible(), ['Open task', 'New task']);
++
++  app.list.children[0].children[0].checked = true;
++  app.list.children[0].children[0].onchange();
++  assert.deepEqual(app.visible(), ['New task']);
++  app.filters.completed.onclick();
++  assert.deepEqual(app.visible(), ['Open task', 'Finished task']);
++  app.filters.all.onclick();
++  assert.deepEqual(app.visible(), ['Open task', 'Finished task', 'New task']);
++  assert.equal(app.filters.all.attributes['aria-pressed'], 'true');
++  assert.equal(app.filters.completed.attributes['aria-pressed'], 'false');
++  app.filters.completed.onclick();
++  app.list.children[1].children[4].onclick();
++  assert.deepEqual(app.visible(), ['Open task']);
++
++  assert.deepEqual(JSON.parse(storage.get('todos')).map(({ text, done }) => [text, done]), [
++    ['Open task', true], ['New task', false],
++  ]);
++  app = openApp(storage);
++  assert.deepEqual(app.visible(), ['Open task', 'New task']);
++  app.filters.active.onclick();
++  assert.deepEqual(app.visible(), ['New task']);
++  app.filters.completed.onclick();
++  assert.deepEqual(app.visible(), ['Open task']);
++});

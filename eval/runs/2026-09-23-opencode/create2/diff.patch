@@ -1,0 +1,823 @@
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..d729207
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,86 @@
++(function (root, factory) {
++  'use strict';
++  if (typeof module === 'object' && module.exports) {
++    module.exports = factory(require('./todo.js'));
++  } else {
++    root.TodoApp = factory(root.TodoStore);
++  }
++})(typeof globalThis !== 'undefined' ? globalThis : this, function (TodoStore) {
++  'use strict';
++
++  function mount(doc, storage) {
++    var store = TodoStore.createStore(storage);
++    var form = doc.getElementById('add-form');
++    var input = doc.getElementById('new-task');
++    var list = doc.getElementById('task-list');
++    var error = doc.getElementById('error');
++    var summary = doc.getElementById('summary');
++
++    function render() {
++      var tasks = store.list();
++      list.textContent = '';
++
++      if (tasks.length === 0) {
++        var empty = doc.createElement('li');
++        empty.className = 'empty';
++        empty.textContent = 'No tasks yet.';
++        list.appendChild(empty);
++      }
++
++      tasks.forEach(function (task) {
++        var item = doc.createElement('li');
++        item.className = task.done ? 'done' : '';
++
++        var checkbox = doc.createElement('input');
++        checkbox.type = 'checkbox';
++        checkbox.checked = task.done;
++        checkbox.setAttribute('aria-label', 'Mark "' + task.text + '" complete');
++        checkbox.addEventListener('change', function () {
++          store.toggle(task.id);
++          render();
++        });
++
++        var text = doc.createElement('span');
++        text.className = 'text';
++        text.textContent = task.text;
++
++        var del = doc.createElement('button');
++        del.type = 'button';
++        del.className = 'delete';
++        del.textContent = 'Delete';
++        del.setAttribute('aria-label', 'Delete "' + task.text + '"');
++        del.addEventListener('click', function () {
++          store.remove(task.id);
++          render();
++        });
++
++        item.appendChild(checkbox);
++        item.appendChild(text);
++        item.appendChild(del);
++        list.appendChild(item);
++      });
++
++      var remaining = tasks.filter(function (t) { return !t.done; }).length;
++      summary.textContent = tasks.length === 0
++        ? ''
++        : remaining + ' of ' + tasks.length + ' remaining';
++    }
++
++    form.addEventListener('submit', function (event) {
++      event.preventDefault();
++      try {
++        store.add(input.value);
++        input.value = '';
++        error.textContent = '';
++        render();
++      } catch (err) {
++        error.textContent = err.message;
++      }
++    });
++
++    render();
++    return store;
++  }
++
++  return { mount: mount };
++});
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..ffe4dea
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,7 @@
++# Docs
++
++Wiki index. Every page is linked here.
++
++- [To-do app](todo-app.md) — behavior, files, and how to run the checks.
++- [Maintenance](MAINTENANCE.md) — audit process and cadence.
++- Languages: [TypeScript](languages/typescript.md), [Python](languages/python.md).
+diff --git a/docs/todo-app.md b/docs/todo-app.md
+new file mode 100644
+index 0000000..d245771
+--- /dev/null
++++ b/docs/todo-app.md
+@@ -0,0 +1,32 @@
++# To-do app
++
++A minimal local to-do list. Static page, no build step, no server, no dependencies; state lives in `localStorage`. Matches the stack in PROJECT_CONFIG.md.
++
++## Behavior
++
++- Add a task: submit nonblank text. Text is trimmed; blank/whitespace-only input is rejected with an inline error and nothing is added.
++- Complete/incomplete: toggle a task's checkbox.
++- Delete: remove a task.
++- Persistence: tasks and their done state survive a reload via `localStorage` (key `todos.v1`). Corrupt or malformed stored data degrades to an empty list instead of throwing.
++
++## Files
++
++- `index.html` — page markup and styles; mounts the app on `window.localStorage`.
++- `todo.js` — storage-agnostic task store (`TodoStore.createStore`): validation, toggle, delete, persistence. Shared by the page and tests.
++- `app.js` — DOM wiring (`TodoApp.mount(document, storage)`); renders with `textContent` so task text is never interpreted as HTML.
++- `tests/` — executable checks (Node's built-in test runner).
++
++## Run the checks
++
++```
++npm test        # or: node --test
++```
++
++Runs with Node's built-in runner; no install needed.
++
++## Verification notes
++
++Checked on 2026-09-23 (Node v26.3.0):
++
++- `node --test`: 13 passing — store behavior, DOM wiring, persistence across a remount, and that `index.html` exposes the ids/scripts the app expects.
++- Rendered `index.html` in headless Chrome at desktop (520px) and mobile (390px) widths; confirmed layout, empty state, and a populated list with a completed item.
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..d29699c
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,174 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>To-do</title>
++  <style>
++    :root {
++      --bg: #f5f6f8;
++      --surface: #ffffff;
++      --text: #1c1f24;
++      --muted: #6b7280;
++      --border: #d9dce1;
++      --accent: #2f6feb;
++      --danger: #c0392b;
++      --done: #9aa0a6;
++      --radius: 10px;
++      --space: 12px;
++    }
++
++    * { box-sizing: border-box; }
++
++    body {
++      margin: 0;
++      min-height: 100vh;
++      background: var(--bg);
++      color: var(--text);
++      font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
++      display: flex;
++      justify-content: center;
++      padding: var(--space);
++    }
++
++    main {
++      width: 100%;
++      max-width: 480px;
++      margin-top: 8vh;
++    }
++
++    h1 {
++      font-size: 1.5rem;
++      margin: 0 0 4px;
++    }
++
++    .summary {
++      color: var(--muted);
++      margin: 0 0 var(--space);
++      font-size: 0.9rem;
++    }
++
++    form {
++      display: flex;
++      gap: 8px;
++      margin-bottom: var(--space);
++    }
++
++    input[type="text"] {
++      flex: 1;
++      min-width: 0;
++      padding: 10px 12px;
++      font-size: 1rem;
++      border: 1px solid var(--border);
++      border-radius: var(--radius);
++      background: var(--surface);
++      color: var(--text);
++    }
++
++    input[type="text"]:focus {
++      outline: 2px solid var(--accent);
++      outline-offset: 1px;
++      border-color: var(--accent);
++    }
++
++    button {
++      font: inherit;
++      cursor: pointer;
++      border-radius: var(--radius);
++      border: 1px solid transparent;
++    }
++
++    .add {
++      padding: 10px 16px;
++      background: var(--accent);
++      color: #fff;
++      font-weight: 600;
++    }
++
++    .error {
++      color: var(--danger);
++      min-height: 1.25rem;
++      margin: 0 0 8px;
++      font-size: 0.9rem;
++    }
++
++    ul {
++      list-style: none;
++      margin: 0;
++      padding: 0;
++      background: var(--surface);
++      border: 1px solid var(--border);
++      border-radius: var(--radius);
++      overflow: hidden;
++    }
++
++    li {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      padding: 10px 12px;
++      border-top: 1px solid var(--border);
++    }
++
++    li:first-child { border-top: none; }
++
++    li .text {
++      flex: 1;
++      min-width: 0;
++      overflow-wrap: anywhere;
++    }
++
++    li.done .text {
++      color: var(--done);
++      text-decoration: line-through;
++    }
++
++    input[type="checkbox"] {
++      width: 20px;
++      height: 20px;
++      flex: none;
++      accent-color: var(--accent);
++    }
++
++    .delete {
++      background: transparent;
++      color: var(--danger);
++      border-color: var(--border);
++      padding: 6px 10px;
++      font-size: 0.85rem;
++    }
++
++    .empty {
++      color: var(--muted);
++      padding: 16px 12px;
++      text-align: center;
++    }
++
++    @media (max-width: 420px) {
++      main { margin-top: 4vh; }
++      h1 { font-size: 1.3rem; }
++    }
++  </style>
++</head>
++<body>
++  <main>
++    <h1>To-do</h1>
++    <p class="summary" id="summary" aria-live="polite"></p>
++
++    <form id="add-form" autocomplete="off">
++      <input id="new-task" type="text" name="task" placeholder="What needs doing?"
++             aria-label="New task" maxlength="500">
++      <button class="add" type="submit">Add</button>
++    </form>
++    <p class="error" id="error" role="alert"></p>
++
++    <ul id="task-list" aria-label="Tasks"></ul>
++  </main>
++
++  <script src="todo.js"></script>
++  <script src="app.js"></script>
++  <script>
++    TodoApp.mount(document, window.localStorage);
++  </script>
++</body>
++</html>
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..9f78440
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,9 @@
++{
++  "name": "local-todo",
++  "version": "0.0.0",
++  "private": true,
++  "description": "Minimal static to-do app: localStorage, no build step, no server.",
++  "scripts": {
++    "test": "node --test"
++  }
++}
+diff --git a/tests/app.test.js b/tests/app.test.js
+new file mode 100644
+index 0000000..a5acdd9
+--- /dev/null
++++ b/tests/app.test.js
+@@ -0,0 +1,110 @@
++'use strict';
++
++const test = require('node:test');
++const assert = require('node:assert/strict');
++
++const { mount } = require('../app.js');
++const { createDocument } = require('./fake-dom.js');
++
++const IDS = {
++  'add-form': 'form',
++  'new-task': 'input',
++  'task-list': 'ul',
++  error: 'p',
++  summary: 'p'
++};
++
++function newStorage(initial) {
++  const data = new Map(Object.entries(initial || {}));
++  return {
++    data,
++    getItem: (key) => (data.has(key) ? data.get(key) : null),
++    setItem: (key, value) => { data.set(key, String(value)); },
++    removeItem: (key) => { data.delete(key); }
++  };
++}
++
++function setup(storage) {
++  const doc = createDocument(IDS);
++  const store = mount(doc, storage || newStorage());
++  return { doc, store };
++}
++
++function submit(doc, text) {
++  doc.getElementById('new-task').value = text;
++  doc.getElementById('add-form').dispatch('submit');
++}
++
++function items(doc) {
++  return doc.getElementById('task-list').children;
++}
++
++test('submitting a nonblank task adds it and clears the input', () => {
++  const { doc, store } = setup();
++  submit(doc, '  Buy milk  ');
++
++  assert.deepEqual(store.list().map((t) => t.text), ['Buy milk']);
++  assert.equal(doc.getElementById('new-task').value, '');
++  assert.equal(doc.getElementById('error').textContent, '');
++  assert.equal(items(doc).length, 1);
++  assert.equal(items(doc)[0].children[1].textContent, 'Buy milk');
++  assert.match(doc.getElementById('summary').textContent, /1 of 1 remaining/);
++});
++
++test('blank input shows an error and adds nothing', () => {
++  const { doc, store } = setup();
++  submit(doc, '   ');
++
++  assert.deepEqual(store.list(), []);
++  assert.match(doc.getElementById('error').textContent, /blank/i);
++  assert.equal(items(doc).length, 1);
++  assert.equal(items(doc)[0].className, 'empty');
++});
++
++test('the checkbox toggles a task complete and back', () => {
++  const { doc, store } = setup();
++  submit(doc, 'Walk the dog');
++
++  items(doc)[0].children[0].checked = true;
++  items(doc)[0].children[0].dispatch('change');
++  assert.equal(store.list()[0].done, true);
++  assert.equal(items(doc)[0].className, 'done');
++  assert.equal(items(doc)[0].children[0].checked, true);
++
++  items(doc)[0].children[0].checked = false;
++  items(doc)[0].children[0].dispatch('change');
++  assert.equal(store.list()[0].done, false);
++  assert.equal(items(doc)[0].className, '');
++});
++
++test('the delete button removes only that task', () => {
++  const { doc, store } = setup();
++  submit(doc, 'A');
++  submit(doc, 'B');
++
++  items(doc)[1].children[2].dispatch('click');
++
++  assert.deepEqual(store.list().map((t) => t.text), ['A']);
++  assert.equal(items(doc).length, 1);
++});
++
++test('a reload restores tasks and their completed state', () => {
++  const storage = newStorage();
++  const first = setup(storage);
++  submit(first.doc, 'A');
++  submit(first.doc, 'B');
++  items(first.doc)[1].children[0].checked = true;
++  items(first.doc)[1].children[0].dispatch('change');
++
++  const reloaded = setup(storage);
++  assert.deepEqual(
++    reloaded.store.list().map((t) => ({ text: t.text, done: t.done })),
++    [
++      { text: 'A', done: false },
++      { text: 'B', done: true }
++    ]
++  );
++  assert.equal(items(reloaded.doc).length, 2);
++  assert.equal(items(reloaded.doc)[1].className, 'done');
++  assert.equal(items(reloaded.doc)[1].children[0].checked, true);
++});
+diff --git a/tests/fake-dom.js b/tests/fake-dom.js
+new file mode 100644
+index 0000000..dc5a321
+--- /dev/null
++++ b/tests/fake-dom.js
+@@ -0,0 +1,65 @@
++'use strict';
++
++function createElement(tagName) {
++  var el = {
++    tagName: String(tagName).toUpperCase(),
++    children: [],
++    attributes: {},
++    listeners: {},
++    className: '',
++    type: '',
++    checked: false,
++    value: '',
++    parentNode: null,
++    _text: '',
++    appendChild: function (child) {
++      this.children.push(child);
++      child.parentNode = this;
++      return child;
++    },
++    setAttribute: function (name, value) {
++      this.attributes[name] = String(value);
++    },
++    getAttribute: function (name) {
++      return Object.prototype.hasOwnProperty.call(this.attributes, name)
++        ? this.attributes[name]
++        : null;
++    },
++    addEventListener: function (type, handler) {
++      (this.listeners[type] = this.listeners[type] || []).push(handler);
++    },
++    dispatch: function (type, event) {
++      var handlers = this.listeners[type] || [];
++      var payload = event || { preventDefault: function () {} };
++      for (var i = 0; i < handlers.length; i++) handlers[i](payload);
++    }
++  };
++
++  Object.defineProperty(el, 'textContent', {
++    get: function () {
++      return this._text;
++    },
++    set: function (value) {
++      this._text = value == null ? '' : String(value);
++      this.children = [];
++    }
++  });
++
++  return el;
++}
++
++function createDocument(ids) {
++  var elements = {};
++  Object.keys(ids || {}).forEach(function (id) {
++    elements[id] = createElement(ids[id]);
++  });
++  return {
++    elements: elements,
++    getElementById: function (id) {
++      return elements[id] || null;
++    },
++    createElement: createElement
++  };
++}
++
++module.exports = { createElement: createElement, createDocument: createDocument };
+diff --git a/tests/page.test.js b/tests/page.test.js
+new file mode 100644
+index 0000000..53a695c
+--- /dev/null
++++ b/tests/page.test.js
+@@ -0,0 +1,55 @@
++'use strict';
++
++const fs = require('node:fs');
++const path = require('node:path');
++const test = require('node:test');
++const assert = require('node:assert/strict');
++
++const { mount } = require('../app.js');
++const { createDocument } = require('./fake-dom.js');
++
++const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
++
++function idsFromHtml(source) {
++  const ids = {};
++  const re = /id="([^"]+)"/g;
++  let match;
++  while ((match = re.exec(source))) ids[match[1]] = 'div';
++  return ids;
++}
++
++function memoryStorage() {
++  const data = new Map();
++  return {
++    getItem: (key) => (data.has(key) ? data.get(key) : null),
++    setItem: (key, value) => { data.set(key, String(value)); },
++    removeItem: (key) => { data.delete(key); }
++  };
++}
++
++test('index.html wires the ids and scripts the app expects', () => {
++  const ids = idsFromHtml(html);
++  ['add-form', 'new-task', 'task-list', 'error', 'summary'].forEach((id) => {
++    assert.ok(ids[id], 'index.html is missing #' + id);
++  });
++  assert.match(html, /src="todo\.js"/);
++  assert.match(html, /src="app\.js"/);
++  assert.match(html, /TodoApp\.mount\(document, window\.localStorage\)/);
++});
++
++test('the real page markup drives add, toggle, and delete', () => {
++  const doc = createDocument(idsFromHtml(html));
++  const store = mount(doc, memoryStorage());
++
++  doc.getElementById('new-task').value = 'Real markup task';
++  doc.getElementById('add-form').dispatch('submit');
++  assert.equal(store.list().length, 1);
++
++  const item = doc.getElementById('task-list').children[0];
++  item.children[0].checked = true;
++  item.children[0].dispatch('change');
++  assert.equal(store.list()[0].done, true);
++
++  doc.getElementById('task-list').children[0].children[2].dispatch('click');
++  assert.equal(store.list().length, 0);
++});
+diff --git a/tests/todo.test.js b/tests/todo.test.js
+new file mode 100644
+index 0000000..2049a39
+--- /dev/null
++++ b/tests/todo.test.js
+@@ -0,0 +1,98 @@
++'use strict';
++
++const test = require('node:test');
++const assert = require('node:assert/strict');
++
++const { createStore, STORAGE_KEY } = require('../todo.js');
++
++function fakeStorage(initial) {
++  const data = new Map(Object.entries(initial || {}));
++  return {
++    data,
++    getItem: (key) => (data.has(key) ? data.get(key) : null),
++    setItem: (key, value) => { data.set(key, String(value)); },
++    removeItem: (key) => { data.delete(key); }
++  };
++}
++
++test('add stores a trimmed, incomplete task', () => {
++  const store = createStore(fakeStorage());
++  const task = store.add('  Buy milk  ');
++
++  assert.equal(task.text, 'Buy milk');
++  assert.equal(task.done, false);
++  assert.ok(task.id);
++  assert.deepEqual(store.list(), [task]);
++});
++
++test('add rejects blank, whitespace-only, and non-string text', () => {
++  const store = createStore(fakeStorage());
++
++  assert.throws(() => store.add(''), /blank/);
++  assert.throws(() => store.add('   '), /blank/);
++  assert.throws(() => store.add('\t\n '), /blank/);
++  assert.throws(() => store.add(undefined), /blank/);
++  assert.throws(() => store.add(42), /blank/);
++  assert.deepEqual(store.list(), []);
++});
++
++test('toggle marks a task complete and then incomplete', () => {
++  const store = createStore(fakeStorage());
++  const task = store.add('Walk the dog');
++
++  assert.equal(store.toggle(task.id).done, true);
++  assert.equal(store.list()[0].done, true);
++
++  assert.equal(store.toggle(task.id).done, false);
++  assert.equal(store.list()[0].done, false);
++
++  assert.equal(store.toggle('missing-id'), null);
++});
++
++test('remove deletes only the matching task', () => {
++  const store = createStore(fakeStorage());
++  const a = store.add('A');
++  const b = store.add('B');
++
++  assert.equal(store.remove(a.id), true);
++  assert.deepEqual(store.list().map((t) => t.text), ['B']);
++  assert.equal(store.remove(a.id), false);
++  assert.equal(store.remove('missing-id'), false);
++  assert.deepEqual(store.list().map((t) => t.id), [b.id]);
++});
++
++test('tasks and their state persist across a reload', () => {
++  const storage = fakeStorage();
++  const first = createStore(storage);
++  first.add('First');
++  const second = first.add('Second');
++  first.toggle(second.id);
++
++  const reloaded = createStore(storage);
++  assert.deepEqual(
++    reloaded.list().map((t) => ({ text: t.text, done: t.done })),
++    [
++      { text: 'First', done: false },
++      { text: 'Second', done: true }
++    ]
++  );
++  assert.equal(reloaded.list()[1].id, second.id);
++  assert.ok(storage.getItem(STORAGE_KEY));
++});
++
++test('corrupt or malformed storage degrades to a clean list', () => {
++  assert.deepEqual(createStore(fakeStorage({ [STORAGE_KEY]: '{not json' })).list(), []);
++  assert.deepEqual(createStore(fakeStorage({ [STORAGE_KEY]: '"nope"' })).list(), []);
++  assert.deepEqual(
++    createStore(fakeStorage({
++      [STORAGE_KEY]: JSON.stringify([
++        { id: 'ok', text: 'Keep me', done: false },
++        { id: '', text: 'No id', done: false },
++        { id: 'x', text: '   ', done: false },
++        null,
++        'junk'
++      ])
++    })).list(),
++    [{ id: 'ok', text: 'Keep me', done: false }]
++  );
++});
+diff --git a/todo.js b/todo.js
+new file mode 100644
+index 0000000..2c57e56
+--- /dev/null
++++ b/todo.js
+@@ -0,0 +1,127 @@
++(function (root, factory) {
++  'use strict';
++  if (typeof module === 'object' && module.exports) {
++    module.exports = factory();
++  } else {
++    root.TodoStore = factory();
++  }
++})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
++  'use strict';
++
++  var STORAGE_KEY = 'todos.v1';
++
++  function isBlank(text) {
++    return typeof text !== 'string' || text.trim() === '';
++  }
++
++  function defaultMakeId() {
++    return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
++  }
++
++  function normalize(raw) {
++    if (!raw || typeof raw !== 'object') return null;
++    if (typeof raw.id !== 'string' || raw.id === '') return null;
++    if (isBlank(raw.text)) return null;
++    return { id: raw.id, text: raw.text.trim(), done: raw.done === true };
++  }
++
++  function createStore(storage, options) {
++    options = options || {};
++    var key = options.key || STORAGE_KEY;
++    var makeId = options.makeId || defaultMakeId;
++    var tasks = load();
++
++    function load() {
++      var raw;
++      try {
++        raw = storage.getItem(key);
++      } catch (err) {
++        return [];
++      }
++      if (!raw) return [];
++      var parsed;
++      try {
++        parsed = JSON.parse(raw);
++      } catch (err) {
++        return [];
++      }
++      if (!Array.isArray(parsed)) return [];
++      var out = [];
++      for (var i = 0; i < parsed.length; i++) {
++        var task = normalize(parsed[i]);
++        if (task) out.push(task);
++      }
++      return out;
++    }
++
++    function save() {
++      try {
++        storage.setItem(key, JSON.stringify(tasks));
++      } catch (err) {
++        /* Storage may be unavailable (private mode, quota); keep in-memory state. */
++      }
++    }
++
++    function snapshot(task) {
++      return { id: task.id, text: task.text, done: task.done };
++    }
++
++    function indexOf(id) {
++      for (var i = 0; i < tasks.length; i++) {
++        if (tasks[i].id === id) return i;
++      }
++      return -1;
++    }
++
++    function list() {
++      return tasks.map(snapshot);
++    }
++
++    function add(text) {
++      if (isBlank(text)) {
++        throw new Error('Task text must not be blank.');
++      }
++      var task = { id: makeId(), text: text.trim(), done: false };
++      tasks.push(task);
++      save();
++      return snapshot(task);
++    }
++
++    function setDone(id, done) {
++      var i = indexOf(id);
++      if (i === -1) return null;
++      tasks[i].done = done === true;
++      save();
++      return snapshot(tasks[i]);
++    }
++
++    function toggle(id) {
++      var i = indexOf(id);
++      if (i === -1) return null;
++      return setDone(id, !tasks[i].done);
++    }
++
++    function remove(id) {
++      var i = indexOf(id);
++      if (i === -1) return false;
++      tasks.splice(i, 1);
++      save();
++      return true;
++    }
++
++    return {
++      key: key,
++      list: list,
++      add: add,
++      setDone: setDone,
++      toggle: toggle,
++      remove: remove
++    };
++  }
++
++  return {
++    STORAGE_KEY: STORAGE_KEY,
++    isBlank: isBlank,
++    createStore: createStore
++  };
++});

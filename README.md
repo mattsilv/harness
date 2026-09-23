@@ -36,6 +36,8 @@ flowchart LR
 | `EVAL.md` | Harness evaluation: fixed prompts and how to run them (issue #13). | no |
 | `eval/check.mjs` | Evaluator: fixed to-do checks and source counts for one run. | no |
 | `eval/fixture/` | Baseline to-do app that the update task starts from. | no |
+| `eval/runs/` | Saved evaluation notes, checks, usage, diffs, and screenshots. | no |
+| `eval/results.jsonl` | One evaluator record per stored run. | no |
 | `RATIONALE.md` | Why each rule exists. | no |
 | `AGENTS.md`, `CLAUDE.md` | Rules for agents working on this repo itself. | no |
 | `.github/workflows/budget.yml` | CI word budget for `template/AGENTS.md`. | no |

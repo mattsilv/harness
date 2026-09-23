@@ -44,7 +44,9 @@ cuttable. Cite the vendor guide wherever it informs a verdict, including a keep.
 
 Revisit the previous review's changes against any failure evidence, and note in the new
 log row whether any need revision: "unknown" without evidence, "n/a" if no earlier
-review changed rules. Planned evaluation prompts are in [EVAL.md](EVAL.md).
+review changed rules. Run [EVAL.md](EVAL.md) twice per task on the current and the proposed
+harness, scored by [eval/check.mjs](eval/check.mjs), and cite the stored results in
+[eval/runs/](eval/runs/) as evidence.
 
 ## Don't cut
 
@@ -76,3 +78,4 @@ review changed rules. Planned evaluation prompts are in [EVAL.md](EVAL.md).
 | Date | Reviewer model | AGENTS.md words (before → after) | Notes |
 |---|---|---|---|
 | 2026-09-23 | — | 675 → 675 | Moved from a Google Doc to this repo; split Python rule into docs/languages/. No review yet. |
+| 2026-09-23 | — (eval pilot; reviews by Sonnet 5 and Haiku 4.5) | 738 → 738 | First [EVAL.md](EVAL.md) run on v8: Claude Code/Opus, OpenCode/DeepSeek V4.1 Flash, and Codex/GPT-6 Sol, 2 runs per task, all 12 passed every check. OpenCode left its work uncommitted in 4/4 runs. Cost: $2.62 at Claude list price (subscription), $0.08 OpenCode Go, Codex unavailable, Jev $0.0013. No rules changed; previous review n/a. [Details](eval/runs/2026-09-23-v8.md). |

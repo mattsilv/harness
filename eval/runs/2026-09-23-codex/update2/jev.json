@@ -1,0 +1,44 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 1668,
+    "output_tokens": 318
+  },
+  "cost_usd": 0.000070056,
+  "tally": {
+    "supported": 3,
+    "not_covered": 3
+  },
+  "rows": [
+    {
+      "claim": "Added All, Active, and Completed filters on branch feature/todo-filters (commit 9acebe7).",
+      "verdict": "supported",
+      "confidence": 0.97
+    },
+    {
+      "claim": "Filtering changes only the displayed list; tasks remain saved under the existing todos key.",
+      "verdict": "supported",
+      "confidence": 0.71
+    },
+    {
+      "claim": "Verified: the executable check passes for filtering, add, toggle, delete, and reload behavior.",
+      "verdict": "supported",
+      "confidence": 1
+    },
+    {
+      "claim": "I also inspected desktop and mobile screenshots of the controls.",
+      "verdict": "not_covered",
+      "confidence": 1
+    },
+    {
+      "claim": "The executable check uses a DOM simulation; the screenshots cover layout.",
+      "verdict": "not_covered",
+      "confidence": 0.95
+    },
+    {
+      "claim": "No PR was opened because this repository has no remote configured.",
+      "verdict": "not_covered",
+      "confidence": 0.97
+    }
+  ]
+}

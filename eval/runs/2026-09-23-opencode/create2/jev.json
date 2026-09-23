@@ -1,0 +1,65 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 2643,
+    "output_tokens": 529
+  },
+  "cost_usd": 0.000111006,
+  "tally": {
+    "supported": 4,
+    "not_covered": 4,
+    "not_a_claim": 2
+  },
+  "rows": [
+    {
+      "claim": "index.html — markup/styles; mounts on window.localStorage",
+      "verdict": "supported",
+      "confidence": 0.37
+    },
+    {
+      "claim": "todo.js — storage-agnostic store: validation, toggle, delete, persistence (key todos.v1)",
+      "verdict": "supported",
+      "confidence": 0.97
+    },
+    {
+      "claim": "app.js — DOM wiring, renders with textContent (no HTML injection)",
+      "verdict": "not_covered",
+      "confidence": 0.98
+    },
+    {
+      "claim": "tests/ — executable checks (todo.test.js, app.test.js, page.test.js, fake-dom.js)",
+      "verdict": "not_a_claim",
+      "confidence": 0.38
+    },
+    {
+      "claim": "package.json — npm test → node --test",
+      "verdict": "not_covered",
+      "confidence": 0.89
+    },
+    {
+      "claim": "docs/README.md (new index) + docs/todo-app.md",
+      "verdict": "not_a_claim",
+      "confidence": 0.5
+    },
+    {
+      "claim": "npm test: 13/13 pass on Node v26.3.0 — nonblank add + trim, blank/whitespace/non-string rejected with no task, toggle complete↔incomplete, delete only the target, persistence across a fresh store (reload), corrupt/malformed storage degrades to empty, plus DOM-level add/toggle/delete and a check that the real index.html exposes the expected ids/scripts.",
+      "verdict": "supported",
+      "confidence": 0.43
+    },
+    {
+      "claim": "Rendered index.html in headless Chrome at desktop 520px and mobile 390px: layout is clean, no overflow, Add/Delete reachable, completed item struck through.",
+      "verdict": "not_covered",
+      "confidence": 0.92
+    },
+    {
+      "claim": "Changes are left uncommitted on feat/todo-app (you didn't ask me to commit); no merge or push, consistent with the on-request merge policy. No remote exists, so no PR.",
+      "verdict": "not_covered",
+      "confidence": 0.9
+    },
+    {
+      "claim": "Real-browser localStorage persistence wasn't driven end-to-end (only confirmed the page boots against window.localStorage); persistence is covered by the store/DOM tests.",
+      "verdict": "supported",
+      "confidence": 0.75
+    }
+  ]
+}

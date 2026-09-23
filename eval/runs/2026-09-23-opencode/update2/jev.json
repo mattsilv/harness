@@ -1,0 +1,60 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 2464,
+    "output_tokens": 477
+  },
+  "cost_usd": 0.000103488,
+  "tally": {
+    "supported": 4,
+    "not_covered": 4,
+    "contradicted": 1
+  },
+  "rows": [
+    {
+      "claim": "index.html:14-24 — filter controls (aria-pressed per button, visible active style), filter state, render now maps filterTodos(todos, filter).",
+      "verdict": "supported",
+      "confidence": 0.38
+    },
+    {
+      "claim": "filters.js (new) — pure filterTodos(todos, filter); returns same task objects so toggle/delete still target stored tasks.",
+      "verdict": "supported",
+      "confidence": 0.54
+    },
+    {
+      "claim": "test/filters.test.js (new) + package.json (new) — npm test → node --test.",
+      "verdict": "not_covered",
+      "confidence": 0.78
+    },
+    {
+      "claim": "node --test: 8/8 pass — all/active/completed selection, empty list, unknown filter fallback, no input mutation, object identity, and page wiring (loads filters.js, exposes all three data-filter values).",
+      "verdict": "not_covered",
+      "confidence": 0.34
+    },
+    {
+      "claim": "Real-browser E2E (Chrome via dev-browser): add 3 → active 3 → toggle \"ship feature\" → active 2, completed 1 → reload kept all 3 tasks and reset filter to All → delete left 2.",
+      "verdict": "supported",
+      "confidence": 0.86
+    },
+    {
+      "claim": "Desktop (1280) and mobile (390) screenshots: selected filter is visibly highlighted and lists filter correctly.",
+      "verdict": "not_covered",
+      "confidence": 0.75
+    },
+    {
+      "claim": "Filter choice is not persisted (resets to All on reload); tasks persist unchanged.",
+      "verdict": "contradicted",
+      "confidence": 0.35
+    },
+    {
+      "claim": "The committed tests cover filter logic + wiring text, not click handlers; UI behavior was verified in-browser but is not in the CI-style test. An independent review rated that and the previously invisible active state as medium; the active-state issue is fixed, the browser-test gap remains a follow-up.",
+      "verdict": "supported",
+      "confidence": 0.53
+    },
+    {
+      "claim": "No commit made (none requested).",
+      "verdict": "not_covered",
+      "confidence": 0.74
+    }
+  ]
+}

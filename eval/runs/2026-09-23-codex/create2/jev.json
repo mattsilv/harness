@@ -1,0 +1,44 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 1653,
+    "output_tokens": 318
+  },
+  "cost_usd": 0.000069426,
+  "tally": {
+    "supported": 3,
+    "not_covered": 3
+  },
+  "rows": [
+    {
+      "claim": "Created the local to-do app on branch feat/local-todo (commit 6db27b9).",
+      "verdict": "supported",
+      "confidence": 0.42
+    },
+    {
+      "claim": "Open index.html directly in a browser to add nonblank tasks, mark them complete or incomplete, and delete them.",
+      "verdict": "supported",
+      "confidence": 0.95
+    },
+    {
+      "claim": "Tasks persist in localStorage across reloads.",
+      "verdict": "supported",
+      "confidence": 1
+    },
+    {
+      "claim": "Verified: pnpm check passes all four tests, including persistence, invalid saved data, failed writes, and sequential edits from two tabs.",
+      "verdict": "not_covered",
+      "confidence": 0.62
+    },
+    {
+      "claim": "I also exercised the task lifecycle and reloads in Chrome, checked keyboard focus and storage-error feedback, and inspected desktop and mobile screenshots.",
+      "verdict": "not_covered",
+      "confidence": 0.5
+    },
+    {
+      "claim": "CI is configured but has not run remotely.",
+      "verdict": "not_covered",
+      "confidence": 0.98
+    }
+  ]
+}

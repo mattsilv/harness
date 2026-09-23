@@ -1,0 +1,69 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 2835,
+    "output_tokens": 586
+  },
+  "cost_usd": 0.00011907000000000001,
+  "tally": {
+    "supported": 4,
+    "not_covered": 7
+  },
+  "rows": [
+    {
+      "claim": "Add: the text is trimmed, and blank or whitespace-only input is refused with \"Enter a task.\"",
+      "verdict": "supported",
+      "confidence": 0.89
+    },
+    {
+      "claim": "Complete/incomplete: a checkbox per task; done tasks are struck through.",
+      "verdict": "not_covered",
+      "confidence": 0.7
+    },
+    {
+      "claim": "Delete: a Delete button per task.",
+      "verdict": "supported",
+      "confidence": 0.61
+    },
+    {
+      "claim": "Reloads: tasks and their done state survive a reload. If the saved data is corrupt, the app starts with an empty list instead of breaking.",
+      "verdict": "supported",
+      "confidence": 0.67
+    },
+    {
+      "claim": "Tests pass: 16/16 locally. They cover adding, refusing blank input, toggling both ways, deleting only the chosen task, and persistence after reload (including after toggles and deletes). Also covered: two tasks with identical text, task text that looks like HTML (shown as plain text, not run), and corrupt saved data.",
+      "verdict": "not_covered",
+      "confidence": 0.34
+    },
+    {
+      "claim": "Tests catch real breakage: with saving switched off, the 2 persistence tests failed; with trimming removed, the add and blank-input tests failed. Both changes were reverted afterwards.",
+      "verdict": "not_covered",
+      "confidence": 0.45
+    },
+    {
+      "claim": "Opening the file directly works: in Chromium, 3 tasks and a checked state survived a reload.",
+      "verdict": "supported",
+      "confidence": 0.75
+    },
+    {
+      "claim": "Layout: I checked desktop (1280×720) and phone (Pixel 7) screenshots. Everything is visible without scrolling, long tasks wrap, and buttons are large enough to tap.",
+      "verdict": "not_covered",
+      "confidence": 1
+    },
+    {
+      "claim": "Independent review: found no correctness or security bugs. I acted on its two small points: I removed a redundant input label and added the identical-text test.",
+      "verdict": "not_covered",
+      "confidence": 0.5
+    },
+    {
+      "claim": "Firefox and Safari; the tests only run in Chromium.",
+      "verdict": "not_covered",
+      "confidence": 0.92
+    },
+    {
+      "claim": "The CI workflow itself, since there's no remote to run it on.",
+      "verdict": "not_covered",
+      "confidence": 0.55
+    }
+  ]
+}

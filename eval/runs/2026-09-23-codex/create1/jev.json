@@ -1,0 +1,39 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 1425,
+    "output_tokens": 267
+  },
+  "cost_usd": 0.000059850000000000005,
+  "tally": {
+    "supported": 2,
+    "not_covered": 3
+  },
+  "rows": [
+    {
+      "claim": "Created the local to-do app on branch feat/local-todo in commit 51333f5.",
+      "verdict": "supported",
+      "confidence": 0.33
+    },
+    {
+      "claim": "Open index.html to use it.",
+      "verdict": "not_covered",
+      "confidence": 0.46
+    },
+    {
+      "claim": "Verified: pnpm test passes browser checks for rejecting blank tasks, adding, completing, reopening, deleting, and preserving changes across reloads.",
+      "verdict": "supported",
+      "confidence": 0.92
+    },
+    {
+      "claim": "I also checked desktop and mobile screenshots and confirmed persistence when opening the HTML file directly.",
+      "verdict": "not_covered",
+      "confidence": 0.58
+    },
+    {
+      "claim": "Tests and setup instructions are in tests/todo.test.mjs and docs/todo.md.",
+      "verdict": "not_covered",
+      "confidence": 0.38
+    }
+  ]
+}

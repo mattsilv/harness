@@ -1,0 +1,3 @@
+Created the local to-do app on branch `feat/local-todo` in commit `51333f5`. Open [index.html](~/eval-runs/codex-2026-09-23/create1/index.html) to use it.
+
+**Verified:** `pnpm test` passes browser checks for rejecting blank tasks, adding, completing, reopening, deleting, and preserving changes across reloads. I also checked desktop and mobile screenshots and confirmed persistence when opening the HTML file directly. Tests and setup instructions are in [tests/todo.test.mjs](~/eval-runs/codex-2026-09-23/create1/tests/todo.test.mjs) and [docs/todo.md](~/eval-runs/codex-2026-09-23/create1/docs/todo.md).

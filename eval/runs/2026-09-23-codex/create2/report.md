@@ -1,0 +1,3 @@
+Created the local to-do app on branch `feat/local-todo` (commit `6db27b9`). Open [index.html](~/eval-runs/codex-2026-09-23/create2/index.html) directly in a browser to add nonblank tasks, mark them complete or incomplete, and delete them. Tasks persist in `localStorage` across reloads.
+
+**Verified:** `pnpm check` passes all four tests, including persistence, invalid saved data, failed writes, and sequential edits from two tabs. I also exercised the task lifecycle and reloads in Chrome, checked keyboard focus and storage-error feedback, and inspected desktop and mobile screenshots. CI is configured but has not run remotely.

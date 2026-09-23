@@ -1,0 +1,337 @@
+diff --git a/.github/workflows/check.yml b/.github/workflows/check.yml
+new file mode 100644
+index 0000000..8f6795f
+--- /dev/null
++++ b/.github/workflows/check.yml
+@@ -0,0 +1,15 @@
++name: Check
++
++on:
++  push:
++  pull_request:
++
++jobs:
++  check:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 22
++      - run: npm run check
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..9ae4892
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,134 @@
++const STORAGE_KEY = "local-todo.tasks.v1";
++
++function createTaskStore(storage, makeId = () => crypto.randomUUID()) {
++  function read() {
++    const raw = storage.getItem(STORAGE_KEY);
++    let saved;
++    try { saved = JSON.parse(raw ?? "[]"); } catch { return []; }
++    return Array.isArray(saved)
++      ? saved.filter((task) => task && typeof task.id === "string" && typeof task.title === "string" && typeof task.completed === "boolean")
++      : [];
++  }
++  let tasks;
++  try { tasks = read(); } catch { tasks = []; }
++
++  function persist(next) {
++    storage.setItem(STORAGE_KEY, JSON.stringify(next));
++    tasks = next;
++  }
++
++  return {
++    all: () => tasks.map((task) => ({ ...task })),
++    sync() {
++      tasks = read();
++    },
++    add(title) {
++      const trimmed = title.trim();
++      if (!trimmed) return false;
++      persist([...read(), { id: makeId(), title: trimmed, completed: false }]);
++      return true;
++    },
++    setCompleted(id, completed) {
++      const latest = read();
++      const task = latest.find((item) => item.id === id);
++      if (!task) { tasks = latest; return false; }
++      persist(latest.map((item) => item.id === id ? { ...item, completed } : item));
++      return true;
++    },
++    remove(id) {
++      const latest = read();
++      const next = latest.filter((task) => task.id !== id);
++      if (next.length === latest.length) { tasks = latest; return false; }
++      persist(next);
++      return true;
++    },
++  };
++}
++
++if (typeof module !== "undefined") module.exports = { createTaskStore };
++
++if (typeof document !== "undefined") {
++  const store = createTaskStore(localStorage);
++  const form = document.querySelector("#task-form");
++  const input = document.querySelector("#task-input");
++  const list = document.querySelector("#tasks");
++  const count = document.querySelector("#count");
++  const empty = document.querySelector("#empty");
++  const error = document.querySelector("#error");
++
++  function render(focusId) {
++    const tasks = store.all();
++    list.replaceChildren();
++    for (const task of tasks) {
++      const row = document.createElement("li");
++      const checkbox = document.createElement("input");
++      const label = document.createElement("label");
++      const button = document.createElement("button");
++
++      checkbox.type = "checkbox";
++      checkbox.id = `task-${task.id}`;
++      checkbox.checked = task.completed;
++      checkbox.addEventListener("change", () => {
++        try {
++          store.setCompleted(task.id, checkbox.checked);
++          error.hidden = true;
++        } catch {
++          error.hidden = false;
++        }
++        render(task.id);
++      });
++      label.htmlFor = checkbox.id;
++      label.textContent = task.title;
++      button.type = "button";
++      button.className = "delete";
++      button.textContent = "Delete";
++      button.setAttribute("aria-label", `Delete ${task.title}`);
++      button.addEventListener("click", () => {
++        const index = store.all().findIndex((item) => item.id === task.id);
++        const nextFocus = tasks[index + 1]?.id ?? tasks[index - 1]?.id;
++        try {
++          store.remove(task.id);
++          error.hidden = true;
++          render(nextFocus ?? "");
++        } catch {
++          error.hidden = false;
++          render(task.id);
++        }
++      });
++      if (task.completed) row.className = "completed";
++      row.append(checkbox, label, button);
++      list.append(row);
++    }
++    const remaining = tasks.filter((task) => !task.completed).length;
++    count.textContent = `${remaining} remaining`;
++    empty.hidden = tasks.length > 0;
++    if (focusId !== undefined) {
++      const checkbox = [...list.querySelectorAll("input")].find((item) => item.id === `task-${focusId}`);
++      (checkbox ?? input).focus();
++    }
++  }
++
++  form.addEventListener("submit", (event) => {
++    event.preventDefault();
++    try {
++      if (store.add(input.value)) {
++        input.value = "";
++        error.hidden = true;
++        render();
++      }
++    } catch {
++      error.hidden = false;
++    }
++    input.focus();
++  });
++  window.addEventListener("storage", (event) => {
++    if (event.key !== STORAGE_KEY) return;
++    try {
++      store.sync();
++      render();
++    } catch {
++      error.hidden = false;
++    }
++  });
++  render();
++}
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..c744e64
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,6 @@
++# Documentation
++
++- [Local to-do app](todo.md)
++- [Maintenance](MAINTENANCE.md)
++- [Python conventions](languages/python.md)
++- [TypeScript conventions](languages/typescript.md)
+diff --git a/docs/todo.md b/docs/todo.md
+new file mode 100644
+index 0000000..bdfbdc8
+--- /dev/null
++++ b/docs/todo.md
+@@ -0,0 +1,5 @@
++# Local to-do app
++
++Open `index.html` in a browser. Tasks are saved in that browser's `localStorage`, so they remain after reloading the page. Data is local to the browser and origin; clearing site data removes it.
++
++Run `pnpm check` for the task lifecycle and saved-data checks. The app has no build step or runtime dependencies.
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..4cdfe59
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,59 @@
++<!doctype html>
++<html lang="en">
++  <head>
++    <meta charset="utf-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1" />
++    <meta name="theme-color" content="#f5f2eb" />
++    <title>Tasks</title>
++    <style>
++      :root {
++        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
++        color: #27352d;
++        background: #f5f2eb;
++        font-synthesis: none;
++      }
++      * { box-sizing: border-box; }
++      body { margin: 0; min-height: 100vh; }
++      main { width: min(100% - 32px, 560px); margin: 0 auto; padding: clamp(48px, 10vh, 104px) 0 64px; }
++      .eyebrow { margin: 0 0 12px; color: #627969; font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
++      h1 { margin: 0; font-size: clamp(38px, 8vw, 56px); line-height: 1.1; letter-spacing: -.05em; }
++      .intro { margin: 12px 0 30px; color: #65736a; font-size: 16px; }
++      form { display: flex; gap: 10px; margin-bottom: 28px; }
++      input[type="text"] { flex: 1; min-width: 0; height: 48px; padding: 0 16px; border: 1px solid #cbd3ca; border-radius: 12px; background: #fff; color: inherit; font: inherit; }
++      input[type="text"]:focus { outline: 2px solid #47745a; outline-offset: 2px; }
++      button { font: inherit; cursor: pointer; }
++      .add { min-width: 82px; border: 0; border-radius: 12px; background: #355f45; color: white; font-weight: 650; }
++      .add:hover { background: #294d37; }
++      .section-heading { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
++      h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
++      #count { color: #65736a; font-size: 13px; }
++      ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid #dce2d9; }
++      li { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 0; border-bottom: 1px solid #dce2d9; }
++      li input { width: 19px; height: 19px; margin: 0; accent-color: #355f45; cursor: pointer; }
++      li label { flex: 1; overflow-wrap: anywhere; cursor: pointer; }
++      li.completed label { color: #88948b; text-decoration: line-through; }
++      .delete { border: 0; border-radius: 8px; padding: 8px 10px; background: transparent; color: #8d5149; font-size: 13px; }
++      .delete:hover, .delete:focus-visible { background: #f0dfdc; }
++      #error { margin: -14px 0 22px; color: #a0473b; font-size: 14px; }
++      #empty { margin: 0; padding: 28px 0; color: #65736a; text-align: center; }
++      [hidden] { display: none !important; }
++      @media (max-width: 380px) { form { gap: 8px; } .add { min-width: 70px; } }
++    </style>
++  </head>
++  <body>
++    <main>
++      <p class="eyebrow">A little room to focus</p>
++      <h1>Your tasks</h1>
++      <p class="intro">Keep the small things in one place.</p>
++      <form id="task-form">
++        <input id="task-input" type="text" aria-label="New task" placeholder="Add a task..." maxlength="200" required />
++        <button class="add" type="submit">Add</button>
++      </form>
++      <p id="error" role="alert" hidden>Could not save tasks. Check browser storage and try again.</p>
++      <div class="section-heading"><h2>All tasks</h2><span id="count" aria-live="polite"></span></div>
++      <ul id="tasks"></ul>
++      <p id="empty">Nothing here yet. Add a task to get started.</p>
++    </main>
++    <script defer src="./app.js"></script>
++  </body>
++</html>
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..ac3c725
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,7 @@
++{
++  "name": "local-todo",
++  "private": true,
++  "scripts": {
++    "check": "node --check app.js && node --test tests/*.test.cjs"
++  }
++}
+diff --git a/tests/tasks.test.cjs b/tests/tasks.test.cjs
+new file mode 100644
+index 0000000..6fbaa96
+--- /dev/null
++++ b/tests/tasks.test.cjs
+@@ -0,0 +1,69 @@
++const assert = require("node:assert/strict");
++const test = require("node:test");
++const { createTaskStore } = require("../app.js");
++
++function memoryStorage() {
++  const values = new Map();
++  return {
++    getItem: (key) => values.get(key) ?? null,
++    setItem: (key, value) => values.set(key, value),
++  };
++}
++
++test("task lifecycle survives reloads", () => {
++  const storage = memoryStorage();
++  const open = () => createTaskStore(storage, () => "task-1");
++  let tasks = open();
++
++  assert.equal(tasks.add(" \n "), false);
++  assert.deepEqual(tasks.all(), []);
++  assert.equal(tasks.add("  Buy milk  "), true);
++  assert.deepEqual(tasks.all(), [{ id: "task-1", title: "Buy milk", completed: false }]);
++
++  tasks = open();
++  assert.equal(tasks.setCompleted("task-1", true), true);
++  assert.equal(open().all()[0].completed, true);
++  assert.equal(tasks.setCompleted("task-1", false), true);
++  assert.equal(open().all()[0].completed, false);
++
++  assert.equal(tasks.remove("task-1"), true);
++  assert.deepEqual(open().all(), []);
++});
++
++test("invalid saved data does not prevent the app from opening", () => {
++  const storage = memoryStorage();
++  storage.setItem("local-todo.tasks.v1", "broken json");
++  const tasks = createTaskStore(storage, () => "new-task");
++  assert.deepEqual(tasks.all(), []);
++  assert.equal(tasks.add("Recover"), true);
++  assert.equal(createTaskStore(storage).all()[0].title, "Recover");
++});
++
++test("failed storage writes leave tasks unchanged", () => {
++  const storage = memoryStorage();
++  const tasks = createTaskStore(storage, () => "task-1");
++  const setItem = storage.setItem;
++
++  storage.setItem = () => { throw new Error("storage full"); };
++  assert.throws(() => tasks.add("Buy milk"), /storage full/);
++  assert.deepEqual(tasks.all(), []);
++
++  storage.setItem = setItem;
++  tasks.add("Buy milk");
++  storage.setItem = () => { throw new Error("storage full"); };
++  assert.throws(() => tasks.setCompleted("task-1", true), /storage full/);
++  assert.deepEqual(tasks.all(), [{ id: "task-1", title: "Buy milk", completed: false }]);
++  assert.throws(() => tasks.remove("task-1"), /storage full/);
++  assert.equal(createTaskStore(storage).all().length, 1);
++});
++
++test("sequential edits from two tabs preserve both tasks", () => {
++  const storage = memoryStorage();
++  const first = createTaskStore(storage, () => "first");
++  const second = createTaskStore(storage, () => "second");
++  first.add("First task");
++  second.add("Second task");
++  first.sync();
++  assert.deepEqual(first.all().map((task) => task.title), ["First task", "Second task"]);
++  assert.equal(createTaskStore(storage).all().length, 2);
++});

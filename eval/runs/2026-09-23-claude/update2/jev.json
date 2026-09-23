@@ -1,0 +1,89 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 3742,
+    "output_tokens": 794
+  },
+  "cost_usd": 0.00015716400000000003,
+  "tally": {
+    "supported": 8,
+    "not_covered": 7
+  },
+  "rows": [
+    {
+      "claim": "index.html: filter buttons above the list, with the selected one shown dark and marked for screen readers. The filter only changes what's shown. It doesn't change how tasks are saved, isn't saved itself, and goes back to All on reload.",
+      "verdict": "supported",
+      "confidence": 0.47
+    },
+    {
+      "claim": "tests/todo.spec.js: Playwright tests that run the real index.html with all network calls blocked. Run them with pnpm test.",
+      "verdict": "not_covered",
+      "confidence": 0.43
+    },
+    {
+      "claim": "I also added package.json, a lockfile, a GitHub Actions workflow that runs the tests, and short docs pages (docs/README.md, docs/todo-app.md, docs/testing.md).",
+      "verdict": "not_covered",
+      "confidence": 0.86
+    },
+    {
+      "claim": "Existing behavior: adding works and blank input is ignored; toggling and deleting work; after a reload the remaining task is still there and still checked, and the saved data is correct.",
+      "verdict": "supported",
+      "confidence": 0.98
+    },
+    {
+      "claim": "Tasks saved before this change: they load unchanged, All is selected by default, and filtering doesn't rewrite them.",
+      "verdict": "supported",
+      "confidence": 0.6
+    },
+    {
+      "claim": "Filtering: Active shows only unfinished tasks, Completed shows only finished ones, All shows everything, and the right button is marked as selected.",
+      "verdict": "supported",
+      "confidence": 0.59
+    },
+    {
+      "claim": "Actions while filtered:",
+      "verdict": "supported",
+      "confidence": 0.89
+    },
+    {
+      "claim": "Completing a task while on Active hides it.",
+      "verdict": "supported",
+      "confidence": 0.61
+    },
+    {
+      "claim": "Adding a task while on Completed saves it but keeps it hidden.",
+      "verdict": "not_covered",
+      "confidence": 0.59
+    },
+    {
+      "claim": "Un-checking a task while on Completed hides it.",
+      "verdict": "not_covered",
+      "confidence": 0.5
+    },
+    {
+      "claim": "Deleting while on Active works.",
+      "verdict": "supported",
+      "confidence": 0.46
+    },
+    {
+      "claim": "The saved tasks come out correct at the end.",
+      "verdict": "supported",
+      "confidence": 0.99
+    },
+    {
+      "claim": "Screenshots: the first desktop and mobile screenshots showed no visible selected filter and cramped spacing. I added a little styling (dark selected button, larger touch targets) and checked the screenshots again.",
+      "verdict": "not_covered",
+      "confidence": 0.87
+    },
+    {
+      "claim": "Review: a separate review agent found no significant issues. It noted one older issue: if two tasks have the same text, their checkboxes and Delete buttons get identical screen-reader labels.",
+      "verdict": "not_covered",
+      "confidence": 0.96
+    },
+    {
+      "claim": "Not verified: the GitHub Actions workflow has never run, because there's no remote. I only ran the tests locally.",
+      "verdict": "not_covered",
+      "confidence": 0.6
+    }
+  ]
+}

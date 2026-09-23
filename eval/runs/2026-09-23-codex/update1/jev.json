@@ -1,0 +1,44 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 1682,
+    "output_tokens": 318
+  },
+  "cost_usd": 0.00007064400000000001,
+  "tally": {
+    "supported": 3,
+    "not_covered": 3
+  },
+  "rows": [
+    {
+      "claim": "Added All, Active, and Completed filters in index.html.",
+      "verdict": "supported",
+      "confidence": 0.9
+    },
+    {
+      "claim": "Filtering changes only the visible list; saved tasks keep the same format, and reload starts on All.",
+      "verdict": "supported",
+      "confidence": 0.6
+    },
+    {
+      "claim": "Verified with node --test tests/*.test.mjs (2 passing checks covering filtering, storage, reload, add, toggle, and delete).",
+      "verdict": "supported",
+      "confidence": 0.85
+    },
+    {
+      "claim": "I also inspected desktop and mobile screenshots and received an independent review with no functional findings.",
+      "verdict": "not_covered",
+      "confidence": 0.94
+    },
+    {
+      "claim": "Committed as 959d714 on feat/task-filters.",
+      "verdict": "not_covered",
+      "confidence": 0.2
+    },
+    {
+      "claim": "No Git remote is configured, so I could not open a PR.",
+      "verdict": "not_covered",
+      "confidence": 0.93
+    }
+  ]
+}
