@@ -30,6 +30,9 @@ them up to date without overwriting local edits.
 
 ## Adopt it
 
+Tell your coding agent: **"Follow INSTALL.md in github.com/mattsilv/harness."**
+The rest of this section is the manual version.
+
 With `harness-sync` (needs Python 3.9+ and git; `gh` for the optional checks):
 
 ```bash
