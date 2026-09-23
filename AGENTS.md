@@ -7,6 +7,8 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
   line in `RATIONALE.md`. Before adding a rule, try the REVIEW.md test: would a current
   frontier model get this wrong without it? Prefer cutting or moving (to
   `PROJECT_CONFIG.md` or an on-demand file) over adding.
+- **Version:** any PR that changes `template/` bumps `VERSION` by one and adds a
+  `CHANGELOG.md` line (version, date, PR, what changed). CI enforces the bump.
 - **Budget:** CI caps `template/AGENTS.md` by word count (`.github/workflows/budget.yml`).
   Raise the cap only deliberately, with the reason in the PR.
 - **Parsed strings:** `harness-sync` reads "Set during setup", `**Merge policy:**`,

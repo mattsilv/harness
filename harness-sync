@@ -35,6 +35,7 @@ REF = "refs/harness/latest"  # the harness default branch as last fetched
 CHECK_CACHE_SECONDS = 3600
 STATE = Path(".harness")
 BASE = STATE / "base"
+APPLIED = STATE / "version"  # harness VERSION last fully applied here
 SOURCE = os.environ.get("HARNESS_SYNC_SOURCE")  # local template dir, to preview a harness branch
 
 
@@ -63,6 +64,22 @@ def fetch(max_age=0):
     names = git("ls-tree", "-r", "-z", "--name-only", REF, "--", TEMPLATE)
     return {n.removeprefix(TEMPLATE + "/"): git("show", f"{REF}:{n}")
             for n in names.split("\0") if n}
+
+
+def upstream_version():
+    """The harness VERSION number matching what fetch() returned, or "?"."""
+    try:
+        if SOURCE:
+            return (Path(SOURCE).parent / "VERSION").read_text().strip()
+        return git("show", f"{REF}:VERSION").strip()
+    except Exception:
+        return "?"
+
+
+def versions():
+    """"v3 → v4" for messages; the local side is "?" until the first apply."""
+    local = (read(APPLIED) or "?").strip()
+    return f"v{local} → v{upstream_version()}"
 
 
 def read(p):
@@ -193,7 +210,8 @@ def cmd_check():
     if upstream:
         files = changed(upstream) + [f"{p} (removed from harness)" for p in removed(upstream)]
         if files:
-            print(f"harness-sync: harness changed: {', '.join(files)}. Run "
+            print(f"harness-sync: harness changed ({versions()}; see CHANGELOG.md in "
+                  f"the harness repo): {', '.join(files)}. Run "
                   "`harness-sync diff`, summarize the changes for the operator, and "
                   "run `harness-sync apply` only after they approve.")
     report_local()
@@ -204,6 +222,8 @@ def cmd_check():
 def cmd_diff():
     upstream = fetch()
     files = changed(upstream)
+    if files:
+        print(f"harness {versions()}")
     for p in files:
         old = read(BASE / p) or ""
         sys.stdout.writelines(difflib.unified_diff(
@@ -245,6 +265,8 @@ def cmd_apply(only):
             print(f"merged {p}" + (f" with {conflicts} conflict(s); resolve the "
                                    "markers by hand" if conflicts else ""))
         write(BASE / p, upstream[p])
+    if not only or not changed(upstream):
+        write(APPLIED, upstream_version() + "\n")
     if not files:
         print("harness-sync: nothing to apply.")
     report_local()
@@ -263,6 +285,7 @@ def cmd_init():
             print(f"{p} already exists: merge the harness version from "
                   f"{BASE / p} into it by hand, removing anything it duplicates.")
         write(BASE / p, text)
+    write(APPLIED, upstream_version() + "\n")
     claude = Path("CLAUDE.md")
     if not claude.exists():
         write(claude, "@AGENTS.md\n")

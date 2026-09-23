@@ -12,6 +12,7 @@ them up to date without overwriting local edits.
 | `template/PROJECT_CONFIG.md` | Per-project defaults; values marked "Set during setup" must be answered. | yes |
 | `template/docs/MAINTENANCE.md` | The recurring maintenance audit. | yes |
 | `template/docs/languages/*.md` | Language-specific rules, read on demand. | yes |
+| `VERSION`, `CHANGELOG.md` | Harness version (one integer, bumped per template change) and one line per version. | no |
 | `INSTALL.md` | Steps an agent follows to install the harness into a repo. | no |
 | `harness-sync` | Installs and updates the template in a repo. | no |
 | `REVIEW.md` | Brief for a model reviewing and lightening this harness, plus the review log. | no |
