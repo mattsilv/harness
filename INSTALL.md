@@ -16,11 +16,14 @@ existing repos; nothing is overwritten.
 5. **Claude Code:** make sure `CLAUDE.md` contains an `@AGENTS.md` line.
 6. **Configure.** Ask the operator for every `PROJECT_CONFIG.md` value marked "Set during
    setup", and for any default that doesn't match this repo (stack, secrets project).
-   Record the answers. Don't guess.
+   Record the answers. Don't guess. `auto` merge only works if the default branch can
+   require CI checks; GitHub's free plan can't on private repos. In that case, say so and
+   suggest `on-request`, or adding CI plus a plan that supports required checks.
 7. **Languages.** If the repo uses a language with no `docs/languages/<language>.md`,
    tell the operator. Don't write one unasked.
-8. **Ship.** Commit `AGENTS.md`, `CLAUDE.md`, `PROJECT_CONFIG.md`, `docs/`, and
-   `.harness/` and open a PR. Merge per the merge policy just recorded.
+8. **Ship.** Commit only what init created or you changed (`AGENTS.md`, `CLAUDE.md`,
+   `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/languages/`, `.harness/`), not
+   unrelated files already in `docs/`, and open a PR. Merge per the merge policy just recorded.
 9. **Verify.** `harness-sync check` prints nothing, except possibly a notice that the
    maintenance audit has never run.
 10. **Session hook (once per machine).** If `harness-sync check` doesn't already run at
