@@ -4,6 +4,23 @@ A small, project-agnostic rule set for AI coding agents (Claude Code, Codex, any
 that reads `AGENTS.md`), plus `harness-sync`, which copies it into repos and keeps
 them up to date without overwriting local edits.
 
+```mermaid
+flowchart LR
+  R[Model review<br>REVIEW.md] -->|keeps it lean| H((Harness))
+  H -->|harness-sync| P
+  subgraph P[Your project]
+    A[Rules<br>AGENTS.md]
+    C[Config<br>PROJECT_CONFIG.md]
+    V[Vendors<br>secrets, hosting, database]
+    M[Maintenance<br>monthly audit]
+    L[Language rules<br>read on demand]
+  end
+  A -. reads .-> C
+  C --- V
+  A -. follows .-> M
+  A -. links .-> L
+```
+
 ## What's here
 
 | Path | Purpose | Copied into projects? |

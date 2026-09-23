@@ -1,3 +1,3 @@
 # Python
 
-- Manage environments and dependencies with uv (`uv add`, `uv run`), never pip.
+- Use the package manager in PROJECT_CONFIG.md for environments and dependencies; no ad-hoc global installs.

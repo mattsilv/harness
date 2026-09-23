@@ -59,11 +59,11 @@ The stale-area check (one folder or feature set untouched 4+ months per audit) c
 
 | Rule | Why | Source |
 |---|---|---|
-| uv, never pip | Author preference: one environment manager across projects. | author |
+| Use the configured package manager, no ad-hoc global installs | One environment manager per project; which one is a config default (uv). | author |
 
 ## docs/languages/typescript.md
 
 | Rule | Why | Source |
 |---|---|---|
-| pnpm, commit the lockfile | Author preference: one package manager across projects. | author |
+| Configured package manager, commit its lockfile | Reproducible installs; which manager is a config default (pnpm). | author |
 | `strict`, no unexplained `any`/`@ts-ignore`, typecheck after shared-type changes | Carried over from an existing TypeScript monorepo rule ("type changes require full typecheck"). Incident not recorded. | author |

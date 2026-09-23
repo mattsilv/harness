@@ -9,6 +9,8 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
   `PROJECT_CONFIG.md` or an on-demand file) over adding.
 - **Version:** any PR that changes `template/` bumps `VERSION` by one and adds a
   `CHANGELOG.md` line (version, date, PR, what changed). CI enforces the bump.
+- **Choices:** name no specific vendor, tool, or project outside
+  `template/PROJECT_CONFIG.md`; every such choice is a per-project default recorded there.
 - **Style:** one lean sentence per instruction, stating the intent. Rely on the consuming
   model's judgment for the details, and leave project specifics to each project.
 - **Budget:** CI caps `template/AGENTS.md` by word count (`.github/workflows/budget.yml`).
@@ -26,4 +28,5 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
 - **Model review:** when a new frontier model ships, or quarterly, follow `REVIEW.md`.
 - **Maintenance (monthly, or when touching these files):** README's file table matches
   the tree; every rule in `template/` has a `RATIONALE.md` line; no rule is duplicated
-  across template files; `INSTALL.md` still matches how `harness-sync` behaves.
+  across template files; no vendor, tool, or project is named outside `PROJECT_CONFIG.md`
+  and nothing private appears; `INSTALL.md` still matches how `harness-sync` behaves.
