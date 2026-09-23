@@ -1,0 +1,484 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..c2658d7
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1 @@
++node_modules/
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..c31d9d4
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,161 @@
++export const STORAGE_KEY = "todo.tasks.v1";
++
++export function normalizeTaskText(text) {
++  return typeof text === "string" ? text.trim() : "";
++}
++
++function isTask(value) {
++  return (
++    value !== null &&
++    typeof value === "object" &&
++    typeof value.id === "string" &&
++    typeof value.text === "string" &&
++    value.text.trim() !== "" &&
++    typeof value.completed === "boolean"
++  );
++}
++
++function newId() {
++  const cryptoObj = globalThis.crypto;
++  if (cryptoObj && typeof cryptoObj.randomUUID === "function") {
++    return cryptoObj.randomUUID();
++  }
++  return `task-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
++}
++
++export function createTodoStore(storage, key = STORAGE_KEY) {
++  if (!storage) throw new Error("createTodoStore requires a storage object");
++
++  function read() {
++    const raw = storage.getItem(key);
++    if (!raw) return [];
++    let parsed;
++    try {
++      parsed = JSON.parse(raw);
++    } catch {
++      return [];
++    }
++    return Array.isArray(parsed) ? parsed.filter(isTask) : [];
++  }
++
++  function write(tasks) {
++    storage.setItem(key, JSON.stringify(tasks));
++  }
++
++  return {
++    list() {
++      return read();
++    },
++    add(text) {
++      const trimmed = normalizeTaskText(text);
++      if (!trimmed) return null;
++      const tasks = read();
++      const task = { id: newId(), text: trimmed, completed: false };
++      tasks.push(task);
++      write(tasks);
++      return task;
++    },
++    toggle(id) {
++      const tasks = read();
++      const task = tasks.find((candidate) => candidate.id === id);
++      if (!task) return null;
++      task.completed = !task.completed;
++      write(tasks);
++      return task;
++    },
++    remove(id) {
++      const tasks = read();
++      const remaining = tasks.filter((candidate) => candidate.id !== id);
++      if (remaining.length === tasks.length) return false;
++      write(remaining);
++      return true;
++    },
++  };
++}
++
++export function initTodoApp({ document: doc, storage, key = STORAGE_KEY }) {
++  const form = doc.getElementById("todo-form");
++  const input = doc.getElementById("todo-input");
++  const list = doc.getElementById("todo-list");
++  const status = doc.getElementById("todo-status");
++  if (!form || !input || !list || !status) {
++    throw new Error("To-do markup is missing required elements");
++  }
++
++  const store = createTodoStore(storage, key);
++
++  function renderTask(task) {
++    const item = doc.createElement("li");
++    item.dataset.taskId = task.id;
++    if (task.completed) item.classList.add("completed");
++
++    const checkbox = doc.createElement("input");
++    checkbox.type = "checkbox";
++    checkbox.checked = task.completed;
++    checkbox.setAttribute("aria-label", `Mark "${task.text}" complete`);
++    checkbox.addEventListener("change", () => {
++      store.toggle(task.id);
++      render();
++    });
++
++    const label = doc.createElement("span");
++    label.className = "text";
++    label.textContent = task.text;
++
++    const remove = doc.createElement("button");
++    remove.type = "button";
++    remove.className = "delete";
++    remove.textContent = "Delete";
++    remove.setAttribute("aria-label", `Delete "${task.text}"`);
++    remove.addEventListener("click", () => {
++      store.remove(task.id);
++      render();
++    });
++
++    item.append(checkbox, label, remove);
++    return item;
++  }
++
++  function render() {
++    const tasks = store.list();
++    list.textContent = "";
++    if (tasks.length === 0) {
++      const empty = doc.createElement("li");
++      empty.className = "empty";
++      empty.textContent = "No tasks yet.";
++      list.append(empty);
++      return;
++    }
++    for (const task of tasks) list.append(renderTask(task));
++  }
++
++  form.addEventListener("submit", (event) => {
++    event.preventDefault();
++    const added = store.add(input.value);
++    if (!added) {
++      status.textContent = "Enter a task before adding.";
++      input.focus();
++      return;
++    }
++    input.value = "";
++    status.textContent = "";
++    render();
++  });
++
++  render();
++  return store;
++}
++
++function autoInit() {
++  if (typeof document === "undefined") return;
++  if (!document.getElementById("todo-form")) return;
++  initTodoApp({ document, storage: window.localStorage });
++}
++
++if (typeof document !== "undefined") {
++  if (document.readyState === "loading") {
++    document.addEventListener("DOMContentLoaded", autoInit, { once: true });
++  } else {
++    autoInit();
++  }
++}
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..f30968a
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,8 @@
++# Docs
++
++Index of every page in this wiki.
++
++- [To-Do app](todo-app.md) — how the static to-do app stores and mutates tasks, and how to run its checks.
++- [Maintenance](MAINTENANCE.md) — recurring audit process.
++- [Languages: TypeScript](languages/typescript.md) — TypeScript conventions.
++- [Languages: Python](languages/python.md) — Python conventions.
+diff --git a/docs/todo-app.md b/docs/todo-app.md
+new file mode 100644
+index 0000000..4e63a0d
+--- /dev/null
++++ b/docs/todo-app.md
+@@ -0,0 +1,33 @@
++# To-Do app
++
++A minimal local to-do app matching the stack in PROJECT_CONFIG.md: a single static page, no build step, no server, no runtime dependencies.
++
++## Files
++
++- `index.html` — markup and styles. Loads `app.js` as a module.
++- `app.js` — all logic. `createTodoStore(storage)` is the storage-backed store; `initTodoApp({ document, storage })` wires it to the DOM; the module self-initializes when a `#todo-form` exists.
++- `test/todo.test.js` — executable checks (`node --test` + jsdom, dev-only).
++
++## Behavior
++
++- **Add:** `store.add(text)` trims input and returns `null` for blank/whitespace-only text; the UI then shows "Enter a task before adding." and adds nothing.
++- **Complete/incomplete:** `store.toggle(id)` flips the `completed` flag.
++- **Delete:** `store.remove(id)` removes one task.
++- **Persistence:** tasks live in `localStorage` under `todo.tasks.v1`. Corrupted JSON and malformed entries are ignored rather than thrown, so a reload never bricks the page.
++
++Task text is rendered with `textContent`, so stored text cannot inject markup.
++
++## Checks
++
++```
++pnpm install
++pnpm test
++```
++
++`test/todo.test.js` mounts the real `index.html` in jsdom, wires the real `app.js`, and drives it through form submit, checkbox change, and delete clicks. It covers add/trim, blank rejection, toggle both ways, targeted delete, persistence across a simulated reload (same `localStorage`, fresh DOM), corrupted storage, and malformed entries.
++
++## Verification notes
++
++- `pnpm test` → 7 passed, 0 failed (Node v26.3.0, jsdom 30.1.1).
++- Reload is simulated by re-mounting a fresh DOM seeded with the previous `localStorage` snapshot; real browser reload was not exercised.
++- No visual/browser rendering was checked (no browser available in this environment).
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..8666e45
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,79 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++  <meta charset="utf-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1" />
++  <title>To-Do</title>
++  <style>
++    :root { --fg: #1a1a1a; --muted: #666; --border: #ddd; --accent: #0b5fff; --danger: #b00020; }
++    * { box-sizing: border-box; }
++    body {
++      margin: 0;
++      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
++      color: var(--fg);
++      background: #fafafa;
++    }
++    main { max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
++    h1 { font-size: 1.5rem; margin: 0 0 1rem; }
++    form { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
++    #todo-input {
++      flex: 1;
++      padding: 0.6rem 0.75rem;
++      font-size: 1rem;
++      border: 1px solid var(--border);
++      border-radius: 0.5rem;
++    }
++    form button {
++      padding: 0.6rem 1rem;
++      font-size: 1rem;
++      border: 0;
++      border-radius: 0.5rem;
++      background: var(--accent);
++      color: #fff;
++      cursor: pointer;
++    }
++    #todo-status { min-height: 1.25rem; margin: 0 0 0.5rem; color: var(--danger); font-size: 0.875rem; }
++    ul { list-style: none; margin: 0; padding: 0; }
++    li {
++      display: flex;
++      align-items: center;
++      gap: 0.75rem;
++      padding: 0.6rem 0.25rem;
++      border-bottom: 1px solid var(--border);
++    }
++    li .text { flex: 1; overflow-wrap: anywhere; }
++    li.completed .text { color: var(--muted); text-decoration: line-through; }
++    li input[type="checkbox"] { width: 1.15rem; height: 1.15rem; }
++    li .delete {
++      border: 0;
++      background: transparent;
++      color: var(--danger);
++      font-size: 1rem;
++      padding: 0.25rem 0.5rem;
++      border-radius: 0.35rem;
++      cursor: pointer;
++    }
++    li .delete:hover { background: #f2dede; }
++    li.empty { color: var(--muted); }
++  </style>
++</head>
++<body>
++  <main>
++    <h1>To-Do</h1>
++    <form id="todo-form" novalidate>
++      <input
++        id="todo-input"
++        name="task"
++        type="text"
++        autocomplete="off"
++        placeholder="Add a task"
++        aria-label="New task"
++      />
++      <button type="submit">Add</button>
++    </form>
++    <p id="todo-status" role="alert" aria-live="polite"></p>
++    <ul id="todo-list"></ul>
++  </main>
++  <script type="module" src="./app.js"></script>
++</body>
++</html>
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..80d4aa6
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,13 @@
++{
++  "name": "todo-app",
++  "version": "1.0.0",
++  "private": true,
++  "type": "module",
++  "description": "Minimal local to-do app: static HTML/JS with localStorage, no build step or server.",
++  "scripts": {
++    "test": "node --test"
++  },
++  "devDependencies": {
++    "jsdom": "^30.1.1"
++  }
++}
+diff --git a/test/todo.test.js b/test/todo.test.js
+new file mode 100644
+index 0000000..71cee63
+--- /dev/null
++++ b/test/todo.test.js
+@@ -0,0 +1,147 @@
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import { JSDOM } from "jsdom";
++
++import { initTodoApp, STORAGE_KEY } from "../app.js";
++
++const HTML = readFileSync(new URL("../index.html", import.meta.url), "utf8");
++const ORIGIN = "https://todo.test/";
++
++// Mount the real index.html markup, seed localStorage, and wire the real app.js.
++function mount(seed = {}) {
++  const jsdom = new JSDOM(HTML, { url: ORIGIN });
++  const { window } = jsdom;
++  for (const [key, value] of Object.entries(seed)) window.localStorage.setItem(key, value);
++  const store = initTodoApp({ document: window.document, storage: window.localStorage });
++  return { jsdom, window, document: window.document, store };
++}
++
++// A reload keeps localStorage but rebuilds the DOM, so carry the storage snapshot over.
++function reload(app) {
++  const snapshot = {};
++  for (let i = 0; i < app.window.localStorage.length; i += 1) {
++    const key = app.window.localStorage.key(i);
++    snapshot[key] = app.window.localStorage.getItem(key);
++  }
++  return mount(snapshot);
++}
++
++function visibleTasks(app) {
++  return [...app.document.querySelectorAll("#todo-list li[data-task-id]")].map((item) => ({
++    id: item.dataset.taskId,
++    text: item.querySelector(".text").textContent,
++    completed: item.classList.contains("completed"),
++    checked: item.querySelector('input[type="checkbox"]').checked,
++  }));
++}
++
++function addTask(app, text) {
++  app.document.getElementById("todo-input").value = text;
++  app.document
++    .getElementById("todo-form")
++    .dispatchEvent(new app.window.Event("submit", { bubbles: true, cancelable: true }));
++}
++
++function persisted(app) {
++  return app.window.localStorage.getItem(STORAGE_KEY);
++}
++
++test("adds a nonblank task, trims it, and persists it", () => {
++  const app = mount();
++  addTask(app, "  Buy milk  ");
++
++  const tasks = visibleTasks(app);
++  assert.equal(tasks.length, 1);
++  assert.equal(tasks[0].text, "Buy milk");
++  assert.equal(tasks[0].completed, false);
++  assert.equal(app.document.getElementById("todo-input").value, "");
++  assert.deepEqual(JSON.parse(persisted(app)).map((t) => t.text), ["Buy milk"]);
++
++  app.jsdom.window.close();
++});
++
++test("rejects blank and whitespace-only tasks without persisting", () => {
++  const app = mount();
++  for (const blank of ["", "   ", "\t\n "]) addTask(app, blank);
++
++  assert.equal(visibleTasks(app).length, 0);
++  assert.equal(persisted(app), null);
++  assert.match(app.document.getElementById("todo-status").textContent, /Enter a task/);
++
++  app.jsdom.window.close();
++});
++
++test("marks a task complete and then incomplete", () => {
++  const app = mount();
++  addTask(app, "Walk the dog");
++
++  app.document.querySelector('li[data-task-id] input[type="checkbox"]').click();
++  let [task] = visibleTasks(app);
++  assert.equal(task.completed, true);
++  assert.equal(task.checked, true);
++  assert.equal(JSON.parse(persisted(app))[0].completed, true);
++
++  app.document.querySelector('li[data-task-id] input[type="checkbox"]').click();
++  [task] = visibleTasks(app);
++  assert.equal(task.completed, false);
++  assert.equal(task.checked, false);
++  assert.equal(JSON.parse(persisted(app))[0].completed, false);
++
++  app.jsdom.window.close();
++});
++
++test("deletes only the targeted task", () => {
++  const app = mount();
++  addTask(app, "One");
++  addTask(app, "Two");
++  assert.equal(visibleTasks(app).length, 2);
++
++  app.document.querySelectorAll("li[data-task-id] .delete")[0].click();
++
++  assert.deepEqual(visibleTasks(app).map((t) => t.text), ["Two"]);
++  assert.deepEqual(JSON.parse(persisted(app)).map((t) => t.text), ["Two"]);
++
++  app.jsdom.window.close();
++});
++
++test("preserves tasks and completion state across a reload", () => {
++  const first = mount();
++  addTask(first, "First");
++  addTask(first, "Second");
++  first.document.querySelectorAll('li[data-task-id] input[type="checkbox"]')[1].click();
++
++  const second = reload(first);
++
++  assert.deepEqual(second.document.querySelectorAll("li[data-task-id]").length, 2);
++  assert.deepEqual(visibleTasks(second).map((t) => t.text), ["First", "Second"]);
++  assert.deepEqual(visibleTasks(second).map((t) => t.completed), [false, true]);
++
++  first.jsdom.window.close();
++  second.jsdom.window.close();
++});
++
++test("recovers from corrupted storage and keeps working", () => {
++  const app = mount({ [STORAGE_KEY]: "{not valid json" });
++
++  assert.equal(visibleTasks(app).length, 0);
++  addTask(app, "Recovered");
++  assert.deepEqual(visibleTasks(app).map((t) => t.text), ["Recovered"]);
++
++  app.jsdom.window.close();
++});
++
++test("ignores malformed stored entries", () => {
++  const app = mount({
++    [STORAGE_KEY]: JSON.stringify([
++      { id: "a", text: "valid", completed: false },
++      { id: "b", text: "  ", completed: false },
++      { nope: true },
++      null,
++    ]),
++  });
++
++  assert.deepEqual(visibleTasks(app).map((t) => t.text), ["valid"]);
++
++  app.jsdom.window.close();
++});

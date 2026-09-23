@@ -1,0 +1,463 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..dbd64df
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,3 @@
++node_modules/
++test-results/
++playwright-report/
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..c708d27
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,5 @@
++# Docs index
++
++- [To-do app](todo-app.md): what it does, how to run and test it, storage format.
++- [Maintenance](MAINTENANCE.md): recurring audit checklist.
++- Language notes: [Python](languages/python.md), [TypeScript](languages/typescript.md).
+diff --git a/docs/todo-app.md b/docs/todo-app.md
+new file mode 100644
+index 0000000..eecfd35
+--- /dev/null
++++ b/docs/todo-app.md
+@@ -0,0 +1,19 @@
++# To-do app
++
++A single static page (`src/index.html` + `src/app.js`), no build step and no server. Tasks are stored in the browser's `localStorage`, so they are per browser profile and per origin.
++
++## Run
++
++Open `src/index.html` directly (it is a classic script, not an ES module, because Chrome blocks module scripts on `file://`), or `pnpm start` to serve `src/` at http://127.0.0.1:4173.
++
++## Test
++
++`pnpm install` once, then `pnpm test`. Playwright runs `tests/todo.spec.mjs` and `tests/file.spec.mjs` against real Chromium in desktop and mobile (Pixel 7) viewports, serving `src/` with the dependency-free `tests/serve.mjs`. Tests fail on page errors and block any request that leaves the local server.
++
++Covered: add (trimmed; blank and whitespace-only rejected with a message), Enter-to-add, complete/incomplete toggle, delete of one task among several, order and state after reload, task text rendered as text (not HTML), recovery from corrupt storage, storage write failure (error shown, nothing changes), focus after delete, loading from `file://`, no horizontal overflow. The screenshot test writes `test-results/*/{desktop,mobile}.png` for visual review.
++
++## Storage format
++
++Key `todo.tasks.v1`: JSON array of `{ id: string, text: string, done: boolean }`. On load, invalid JSON or a non-array resets to empty; entries with a missing id or blank text are dropped, and text is trimmed; `done` is true only if stored as `true`. Bump the key suffix if the shape changes incompatibly.
++
++Every change is written to storage before the UI adopts it; if the write throws (quota, private mode, disabled storage), the change is discarded and an error is shown.
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..86876eb
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,13 @@
++{
++  "name": "create",
++  "scripts": {
++    "start": "node tests/serve.mjs",
++    "test": "playwright test"
++  },
++  "packageManager": "pnpm@10.32.1",
++  "devDependencies": {
++    "@playwright/test": "^1.63.0"
++  },
++  "private": true,
++  "type": "module"
++}
+diff --git a/playwright.config.mjs b/playwright.config.mjs
+new file mode 100644
+index 0000000..a9de62c
+--- /dev/null
++++ b/playwright.config.mjs
+@@ -0,0 +1,19 @@
++import { defineConfig, devices } from "@playwright/test";
++
++const PORT = 4173;
++
++export default defineConfig({
++  testDir: "tests",
++  forbidOnly: !!process.env.CI,
++  use: { baseURL: `http://127.0.0.1:${PORT}` },
++  projects: [
++    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
++    { name: "mobile", use: { ...devices["Pixel 7"] } },
++  ],
++  webServer: {
++    command: "node tests/serve.mjs",
++    url: `http://127.0.0.1:${PORT}`,
++    env: { PORT: String(PORT) },
++    reuseExistingServer: !process.env.CI,
++  },
++});
+diff --git a/src/app.js b/src/app.js
+new file mode 100644
+index 0000000..a1d85b0
+--- /dev/null
++++ b/src/app.js
+@@ -0,0 +1,98 @@
++// Classic script (not a module) so the page works when opened from file://.
++// Loaded at the end of <body>, so the elements below already exist.
++(() => {
++  const STORAGE_KEY = "todo.tasks.v1";
++
++  const form = document.getElementById("add-form");
++  const input = document.getElementById("new-task");
++  const error = document.getElementById("error");
++  const list = document.getElementById("tasks");
++  const empty = document.getElementById("empty");
++
++  function load() {
++    try {
++      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
++      if (!Array.isArray(data)) return [];
++      return data
++        .filter((t) => t && typeof t.id === "string" && typeof t.text === "string" && t.text.trim() !== "")
++        .map((t) => ({ id: t.id, text: t.text.trim(), done: t.done === true }));
++    } catch {
++      // Corrupt or unreadable storage: start empty rather than crash.
++      return [];
++    }
++  }
++
++  let tasks = load();
++
++  // Save first, then adopt the new state, so the UI never shows unsaved changes.
++  function commit(next) {
++    try {
++      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
++    } catch {
++      error.textContent = "Couldn't save: browser storage is full or unavailable. Change not applied.";
++      render();
++      return false;
++    }
++    tasks = next;
++    error.textContent = "";
++    render();
++    return true;
++  }
++
++  function newId() {
++    return crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
++  }
++
++  function render() {
++    list.replaceChildren(
++      ...tasks.map((task) => {
++        const li = document.createElement("li");
++        li.dataset.id = task.id;
++        li.classList.toggle("done", task.done);
++
++        const label = document.createElement("label");
++        const checkbox = document.createElement("input");
++        checkbox.type = "checkbox";
++        checkbox.checked = task.done;
++        checkbox.addEventListener("change", () => {
++          commit(tasks.map((t) => (t.id === task.id ? { ...t, done: checkbox.checked } : t)));
++          list.querySelector(`li[data-id="${CSS.escape(task.id)}"] input`)?.focus();
++        });
++        const text = document.createElement("span");
++        text.className = "text";
++        text.textContent = task.text;
++        label.append(checkbox, text);
++
++        const del = document.createElement("button");
++        del.type = "button";
++        del.textContent = "Delete";
++        del.setAttribute("aria-label", `Delete "${task.text}"`);
++        del.addEventListener("click", () => {
++          const index = tasks.findIndex((t) => t.id === task.id);
++          if (!commit(tasks.filter((t) => t.id !== task.id))) return;
++          // Keep keyboard users in place: focus the next task's delete button, else the previous, else the input.
++          const buttons = list.querySelectorAll("button");
++          (buttons[Math.min(index, buttons.length - 1)] ?? input).focus();
++        });
++
++        li.append(label, del);
++        return li;
++      }),
++    );
++    empty.hidden = tasks.length > 0;
++  }
++
++  form.addEventListener("submit", (event) => {
++    event.preventDefault();
++    const text = input.value.trim();
++    if (text === "") {
++      error.textContent = "Enter a task.";
++      input.focus();
++      return;
++    }
++    if (commit([...tasks, { id: newId(), text, done: false }])) input.value = "";
++    input.focus();
++  });
++
++  render();
++})();
+diff --git a/src/index.html b/src/index.html
+new file mode 100644
+index 0000000..ad2eb43
+--- /dev/null
++++ b/src/index.html
+@@ -0,0 +1,52 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>To-do</title>
++  <style>
++    :root {
++      --color-text: #1f2328;
++      --color-muted: #656d76;
++      --color-border: #d0d7de;
++      --color-accent: #0969da;
++      --color-danger: #cf222e;
++      --color-bg: #ffffff;
++      --font: system-ui, -apple-system, "Segoe UI", sans-serif;
++      --space: 0.5rem;
++      --radius: 6px;
++      --tap: 44px;
++    }
++    * { box-sizing: border-box; }
++    body { margin: 0; font: 16px/1.4 var(--font); color: var(--color-text); background: var(--color-bg); }
++    main { max-width: 36rem; margin: 0 auto; padding: calc(var(--space) * 2); }
++    h1 { font-size: 1.5rem; margin: 0 0 var(--space); }
++    form { display: flex; gap: var(--space); }
++    input[type="text"] { flex: 1; min-width: 0; min-height: var(--tap); padding: 0 var(--space); font: inherit; border: 1px solid var(--color-border); border-radius: var(--radius); }
++    button { min-height: var(--tap); padding: 0 calc(var(--space) * 2); font: inherit; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); cursor: pointer; }
++    button[type="submit"] { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
++    .error { color: var(--color-danger); margin: var(--space) 0 0; font-size: 0.875rem; }
++    .error:empty { display: none; }
++    ul { list-style: none; margin: var(--space) 0 0; padding: 0; }
++    li { display: flex; align-items: center; gap: var(--space); padding: calc(var(--space) / 2) 0; border-bottom: 1px solid var(--color-border); min-height: var(--tap); }
++    li label { flex: 1; display: flex; align-items: center; gap: var(--space); min-height: var(--tap); overflow-wrap: anywhere; cursor: pointer; }
++    li input[type="checkbox"] { width: 1.25rem; height: 1.25rem; flex: none; }
++    li.done .text { text-decoration: line-through; color: var(--color-muted); }
++    li button { color: var(--color-danger); }
++    .empty { color: var(--color-muted); padding: var(--space) 0; }
++  </style>
++</head>
++<body>
++  <main>
++    <h1>To-do</h1>
++    <form id="add-form" novalidate>
++      <input id="new-task" type="text" aria-label="New task" placeholder="What needs doing?" autocomplete="off" maxlength="500">
++      <button type="submit">Add</button>
++    </form>
++    <p id="error" class="error" role="alert"></p>
++    <ul id="tasks" aria-label="Tasks"></ul>
++    <p id="empty" class="empty">No tasks yet.</p>
++  </main>
++  <script src="app.js"></script>
++</body>
++</html>
+diff --git a/tests/file.spec.mjs b/tests/file.spec.mjs
+new file mode 100644
+index 0000000..5c637e8
+--- /dev/null
++++ b/tests/file.spec.mjs
+@@ -0,0 +1,16 @@
++import { test, expect } from "@playwright/test";
++
++// The stack promises no server: the page must work when opened from disk.
++test("works when opened from file://", async ({ page }) => {
++  const problems = [];
++  page.on("pageerror", (e) => problems.push(e.message));
++  page.on("console", (m) => m.type() === "error" && problems.push(m.text()));
++  const url = new URL("../src/index.html", import.meta.url).href;
++  expect(url.startsWith("file://")).toBe(true);
++  await page.goto(url);
++  await page.getByLabel("New task").fill("From disk");
++  await page.getByRole("button", { name: "Add" }).click();
++  await page.reload();
++  await expect(page.getByRole("listitem")).toHaveText(/From disk/);
++  expect(problems).toEqual([]);
++});
+diff --git a/tests/serve.mjs b/tests/serve.mjs
+new file mode 100644
+index 0000000..54416a4
+--- /dev/null
++++ b/tests/serve.mjs
+@@ -0,0 +1,20 @@
++// Minimal static server for tests; the app itself needs no server.
++import { createServer } from "node:http";
++import { readFile } from "node:fs/promises";
++import { extname, join, normalize } from "node:path";
++
++const root = new URL("../src/", import.meta.url).pathname;
++const types = { ".html": "text/html", ".js": "text/javascript" };
++const port = Number(process.env.PORT ?? 4173);
++
++createServer(async (req, res) => {
++  const path = normalize(new URL(req.url, "http://x").pathname).replace(/^(\.\.[/\\])+/, "");
++  const file = join(root, path === "/" ? "index.html" : path);
++  if (!file.startsWith(root)) return res.writeHead(403).end();
++  try {
++    const body = await readFile(file);
++    res.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream" }).end(body);
++  } catch {
++    res.writeHead(404).end();
++  }
++}).listen(port, "127.0.0.1");
+diff --git a/tests/todo.spec.mjs b/tests/todo.spec.mjs
+new file mode 100644
+index 0000000..0e6764f
+--- /dev/null
++++ b/tests/todo.spec.mjs
+@@ -0,0 +1,158 @@
++import { test, expect } from "@playwright/test";
++
++const STORAGE_KEY = "todo.tasks.v1";
++
++// Per-test problems; each worker runs one test at a time.
++let problems;
++
++test.beforeEach(async ({ page, baseURL }) => {
++  problems = [];
++  // The app is offline-only: block and record any request that leaves the test server.
++  await page.route("**/*", (route) => {
++    if (route.request().url().startsWith(baseURL)) return route.continue();
++    problems.push(`external request: ${route.request().url()}`);
++    return route.abort();
++  });
++  page.on("pageerror", (e) => problems.push(`page error: ${e.message}`));
++  await page.goto("/");
++});
++
++test.afterEach(() => {
++  expect(problems).toEqual([]);
++});
++
++const input = (page) => page.getByLabel("New task");
++const items = (page) => page.getByRole("listitem");
++
++async function add(page, text) {
++  await input(page).fill(text);
++  await page.getByRole("button", { name: "Add" }).click();
++}
++
++async function stored(page) {
++  return page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? "null"), STORAGE_KEY);
++}
++
++test("adds a nonblank task, trimmed, and clears the input", async ({ page }) => {
++  await add(page, "  Buy milk  ");
++  await expect(items(page)).toHaveCount(1);
++  await expect(items(page)).toHaveText(/^Buy milk/);
++  await expect(input(page)).toHaveValue("");
++  expect(await stored(page)).toMatchObject([{ text: "Buy milk", done: false }]);
++});
++
++test("adds with the Enter key", async ({ page }) => {
++  await input(page).fill("Walk dog");
++  await input(page).press("Enter");
++  await expect(items(page)).toHaveCount(1);
++});
++
++for (const blank of ["", "   ", "\t \t"]) {
++  test(`rejects blank input ${JSON.stringify(blank)}`, async ({ page }) => {
++    await add(page, blank);
++    await expect(items(page)).toHaveCount(0);
++    await expect(page.getByRole("alert")).toHaveText("Enter a task.");
++    expect(await stored(page)).toBeNull();
++    // Error clears after a valid add.
++    await add(page, "Real task");
++    await expect(page.locator("#error")).toBeEmpty();
++    await expect(page.locator("#error")).toBeHidden();
++  });
++}
++
++test("marks a task complete and incomplete, persisted", async ({ page }) => {
++  await add(page, "Pay rent");
++  const box = page.getByRole("checkbox", { name: "Pay rent" });
++  await box.check();
++  await expect(items(page).first()).toHaveClass(/done/);
++  expect(await stored(page)).toMatchObject([{ done: true }]);
++  await page.reload();
++  await expect(page.getByRole("checkbox", { name: "Pay rent" })).toBeChecked();
++  await page.getByRole("checkbox", { name: "Pay rent" }).uncheck();
++  await expect(items(page).first()).not.toHaveClass(/done/);
++  await page.reload();
++  await expect(page.getByRole("checkbox", { name: "Pay rent" })).not.toBeChecked();
++});
++
++test("deletes only the chosen task, persisted", async ({ page }) => {
++  await add(page, "One");
++  await add(page, "Two");
++  await add(page, "Three");
++  await page.getByRole("button", { name: 'Delete "Two"' }).click();
++  await expect(items(page)).toHaveCount(2);
++  await page.reload();
++  await expect(items(page).locator(".text")).toHaveText(["One", "Three"]);
++});
++
++test("preserves tasks and order across reloads", async ({ page }) => {
++  await add(page, "First");
++  await add(page, "Second");
++  await page.getByRole("checkbox", { name: "Second" }).check();
++  await page.reload();
++  await expect(items(page).locator(".text")).toHaveText(["First", "Second"]);
++  await expect(page.getByRole("checkbox", { name: "First" })).not.toBeChecked();
++  await expect(page.getByRole("checkbox", { name: "Second" })).toBeChecked();
++});
++
++test("renders task text as text, not HTML", async ({ page }) => {
++  await add(page, '<img src=x onerror="window.pwned=1">');
++  await expect(items(page).locator(".text")).toHaveText('<img src=x onerror="window.pwned=1">');
++  expect(await page.evaluate(() => window.pwned)).toBeUndefined();
++});
++
++for (const [name, raw] of [
++  ["invalid JSON", "{not json"],
++  ["non-array JSON", '{"a":1}'],
++  ["malformed entries", '[null, {"id":"a","text":"  "}, {"id":"b","text":"ok","done":"yes"}]'],
++]) {
++  test(`recovers from ${name} in storage`, async ({ page }) => {
++    await page.evaluate(([k, v]) => localStorage.setItem(k, v), [STORAGE_KEY, raw]);
++    await page.reload();
++    await add(page, "Still works");
++    await expect(items(page).last()).toHaveText(/Still works/);
++  });
++}
++
++test("moves focus to the next task (or the input) after delete", async ({ page }) => {
++  await add(page, "One");
++  await add(page, "Two");
++  await page.getByRole("button", { name: 'Delete "One"' }).click();
++  await expect(page.getByRole("button", { name: 'Delete "Two"' })).toBeFocused();
++  await page.getByRole("button", { name: 'Delete "Two"' }).click();
++  await expect(input(page)).toBeFocused();
++});
++
++test("storage write failure shows an error and changes nothing", async ({ page }) => {
++  await add(page, "Keep me");
++  await page.evaluate(() => {
++    Storage.prototype.setItem = () => {
++      throw new DOMException("full", "QuotaExceededError");
++    };
++  });
++  const error = page.getByRole("alert");
++
++  await add(page, "Unsaved");
++  await expect(error).toContainText("Couldn't save");
++  await expect(items(page)).toHaveCount(1);
++  await expect(input(page)).toHaveValue("Unsaved");
++
++  await page.getByRole("checkbox", { name: "Keep me" }).click();
++  await expect(page.getByRole("checkbox", { name: "Keep me" })).not.toBeChecked();
++
++  await page.getByRole("button", { name: 'Delete "Keep me"' }).click();
++  await expect(items(page)).toHaveCount(1);
++
++  await page.reload();
++  await expect(items(page).locator(".text")).toHaveText(["Keep me"]);
++  await expect(page.getByRole("checkbox", { name: "Keep me" })).not.toBeChecked();
++});
++
++test("screenshot", async ({ page }, info) => {
++  await add(page, "Buy milk");
++  await add(page, "A much longer task description that should wrap cleanly on narrow screens without overflow");
++  await add(page, "Done thing");
++  await page.getByRole("checkbox", { name: "Done thing" }).check();
++  await page.screenshot({ path: info.outputPath(`${info.project.name}.png`), fullPage: true });
++  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
++  expect(overflow).toBe(false);
++});

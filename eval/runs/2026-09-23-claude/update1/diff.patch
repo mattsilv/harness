@@ -1,0 +1,256 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..dbd64df
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,3 @@
++node_modules/
++test-results/
++playwright-report/
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..4d189fd
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,5 @@
++# Docs
++
++- [Testing](testing.md) — how to run the browser checks and what they cover.
++- [Maintenance](MAINTENANCE.md) — periodic audit procedure.
++- Languages: [Python](languages/python.md), [TypeScript](languages/typescript.md).
+diff --git a/docs/testing.md b/docs/testing.md
+new file mode 100644
+index 0000000..82951a3
+--- /dev/null
++++ b/docs/testing.md
+@@ -0,0 +1,14 @@
++# Testing
++
++Run `pnpm install` once, then `pnpm test`. It uses Playwright and loads `index.html` directly from disk in Chromium, in both a desktop and a mobile (Pixel 7) viewport. Any request that isn't to a `file:` URL fails the test.
++
++`tests/todo.spec.js` covers:
++
++- Adding, toggling, deleting, and reloading tasks (they persist in `localStorage["todos"]`).
++- Loading previously saved tasks, and checking that switching filters never rewrites storage.
++- The All, Active, and Completed filters, including lists that update when tasks are toggled, added, or deleted while a filter is active.
++- A screenshot per viewport, written to `test-results/` for visual review.
++
++Note: in a filtered view, toggle checkboxes with `click()` rather than `check()`. The row leaves the view once it's toggled, so `check()` can't confirm the new state and fails.
++
++The filter is view state only. It resets to All on reload and isn't saved with the tasks.
+diff --git a/index.html b/index.html
+index 69be497..35128a4 100644
+--- a/index.html
++++ b/index.html
+@@ -4,6 +4,11 @@
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <title>To-do</title>
++  <style>
++    #filters { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
++    #filters button { min-height: 2.75rem; padding: 0 1rem; }
++    #filters button[aria-pressed="true"] { font-weight: bold; background: #222; color: #fff; }
++  </style>
+ </head>
+ <body>
+   <h1>To-do</h1>
+@@ -11,6 +16,11 @@
+     <input id="text" aria-label="New task" autocomplete="off">
+     <button>Add</button>
+   </form>
++  <nav id="filters" aria-label="Filter tasks">
++    <button type="button" data-filter="all" aria-pressed="true">All</button>
++    <button type="button" data-filter="active" aria-pressed="false">Active</button>
++    <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
++  </nav>
+   <ul id="list"></ul>
+   <script>
+     // Tasks persist in localStorage as [{id, text, done}].
+@@ -18,6 +28,14 @@
+     let todos = JSON.parse(localStorage.getItem(KEY) || "[]");
+     const list = document.getElementById("list");
+     const input = document.getElementById("text");
++    const filterButtons = document.querySelectorAll("#filters button");
++    // The filter is view state only; it is not saved with the tasks.
++    const FILTERS = {
++      all: () => true,
++      active: (t) => !t.done,
++      completed: (t) => t.done,
++    };
++    let filter = "all";
+ 
+     function save() {
+       localStorage.setItem(KEY, JSON.stringify(todos));
+@@ -25,7 +43,8 @@
+     }
+ 
+     function render() {
+-      list.replaceChildren(...todos.map((t) => {
++      filterButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === filter)));
++      list.replaceChildren(...todos.filter(FILTERS[filter]).map((t) => {
+         const li = document.createElement("li");
+         const box = document.createElement("input");
+         box.type = "checkbox";
+@@ -43,6 +62,10 @@
+       }));
+     }
+ 
++    filterButtons.forEach((b) => {
++      b.onclick = () => { filter = b.dataset.filter; render(); };
++    });
++
+     document.getElementById("add").onsubmit = (e) => {
+       e.preventDefault();
+       const text = input.value.trim();
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..a041ec7
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,10 @@
++{
++  "name": "todo",
++  "private": true,
++  "scripts": {
++    "test": "playwright test"
++  },
++  "devDependencies": {
++    "@playwright/test": "^1.63.0"
++  }
++}
+diff --git a/playwright.config.js b/playwright.config.js
+new file mode 100644
+index 0000000..caadc99
+--- /dev/null
++++ b/playwright.config.js
+@@ -0,0 +1,10 @@
++// @ts-check
++const { defineConfig, devices } = require("@playwright/test");
++
++module.exports = defineConfig({
++  testDir: "tests",
++  projects: [
++    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
++    { name: "mobile", use: { ...devices["Pixel 7"] } },
++  ],
++});
+diff --git a/tests/todo.spec.js b/tests/todo.spec.js
+new file mode 100644
+index 0000000..67755b9
+--- /dev/null
++++ b/tests/todo.spec.js
+@@ -0,0 +1,114 @@
++// @ts-check
++const { test, expect } = require("@playwright/test");
++const path = require("path");
++const { pathToFileURL } = require("url");
++
++const APP = pathToFileURL(path.join(__dirname, "..", "index.html")).href;
++
++test.beforeEach(async ({ context }) => {
++  // The app is fully offline; fail on any unexpected network call.
++  await context.route(/^(?!file:)/, (route) => {
++    throw new Error(`Unexpected network request: ${route.request().url()}`);
++  });
++});
++
++async function add(page, text) {
++  await page.getByLabel("New task").fill(text);
++  await page.getByRole("button", { name: "Add" }).click();
++}
++
++const items = (page) => page.locator("#list li span");
++const filter = (page, name) => page.getByRole("button", { name, exact: true });
++
++test("add, toggle, delete, and reload keep working", async ({ page }) => {
++  await page.goto(APP);
++  await add(page, "Milk");
++  await add(page, "Bread");
++  await add(page, "  ");
++  await expect(items(page)).toHaveText(["Milk", "Bread"]);
++
++  await page.getByLabel("Complete Milk").check();
++  await page.getByRole("button", { name: "Delete Bread" }).click();
++  await expect(items(page)).toHaveText(["Milk"]);
++
++  await page.reload();
++  await expect(items(page)).toHaveText(["Milk"]);
++  await expect(page.getByLabel("Complete Milk")).toBeChecked();
++});
++
++test("previously saved tasks load unchanged", async ({ page }) => {
++  const saved = [
++    { id: 1, text: "Old open", done: false },
++    { id: 2, text: "Old done", done: true },
++  ];
++  await page.goto(APP);
++  await page.evaluate((s) => localStorage.setItem("todos", JSON.stringify(s)), saved);
++  await page.reload();
++  await expect(items(page)).toHaveText(["Old open", "Old done"]);
++
++  // Switching filters is view-only and must not rewrite storage.
++  await filter(page, "Completed").click();
++  await filter(page, "Active").click();
++  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("todos")));
++  expect(stored).toEqual(saved);
++});
++
++test("filters show All, Active, and Completed tasks", async ({ page }) => {
++  await page.goto(APP);
++  await add(page, "A");
++  await add(page, "B");
++  await add(page, "C");
++  await page.getByLabel("Complete B").check();
++
++  await expect(filter(page, "All")).toHaveAttribute("aria-pressed", "true");
++  await expect(items(page)).toHaveText(["A", "B", "C"]);
++
++  await filter(page, "Active").click();
++  await expect(filter(page, "Active")).toHaveAttribute("aria-pressed", "true");
++  await expect(filter(page, "All")).toHaveAttribute("aria-pressed", "false");
++  await expect(items(page)).toHaveText(["A", "C"]);
++
++  await filter(page, "Completed").click();
++  await expect(items(page)).toHaveText(["B"]);
++
++  await filter(page, "All").click();
++  await expect(items(page)).toHaveText(["A", "B", "C"]);
++});
++
++test("filtered views update after toggle, add, and delete", async ({ page }) => {
++  await page.goto(APP);
++  await add(page, "A");
++  await add(page, "B");
++
++  await filter(page, "Active").click();
++  // click, not check(): the row leaves the filtered view once toggled.
++  await page.getByLabel("Complete A").click();
++  await expect(items(page)).toHaveText(["B"]);
++
++  await add(page, "C");
++  await expect(items(page)).toHaveText(["B", "C"]);
++
++  await filter(page, "Completed").click();
++  await expect(items(page)).toHaveText(["A"]);
++  await page.getByLabel("Complete A").click();
++  await expect(items(page)).toHaveCount(0);
++
++  await add(page, "D"); // new tasks are active, so hidden here
++  await expect(items(page)).toHaveCount(0);
++
++  await filter(page, "Active").click();
++  await page.getByRole("button", { name: "Delete B" }).click();
++  await expect(items(page)).toHaveText(["A", "C", "D"]);
++
++  await filter(page, "All").click();
++  await expect(items(page)).toHaveText(["A", "C", "D"]);
++});
++
++test("screenshot", async ({ page }, info) => {
++  await page.goto(APP);
++  await add(page, "Buy groceries");
++  await add(page, "Call the plumber about the kitchen sink");
++  await page.getByLabel("Complete Buy groceries").check();
++  await filter(page, "Active").click();
++  await page.screenshot({ path: info.outputPath("todo.png") });
++});

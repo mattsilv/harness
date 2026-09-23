@@ -1,0 +1,1 @@
+{"date":"2026-09-23","task":"create","app":"create2","harness":"v8","fixture":"unknown","model":"gpt-6-sol","effort":"medium","tokens":"1244574","checks":{"loads":"pass","add":"pass","reject_blank":"pass","toggle":"pass","delete":"pass","persist_reload":"pass"},"passed":"6/6","counts":{"files":3,"source_lines":244,"comment_lines":1,"test_lines":59}}

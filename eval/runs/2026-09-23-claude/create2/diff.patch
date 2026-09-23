@@ -1,0 +1,361 @@
+diff --git a/.github/workflows/test.yml b/.github/workflows/test.yml
+new file mode 100644
+index 0000000..bf1598f
+--- /dev/null
++++ b/.github/workflows/test.yml
+@@ -0,0 +1,18 @@
++name: test
++on:
++  pull_request:
++  push:
++    branches: [main]
++jobs:
++  e2e:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: pnpm/action-setup@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 22
++          cache: pnpm
++      - run: pnpm install --frozen-lockfile
++      - run: pnpm exec playwright install --with-deps chromium
++      - run: pnpm test
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..dbd64df
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,3 @@
++node_modules/
++test-results/
++playwright-report/
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..7fb4ff5
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,85 @@
++"use strict";
++
++const STORAGE_KEY = "todo.tasks.v1";
++
++function loadTasks() {
++  try {
++    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
++    if (!Array.isArray(parsed)) return [];
++    return parsed.filter(
++      (t) => t && typeof t.id === "string" && typeof t.text === "string" && typeof t.done === "boolean"
++    );
++  } catch {
++    return [];
++  }
++}
++
++// crypto.randomUUID is only available in secure contexts; fall back elsewhere.
++function newId() {
++  return crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
++}
++
++function saveTasks(tasks) {
++  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
++}
++
++let tasks = loadTasks();
++
++const form = document.getElementById("add-form");
++const input = document.getElementById("new-task");
++const list = document.getElementById("list");
++const error = document.getElementById("error");
++const empty = document.getElementById("empty");
++
++function update(next) {
++  tasks = next;
++  saveTasks(tasks);
++  render();
++}
++
++function render() {
++  list.replaceChildren(
++    ...tasks.map((task) => {
++      const li = document.createElement("li");
++      li.className = task.done ? "done" : "";
++
++      const label = document.createElement("label");
++      const checkbox = document.createElement("input");
++      checkbox.type = "checkbox";
++      checkbox.checked = task.done;
++      checkbox.addEventListener("change", () =>
++        update(tasks.map((t) => (t.id === task.id ? { ...t, done: checkbox.checked } : t)))
++      );
++      const text = document.createElement("span");
++      text.textContent = task.text;
++      label.append(checkbox, text);
++
++      const del = document.createElement("button");
++      del.type = "button";
++      del.className = "delete";
++      del.textContent = "Delete";
++      del.setAttribute("aria-label", `Delete "${task.text}"`);
++      del.addEventListener("click", () => update(tasks.filter((t) => t.id !== task.id)));
++
++      li.append(label, del);
++      return li;
++    })
++  );
++  empty.hidden = tasks.length > 0;
++}
++
++form.addEventListener("submit", (event) => {
++  event.preventDefault();
++  const text = input.value.trim();
++  if (!text) {
++    error.textContent = "Enter a task.";
++    input.focus();
++    return;
++  }
++  error.textContent = "";
++  update([...tasks, { id: newId(), text, done: false }]);
++  input.value = "";
++  input.focus();
++});
++
++render();
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..dd29814
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,5 @@
++# Docs
++
++- [To-do app](todo-app.md) — what the app does, how to run it, how it's tested.
++- [Maintenance](MAINTENANCE.md) — periodic audit checklist.
++- Language notes: [Python](languages/python.md), [TypeScript](languages/typescript.md).
+diff --git a/docs/todo-app.md b/docs/todo-app.md
+new file mode 100644
+index 0000000..daf4a41
+--- /dev/null
++++ b/docs/todo-app.md
+@@ -0,0 +1,21 @@
++# To-do app
++
++A single static page (`index.html` + `app.js`), no build step or server. Open `index.html` directly in a browser.
++
++## Behavior
++
++- Add a task; input is trimmed and blank input is rejected with "Enter a task."
++- Check/uncheck to mark complete/incomplete; Delete removes one task.
++- Tasks persist in `localStorage` under `todo.tasks.v1` as `[{ id, text, done }]`. Unparseable or malformed data loads as an empty list. Storage is per browser and per origin: opening the file from a different path or a server gives a separate list.
++
++## Tests
++
++`pnpm install && pnpm exec playwright install chromium && pnpm test` runs Playwright E2E tests (`tests/todo.spec.js`) on desktop and mobile Chromium viewports. Tests serve repo files through `page.route` under a fixed `http://localhost:4173` origin and abort every other request, so no server or network is needed. CI runs the same command (`.github/workflows/test.yml`).
++
++## Verification notes (2026-09-23)
++
++- 16/16 tests pass locally (8 tests × desktop/mobile).
++- Mutation checks: disabling `saveTasks` fails the persistence tests; removing `trim()` fails the add/blank tests.
++- Opened via `file://` in Chromium: tasks and completion state survive reload.
++- Desktop (1280×720) and mobile (Pixel 7) screenshots checked: content above the fold, long text wraps, 44px tap targets.
++- Not checked: Firefox/Safari, and the CI workflow (no GitHub remote yet).
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..a9fb62a
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,49 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>To-do</title>
++  <style>
++    :root {
++      --font: system-ui, -apple-system, "Segoe UI", sans-serif;
++      --text: #1f2328;
++      --muted: #656d76;
++      --border: #d0d7de;
++      --accent: #0969da;
++      --danger: #cf222e;
++      --space: 0.5rem;
++      --radius: 6px;
++      --tap: 2.75rem;
++    }
++    * { box-sizing: border-box; }
++    body { font-family: var(--font); color: var(--text); margin: 0 auto; padding: calc(var(--space) * 2); max-width: 40rem; }
++    h1 { font-size: 1.5rem; margin: 0 0 calc(var(--space) * 2); }
++    form { display: flex; gap: var(--space); }
++    input[type="text"] { flex: 1; min-height: var(--tap); padding: 0 var(--space); font: inherit; border: 1px solid var(--border); border-radius: var(--radius); }
++    button { min-height: var(--tap); min-width: var(--tap); padding: 0 calc(var(--space) * 2); font: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; cursor: pointer; }
++    button[type="submit"] { background: var(--accent); border-color: var(--accent); color: #fff; }
++    .error { color: var(--danger); min-height: 1.25rem; margin: var(--space) 0; font-size: 0.875rem; }
++    ul { list-style: none; padding: 0; margin: 0; }
++    li { display: flex; align-items: center; gap: var(--space); padding: calc(var(--space) / 2) 0; border-bottom: 1px solid var(--border); }
++    li label { flex: 1; display: flex; align-items: center; gap: var(--space); min-height: var(--tap); overflow-wrap: anywhere; }
++    li input[type="checkbox"] { width: 1.25rem; height: 1.25rem; flex: none; }
++    li.done span { text-decoration: line-through; color: var(--muted); }
++    .delete { color: var(--danger); }
++    .empty { color: var(--muted); }
++  </style>
++</head>
++<body>
++  <main>
++    <h1>To-do</h1>
++    <form id="add-form" novalidate>
++      <input id="new-task" type="text" placeholder="Add a task" aria-label="New task" autocomplete="off">
++      <button type="submit">Add</button>
++    </form>
++    <p id="error" class="error" role="alert"></p>
++    <ul id="list" aria-label="Tasks"></ul>
++    <p id="empty" class="empty">No tasks yet.</p>
++  </main>
++  <script src="app.js"></script>
++</body>
++</html>
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..9616766
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,11 @@
++{
++  "name": "todo",
++  "private": true,
++  "scripts": {
++    "test": "playwright test"
++  },
++  "devDependencies": {
++    "@playwright/test": "^1.63.0"
++  },
++  "packageManager": "pnpm@10.32.1"
++}
+diff --git a/playwright.config.js b/playwright.config.js
+new file mode 100644
+index 0000000..147aa71
+--- /dev/null
++++ b/playwright.config.js
+@@ -0,0 +1,11 @@
++// @ts-check
++const { defineConfig, devices } = require("@playwright/test");
++
++module.exports = defineConfig({
++  testDir: "tests",
++  forbidOnly: !!process.env.CI,
++  projects: [
++    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
++    { name: "mobile", use: { ...devices["Pixel 7"] } },
++  ],
++});
+diff --git a/tests/todo.spec.js b/tests/todo.spec.js
+new file mode 100644
+index 0000000..e4a7fb1
+--- /dev/null
++++ b/tests/todo.spec.js
+@@ -0,0 +1,104 @@
++// @ts-check
++const fs = require("node:fs");
++const path = require("node:path");
++const { test, expect } = require("@playwright/test");
++
++// Serve the static files from disk under a fixed origin; abort any other request.
++const ORIGIN = "http://localhost:4173";
++const ROOT = path.resolve(__dirname, "..");
++const TYPES = { ".html": "text/html", ".js": "text/javascript" };
++
++test.beforeEach(async ({ page }) => {
++  await page.route("**/*", async (route) => {
++    const url = new URL(route.request().url());
++    if (url.origin !== ORIGIN) return route.abort();
++    const file = path.join(ROOT, url.pathname === "/" ? "index.html" : url.pathname);
++    if (!file.startsWith(ROOT) || !fs.existsSync(file)) return route.fulfill({ status: 404 });
++    return route.fulfill({ body: fs.readFileSync(file), contentType: TYPES[path.extname(file)] });
++  });
++  await page.goto(ORIGIN + "/");
++});
++
++const input = (page) => page.getByRole("textbox", { name: "New task" });
++const items = (page) => page.getByRole("list", { name: "Tasks" }).getByRole("listitem");
++
++async function add(page, text) {
++  await input(page).fill(text);
++  await page.getByRole("button", { name: "Add" }).click();
++}
++
++test("adds a trimmed task and clears the input", async ({ page }) => {
++  await add(page, "  Buy milk  ");
++  await expect(items(page)).toHaveText(["Buy milkDelete"]);
++  await expect(input(page)).toHaveValue("");
++});
++
++test("rejects blank tasks", async ({ page }) => {
++  await add(page, "");
++  await add(page, "   \t ");
++  await expect(items(page)).toHaveCount(0);
++  await expect(page.getByRole("alert")).toHaveText("Enter a task.");
++  await page.reload();
++  await expect(items(page)).toHaveCount(0);
++});
++
++test("marks a task complete and incomplete", async ({ page }) => {
++  await add(page, "Walk dog");
++  const box = page.getByRole("checkbox", { name: "Walk dog" });
++  await box.check();
++  await expect(box).toBeChecked();
++  await expect(items(page).first()).toHaveClass("done");
++  await box.uncheck();
++  await expect(box).not.toBeChecked();
++  await expect(items(page).first()).not.toHaveClass("done");
++});
++
++test("deletes only the chosen task", async ({ page }) => {
++  await add(page, "Keep");
++  await add(page, "Remove");
++  await page.getByRole("button", { name: 'Delete "Remove"' }).click();
++  await expect(items(page)).toHaveCount(1);
++  await expect(page.getByRole("checkbox", { name: "Keep" })).toBeVisible();
++});
++
++test("deletes the right one of two tasks with identical text", async ({ page }) => {
++  await add(page, "Milk");
++  await add(page, "Milk");
++  await items(page).nth(0).getByRole("checkbox").check();
++  await items(page).nth(1).getByRole("button", { name: /Delete/ }).click();
++  await page.reload();
++  await expect(items(page)).toHaveCount(1);
++  await expect(items(page).first().getByRole("checkbox")).toBeChecked();
++});
++
++test("preserves tasks, completion, and deletion across reloads", async ({ page }) => {
++  await add(page, "One");
++  await add(page, "Two");
++  await add(page, "Three");
++  await page.getByRole("checkbox", { name: "Two" }).check();
++  await page.getByRole("button", { name: 'Delete "Three"' }).click();
++
++  await page.reload();
++  await expect(items(page)).toHaveCount(2);
++  await expect(page.getByRole("checkbox", { name: "One" })).not.toBeChecked();
++  await expect(page.getByRole("checkbox", { name: "Two" })).toBeChecked();
++
++  await page.getByRole("checkbox", { name: "Two" }).uncheck();
++  await page.reload();
++  await expect(page.getByRole("checkbox", { name: "Two" })).not.toBeChecked();
++});
++
++test("renders task text as text, not HTML", async ({ page }) => {
++  await add(page, "<img src=x onerror=alert(1)>");
++  await expect(page.getByRole("checkbox", { name: "<img src=x onerror=alert(1)>" })).toBeVisible();
++  await expect(page.locator("li img")).toHaveCount(0);
++});
++
++test("recovers from corrupt stored data", async ({ page }) => {
++  await page.evaluate(() => localStorage.setItem("todo.tasks.v1", "{not json"));
++  await page.reload();
++  await expect(items(page)).toHaveCount(0);
++  await add(page, "Fresh start");
++  await page.reload();
++  await expect(items(page)).toHaveCount(1);
++});

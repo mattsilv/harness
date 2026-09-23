@@ -1,0 +1,37 @@
+{
+  "model": "gpt-6-sol",
+  "effort": "medium",
+  "turns": 1,
+  "duration_seconds": 377.297,
+  "duration_source": "parent rollout session_meta to task_complete timestamps",
+  "cost": "unavailable",
+  "usage": {
+    "input_tokens": 1226021,
+    "cached_input_tokens": 1130240,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 18553,
+    "reasoning_output_tokens": 5944,
+    "total_tokens": 1244574
+  },
+  "subagents": [
+    {
+      "model": "gpt-5.6-terra",
+      "effort": "high",
+      "usage": {
+        "input_tokens": 284557,
+        "cached_input_tokens": 249344,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4642,
+        "reasoning_output_tokens": 1963,
+        "total_tokens": 289199
+      }
+    }
+  ],
+  "sandbox": "danger-full-access",
+  "approval_policy": "never",
+  "task_prompt_exact_verified": true,
+  "user_level_instructions_loaded": false,
+  "repository_AGENTS_loaded": true,
+  "mcp_servers_configured": [],
+  "cli_recommended_plugins_message_injected": true
+}

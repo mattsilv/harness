@@ -1,0 +1,45 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 1798,
+    "output_tokens": 317
+  },
+  "cost_usd": 0.000075516,
+  "tally": {
+    "supported": 3,
+    "not_a_claim": 1,
+    "not_covered": 2
+  },
+  "rows": [
+    {
+      "claim": "filters.js — one shared filterTodos(todos, filter) + FILTERS, used by the page (TodoFilters global) and tests.",
+      "verdict": "supported",
+      "confidence": 0.63
+    },
+    {
+      "claim": "index.html:19 — filter button group (aria-pressed state), filter state, render uses filterTodos; todos still persist unchanged under todos as [{id,text,done}]. Add/toggle/delete/reload untouched.",
+      "verdict": "supported",
+      "confidence": 0.34
+    },
+    {
+      "claim": "tests/filters.test.js, tests/e2e.test.js, package.json (pnpm test), docs/todo-app.md, docs/README.md, .gitignore, pnpm-lock.yaml.",
+      "verdict": "not_a_claim",
+      "confidence": 0.45
+    },
+    {
+      "claim": "Unit: each filter, empty list, unknown filter→all, no mutation/reorder, object identity, saved shape.",
+      "verdict": "not_covered",
+      "confidence": 0.58
+    },
+    {
+      "claim": "E2E (real page in headless Chrome): add shows under All; Active hides done; Completed shows only done; toggling out of Active removes live; delete persists; reload keeps tasks and resets to All.",
+      "verdict": "supported",
+      "confidence": 0.89
+    },
+    {
+      "claim": "Reviewed tests/screenshots/desktop-all|active|completed.png and mobile-all.png: filters above the fold, clear pressed state, no layout issues.",
+      "verdict": "not_covered",
+      "confidence": 0.44
+    }
+  ]
+}

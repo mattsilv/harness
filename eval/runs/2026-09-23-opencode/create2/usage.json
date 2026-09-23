@@ -1,0 +1,14 @@
+{
+ "harness_cli": "OpenCode 1.18.31",
+ "model": "opencode-go/deepseek-v4.1-flash",
+ "effort": "default (unverified)",
+ "tokens_total": 984926,
+ "cost_usd": 0.0264,
+ "cost_basis": "OpenCode Go quota",
+ "turns": "34 steps",
+ "duration_s": 294,
+ "subagents": [],
+ "branch": "feat/todo-app",
+ "commits_after_baseline": 0,
+ "uncommitted_paths": 10
+}

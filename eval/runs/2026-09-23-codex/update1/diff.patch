@@ -1,0 +1,178 @@
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..547d80c
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,6 @@
++# Documentation
++
++- [To-do app](todo.md)
++- [Maintenance](MAINTENANCE.md)
++- [TypeScript guidance](languages/typescript.md)
++- [Python guidance](languages/python.md)
+diff --git a/docs/todo.md b/docs/todo.md
+new file mode 100644
+index 0000000..002b8c2
+--- /dev/null
++++ b/docs/todo.md
+@@ -0,0 +1,5 @@
++# To-do app
++
++Open `index.html` in a browser. Tasks are saved in localStorage under `todos` as an array of `{id, text, done}` objects. The All, Active, and Completed buttons change which tasks are shown without changing that saved array. Reloading starts on All.
++
++Run `node --test tests/*.test.mjs` to check filtering, persistence, and the existing add, toggle, and delete actions.
+diff --git a/index.html b/index.html
+index 69be497..58138fd 100644
+--- a/index.html
++++ b/index.html
+@@ -4,6 +4,11 @@
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <title>To-do</title>
++  <style>
++    #filters { display: flex; gap: 0.5rem; margin: 1rem 0; }
++    #filters button { min-height: 44px; padding: 0 0.75rem; }
++    #filters button[aria-pressed="true"] { font-weight: bold; text-decoration: underline; }
++  </style>
+ </head>
+ <body>
+   <h1>To-do</h1>
+@@ -11,13 +16,27 @@
+     <input id="text" aria-label="New task" autocomplete="off">
+     <button>Add</button>
+   </form>
++  <nav id="filters" aria-label="Task filters">
++    <button type="button" data-filter="all" aria-pressed="true">All</button>
++    <button type="button" data-filter="active" aria-pressed="false">Active</button>
++    <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
++  </nav>
+   <ul id="list"></ul>
+   <script>
+     // Tasks persist in localStorage as [{id, text, done}].
+     const KEY = "todos";
+     let todos = JSON.parse(localStorage.getItem(KEY) || "[]");
++    let filter = "all";
+     const list = document.getElementById("list");
+     const input = document.getElementById("text");
++    const filterButtons = document.querySelectorAll("#filters button");
++
++    filterButtons.forEach((button) => {
++      button.onclick = () => {
++        filter = button.dataset.filter;
++        render();
++      };
++    });
+ 
+     function save() {
+       localStorage.setItem(KEY, JSON.stringify(todos));
+@@ -25,7 +44,13 @@
+     }
+ 
+     function render() {
+-      list.replaceChildren(...todos.map((t) => {
++      filterButtons.forEach((button) => {
++        button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
++      });
++      const visible = todos.filter((t) =>
++        filter === "all" || (filter === "active" ? !t.done : t.done)
++      );
++      list.replaceChildren(...visible.map((t) => {
+         const li = document.createElement("li");
+         const box = document.createElement("input");
+         box.type = "checkbox";
+diff --git a/tests/filters.test.mjs b/tests/filters.test.mjs
+new file mode 100644
+index 0000000..ff682fc
+--- /dev/null
++++ b/tests/filters.test.mjs
+@@ -0,0 +1,90 @@
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import test from "node:test";
++import { runInNewContext } from "node:vm";
++
++const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
++const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
++assert.ok(script, "The app must have an inline script");
++
++function element() {
++  return {
++    children: [],
++    attributes: {},
++    append(...children) { this.children.push(...children); },
++    replaceChildren(...children) { this.children = children; },
++    setAttribute(name, value) { this.attributes[name] = value; },
++  };
++}
++
++function startApp(saved = new Map()) {
++  const buttons = [...html.matchAll(/<button type="button" data-filter="([^"]+)"/g)]
++    .map(([, filter]) => Object.assign(element(), { dataset: { filter } }));
++  const nodes = { add: element(), text: element(), list: element() };
++  const localStorage = {
++    getItem: (key) => saved.get(key) ?? null,
++    setItem: (key, value) => saved.set(key, value),
++  };
++  const document = {
++    getElementById: (id) => nodes[id],
++    querySelectorAll: (selector) => {
++      assert.equal(selector, "#filters button");
++      return buttons;
++    },
++    createElement: () => element(),
++  };
++  runInNewContext(script, { document, localStorage, Date });
++
++  const visible = () => nodes.list.children.map((li) => li.children[2].textContent);
++  const add = (text) => {
++    nodes.text.value = text;
++    nodes.add.onsubmit({ preventDefault() {} });
++  };
++  const select = (filter) => {
++    buttons.find((button) => button.dataset.filter === filter).onclick();
++    assert.deepEqual(buttons.map((button) => button.attributes["aria-pressed"]),
++      ["all", "active", "completed"].map((name) => String(name === filter)));
++  };
++  return { nodes, saved, visible, add, select };
++}
++
++test("filters saved tasks without changing storage, and reload starts on All", () => {
++  const tasks = [
++    { id: 1, text: "Open", done: false },
++    { id: 2, text: "Finished", done: true },
++  ];
++  const saved = new Map([["todos", JSON.stringify(tasks)]]);
++  const app = startApp(saved);
++
++  assert.deepEqual(app.visible(), ["Open", "Finished"]);
++  app.select("active");
++  assert.deepEqual(app.visible(), ["Open"]);
++  app.select("completed");
++  assert.deepEqual(app.visible(), ["Finished"]);
++  app.select("all");
++  assert.deepEqual(app.visible(), ["Open", "Finished"]);
++  assert.equal(saved.get("todos"), JSON.stringify(tasks));
++  assert.deepEqual(startApp(saved).visible(), ["Open", "Finished"]);
++});
++
++test("add, toggle, and delete still work while a filter is selected", () => {
++  const app = startApp();
++  app.select("active");
++  app.add("  New task  ");
++  assert.deepEqual(app.visible(), ["New task"]);
++  assert.equal(app.nodes.text.value, "");
++
++  const checkbox = app.nodes.list.children[0].children[0];
++  checkbox.checked = true;
++  checkbox.onchange();
++  assert.deepEqual(app.visible(), []);
++  assert.deepEqual(JSON.parse(app.saved.get("todos")).map(({ text, done }) => ({ text, done })),
++    [{ text: "New task", done: true }]);
++
++  app.select("completed");
++  assert.deepEqual(app.visible(), ["New task"]);
++  app.nodes.list.children[0].children[4].onclick();
++  assert.deepEqual(app.visible(), []);
++  assert.deepEqual(JSON.parse(app.saved.get("todos")), []);
++  assert.deepEqual(startApp(app.saved).visible(), []);
++});

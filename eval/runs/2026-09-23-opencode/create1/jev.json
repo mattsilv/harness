@@ -1,0 +1,80 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 3203,
+    "output_tokens": 683
+  },
+  "cost_usd": 0.00013452600000000002,
+  "tally": {
+    "not_covered": 4,
+    "supported": 8,
+    "not_a_claim": 1
+  },
+  "rows": [
+    {
+      "claim": "index.html — markup/styles, loads app.js as a module.",
+      "verdict": "not_covered",
+      "confidence": 0.81
+    },
+    {
+      "claim": "app.js — createTodoStore (persistence/validation) + initTodoApp (DOM wiring), self-inits in the browser.",
+      "verdict": "supported",
+      "confidence": 0.55
+    },
+    {
+      "claim": "test/todo.test.js — node --test + jsdom driving the real page.",
+      "verdict": "supported",
+      "confidence": 0.31
+    },
+    {
+      "claim": "package.json, pnpm-lock.yaml, .gitignore, docs/README.md, docs/todo-app.md.",
+      "verdict": "not_a_claim",
+      "confidence": 0.64
+    },
+    {
+      "claim": "Add: nonblank task is trimmed, rendered, and written to localStorage; input clears.",
+      "verdict": "supported",
+      "confidence": 0.42
+    },
+    {
+      "claim": "Blank rejection: \"\", \"   \", \"\\t\\n \" add nothing, persist nothing, show an error.",
+      "verdict": "supported",
+      "confidence": 0.9
+    },
+    {
+      "claim": "Complete/incomplete: checkbox click flips state in DOM and storage, both directions.",
+      "verdict": "supported",
+      "confidence": 0.94
+    },
+    {
+      "claim": "Delete: only the targeted task is removed (DOM + storage).",
+      "verdict": "supported",
+      "confidence": 0.72
+    },
+    {
+      "claim": "Persistence across reload: fresh DOM + same storage reproduces tasks and completion state.",
+      "verdict": "supported",
+      "confidence": 1
+    },
+    {
+      "claim": "Resilience: corrupted JSON and malformed entries are ignored; app keeps working.",
+      "verdict": "not_covered",
+      "confidence": 0.99
+    },
+    {
+      "claim": "\"Reload\" is simulated by re-mounting a fresh DOM seeded with the prior localStorage snapshot; a real browser reload was not exercised.",
+      "verdict": "supported",
+      "confidence": 0.62
+    },
+    {
+      "claim": "No browser rendering/screenshot check (none available here), so visual/mobile layout is unverified.",
+      "verdict": "not_covered",
+      "confidence": 0.32
+    },
+    {
+      "claim": "No linter/typechecker is configured in the repo; only node --check syntax validation was run.",
+      "verdict": "not_covered",
+      "confidence": 0.97
+    }
+  ]
+}

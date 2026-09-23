@@ -1,0 +1,16 @@
+{
+ "harness_cli": "Claude Code 2.1.280",
+ "model": "claude-opus-5-5",
+ "effort": "medium (requested; not echoed)",
+ "tokens_total": 936402,
+ "cost_usd": 1.018,
+ "cost_basis": "list price; covered by subscription",
+ "turns": 4,
+ "duration_s": 61,
+ "subagents": [
+  "sonnet"
+ ],
+ "branch": "feat/todo-app",
+ "commits_after_baseline": 1,
+ "uncommitted_paths": 0
+}

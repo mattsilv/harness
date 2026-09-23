@@ -1,0 +1,502 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..bca5736
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,2 @@
++node_modules/
++tests/screenshots/
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..2b0d441
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,6 @@
++# Docs
++
++- [To-do app](todo-app.md)
++- [Maintenance](MAINTENANCE.md)
++- [TypeScript](languages/typescript.md)
++- [Python](languages/python.md)
+diff --git a/docs/todo-app.md b/docs/todo-app.md
+new file mode 100644
+index 0000000..d3d561d
+--- /dev/null
++++ b/docs/todo-app.md
+@@ -0,0 +1,22 @@
++# To-do app
++
++Static page (`index.html`) with no build step or server. Tasks persist in `localStorage` under key `todos` as `[{id, text, done}]`; add, toggle, delete, and reload behavior all read and write that one key.
++
++## Filters
++
++`filters.js` defines the filter names and the `filterTodos(todos, filter)` mapping once, shared by the page (via `TodoFilters` global) and the tests (via CommonJS export).
++
++- `all` — every task (default on load)
++- `active` — `!done`
++- `completed` — `done`
++
++The selected filter lives in memory only, so reload returns to `all` while tasks are preserved. Filter buttons expose state through `aria-pressed`.
++
++## Checks
++
++Run `pnpm test` (or `node --test tests/`). No dependencies.
++
++- `tests/filters.test.js` — unit tests for `filterTodos`: each filter, empty input, unknown filter, no mutation, object identity, and saved shape.
++- `tests/e2e.test.js` — drives the real page in headless Google Chrome over the DevTools Protocol: add, toggle, delete, filter switching, live removal when toggling out of `active`, reload persistence, and desktop/mobile screenshot capture into `tests/screenshots/`.
++
++Last verified: `pnpm test` passed 18 tests (9 unit + 9 E2E); desktop and mobile screenshots reviewed with filters visible above the fold and correct pressed state.
+diff --git a/filters.js b/filters.js
+new file mode 100644
+index 0000000..b995c33
+--- /dev/null
++++ b/filters.js
+@@ -0,0 +1,21 @@
++(function (root, factory) {
++  if (typeof module === "object" && module.exports) {
++    module.exports = factory();
++  } else {
++    root.TodoFilters = factory();
++  }
++})(typeof globalThis !== "undefined" ? globalThis : this, function () {
++  var FILTERS = ["all", "active", "completed"];
++
++  function filterTodos(todos, filter) {
++    if (filter === "active") {
++      return todos.filter(function (t) { return !t.done; });
++    }
++    if (filter === "completed") {
++      return todos.filter(function (t) { return t.done; });
++    }
++    return todos.slice();
++  }
++
++  return { FILTERS: FILTERS, filterTodos: filterTodos };
++});
+diff --git a/index.html b/index.html
+index 69be497..684d1f5 100644
+--- a/index.html
++++ b/index.html
+@@ -4,6 +4,12 @@
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <title>To-do</title>
++  <style>
++    body { font-family: system-ui, sans-serif; margin: 1rem; max-width: 40rem; }
++    #filters { display: flex; gap: 0.5rem; margin: 1rem 0; }
++    #filters button[aria-pressed="true"] { font-weight: bold; outline: 2px solid currentColor; }
++    #list li { margin: 0.25rem 0; }
++  </style>
+ </head>
+ <body>
+   <h1>To-do</h1>
+@@ -11,13 +17,24 @@
+     <input id="text" aria-label="New task" autocomplete="off">
+     <button>Add</button>
+   </form>
++  <div id="filters" role="group" aria-label="Filter tasks">
++    <button type="button" data-filter="all" aria-pressed="true">All</button>
++    <button type="button" data-filter="active" aria-pressed="false">Active</button>
++    <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
++  </div>
++  <p id="empty" hidden>No tasks here.</p>
+   <ul id="list"></ul>
++  <script src="filters.js"></script>
+   <script>
+     // Tasks persist in localStorage as [{id, text, done}].
+     const KEY = "todos";
++    const { filterTodos } = TodoFilters;
+     let todos = JSON.parse(localStorage.getItem(KEY) || "[]");
++    let filter = "all";
+     const list = document.getElementById("list");
+     const input = document.getElementById("text");
++    const empty = document.getElementById("empty");
++    const filterButtons = [...document.querySelectorAll("#filters button")];
+ 
+     function save() {
+       localStorage.setItem(KEY, JSON.stringify(todos));
+@@ -25,7 +42,8 @@
+     }
+ 
+     function render() {
+-      list.replaceChildren(...todos.map((t) => {
++      const visible = filterTodos(todos, filter);
++      list.replaceChildren(...visible.map((t) => {
+         const li = document.createElement("li");
+         const box = document.createElement("input");
+         box.type = "checkbox";
+@@ -41,8 +59,16 @@
+         li.append(box, " ", label, " ", del);
+         return li;
+       }));
++      empty.hidden = visible.length > 0;
++      for (const b of filterButtons) {
++        b.setAttribute("aria-pressed", String(b.dataset.filter === filter));
++      }
+     }
+ 
++    filterButtons.forEach((b) => {
++      b.onclick = () => { filter = b.dataset.filter; render(); };
++    });
++
+     document.getElementById("add").onsubmit = (e) => {
+       e.preventDefault();
+       const text = input.value.trim();
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..1a4dd42
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,8 @@
++{
++  "name": "todo",
++  "version": "1.0.0",
++  "private": true,
++  "scripts": {
++    "test": "node --test tests/*.test.js"
++  }
++}
+diff --git a/tests/e2e.test.js b/tests/e2e.test.js
+new file mode 100644
+index 0000000..a980625
+--- /dev/null
++++ b/tests/e2e.test.js
+@@ -0,0 +1,267 @@
++const test = require("node:test");
++const assert = require("node:assert/strict");
++const { spawn } = require("node:child_process");
++const fs = require("node:fs");
++const os = require("node:os");
++const path = require("node:path");
++
++const CHROME =
++  process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
++const ROOT = path.resolve(__dirname, "..");
++const APP_URL = "file://" + path.join(ROOT, "index.html");
++const SHOTS = path.join(__dirname, "screenshots");
++
++class CDP {
++  constructor(ws) {
++    this.ws = ws;
++    this.nextId = 0;
++    this.pending = new Map();
++    this.waiters = new Map();
++    ws.onmessage = (event) => {
++      const msg = JSON.parse(event.data);
++      if (msg.id && this.pending.has(msg.id)) {
++        const { resolve, reject } = this.pending.get(msg.id);
++        this.pending.delete(msg.id);
++        if (msg.error) reject(new Error(msg.error.message));
++        else resolve(msg.result);
++      } else if (msg.method && this.waiters.has(msg.method)) {
++        const list = this.waiters.get(msg.method);
++        this.waiters.delete(msg.method);
++        for (const resolve of list) resolve(msg.params);
++      }
++    };
++  }
++
++  static async connect(url) {
++    const ws = new WebSocket(url);
++    await new Promise((resolve, reject) => {
++      ws.onopen = resolve;
++      ws.onerror = () => reject(new Error("websocket failed"));
++    });
++    return new CDP(ws);
++  }
++
++  send(method, params = {}) {
++    const id = ++this.nextId;
++    return new Promise((resolve, reject) => {
++      this.pending.set(id, { resolve, reject });
++      this.ws.send(JSON.stringify({ id, method, params }));
++    });
++  }
++
++  once(method) {
++    return new Promise((resolve) => {
++      const list = this.waiters.get(method) || [];
++      list.push(resolve);
++      this.waiters.set(method, list);
++    });
++  }
++
++  async evaluate(expression) {
++    const result = await this.send("Runtime.evaluate", {
++      expression,
++      returnByValue: true,
++      awaitPromise: true,
++    });
++    if (result.exceptionDetails) {
++      throw new Error("page error: " + JSON.stringify(result.exceptionDetails));
++    }
++    return result.result.value;
++  }
++
++  async navigate(url) {
++    const loaded = this.once("Page.loadEventFired");
++    await this.send("Page.navigate", { url });
++    await loaded;
++  }
++
++  async reload() {
++    const loaded = this.once("Page.loadEventFired");
++    await this.send("Page.reload");
++    await loaded;
++  }
++
++  async screenshot(file, { width, height, mobile }) {
++    await this.send("Emulation.setDeviceMetricsOverride", {
++      width,
++      height,
++      deviceScaleFactor: mobile ? 2 : 1,
++      mobile: Boolean(mobile),
++    });
++    const { data } = await this.send("Page.captureScreenshot", {
++      format: "png",
++      captureBeyondViewport: true,
++    });
++    fs.mkdirSync(path.dirname(file), { recursive: true });
++    fs.writeFileSync(file, Buffer.from(data, "base64"));
++  }
++}
++
++async function launchChrome() {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "todo-e2e-"));
++  const proc = spawn(
++    CHROME,
++    [
++      "--headless=new",
++      "--disable-gpu",
++      "--no-first-run",
++      "--no-default-browser-check",
++      "--remote-debugging-port=0",
++      `--user-data-dir=${dir}`,
++      "about:blank",
++    ],
++    { stdio: ["ignore", "ignore", "pipe"] }
++  );
++  const browserWs = await new Promise((resolve, reject) => {
++    let buf = "";
++    const timer = setTimeout(() => reject(new Error("chrome did not start")), 20000);
++    proc.stderr.on("data", (chunk) => {
++      buf += chunk.toString();
++      const match = buf.match(/DevTools listening on (ws:\/\/\S+)/);
++      if (match) {
++        clearTimeout(timer);
++        resolve(match[1]);
++      }
++    });
++    proc.on("exit", (code) => {
++      clearTimeout(timer);
++      reject(new Error("chrome exited early with code " + code));
++    });
++    proc.on("error", (err) => {
++      clearTimeout(timer);
++      reject(new Error("could not launch Chrome at " + CHROME + ": " + err.message));
++    });
++  });
++  const port = new URL(browserWs).port;
++  const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
++  const page = targets.find((t) => t.type === "page");
++  const cdp = await CDP.connect(page.webSocketDebuggerUrl);
++  return { proc, dir, cdp };
++}
++
++const count = (cdp) => cdp.evaluate("document.querySelectorAll('#list li').length");
++const texts = (cdp) =>
++  cdp.evaluate("[...document.querySelectorAll('#list li span')].map((s) => s.textContent)");
++const pressed = (cdp, filter) =>
++  cdp.evaluate(
++    `document.querySelector('#filters button[data-filter="${filter}"]').getAttribute('aria-pressed')`
++  );
++const addTask = (cdp, text) =>
++  cdp.evaluate(
++    `(() => { document.getElementById('text').value = ${JSON.stringify(text)}; document.getElementById('add').requestSubmit(); })()`
++  );
++const setDone = (cdp, text, done) =>
++  cdp.evaluate(
++    `(() => { const li = [...document.querySelectorAll('#list li')].find((l) => l.querySelector('span').textContent === ${JSON.stringify(text)}); const box = li.querySelector('input[type=checkbox]'); box.checked = ${done}; box.dispatchEvent(new Event('change')); })()`
++  );
++const clickFilter = (cdp, filter) =>
++  cdp.evaluate(`document.querySelector('#filters button[data-filter="${filter}"]').click()`);
++const deleteTask = (cdp, text) =>
++  cdp.evaluate(
++    `[...document.querySelectorAll('#list button')].find((b) => b.getAttribute('aria-label') === ${JSON.stringify("Delete " + text)}).click()`
++  );
++
++test("to-do filters, persistence, and existing behavior", async (t) => {
++  const { proc, dir, cdp } = await launchChrome();
++  try {
++    await cdp.send("Page.enable");
++    await cdp.send("Runtime.enable");
++    await cdp.navigate(APP_URL);
++    await cdp.evaluate("localStorage.clear()");
++    await cdp.reload();
++
++    await t.test("adds tasks and shows them under All", async () => {
++      await addTask(cdp, "alpha");
++      await addTask(cdp, "beta");
++      await addTask(cdp, "gamma");
++      assert.equal(await count(cdp), 3);
++      assert.deepEqual(await texts(cdp), ["alpha", "beta", "gamma"]);
++      assert.equal(await pressed(cdp, "all"), "true");
++    });
++
++    await t.test("All keeps completed and active tasks visible", async () => {
++      await setDone(cdp, "beta", true);
++      await clickFilter(cdp, "all");
++      assert.equal(await count(cdp), 3);
++      assert.equal(await pressed(cdp, "all"), "true");
++      assert.equal(await pressed(cdp, "active"), "false");
++    });
++
++    await t.test("Active hides completed tasks", async () => {
++      await clickFilter(cdp, "active");
++      assert.deepEqual(await texts(cdp), ["alpha", "gamma"]);
++      assert.equal(await pressed(cdp, "active"), "true");
++    });
++
++    await t.test("Completed shows only completed tasks", async () => {
++      await clickFilter(cdp, "completed");
++      assert.deepEqual(await texts(cdp), ["beta"]);
++      assert.equal(await pressed(cdp, "completed"), "true");
++    });
++
++    await t.test("toggling a task out of the active filter removes it live", async () => {
++      await clickFilter(cdp, "active");
++      assert.equal(await count(cdp), 2);
++      await setDone(cdp, "alpha", true);
++      assert.deepEqual(await texts(cdp), ["gamma"]);
++    });
++
++    await t.test("deleting removes the task and persists", async () => {
++      await clickFilter(cdp, "completed");
++      assert.deepEqual(await texts(cdp), ["alpha", "beta"]);
++      await deleteTask(cdp, "beta");
++      assert.deepEqual(await texts(cdp), ["alpha"]);
++      await clickFilter(cdp, "all");
++      assert.deepEqual(await texts(cdp), ["alpha", "gamma"]);
++    });
++
++    await t.test("reload preserves tasks and resets to All", async () => {
++      await cdp.reload();
++      assert.deepEqual(await texts(cdp), ["alpha", "gamma"]);
++      assert.equal(await pressed(cdp, "all"), "true");
++      assert.deepEqual(
++        await cdp.evaluate(
++          "JSON.parse(localStorage.getItem('todos')).map(({ text, done }) => ({ text, done }))"
++        ),
++        [
++          { text: "alpha", done: true },
++          { text: "gamma", done: false },
++        ]
++      );
++    });
++
++    await t.test("captures desktop and mobile screenshots", async () => {
++      await cdp.evaluate("localStorage.clear()");
++      await cdp.reload();
++      await addTask(cdp, "Buy milk");
++      await addTask(cdp, "Walk the dog");
++      await addTask(cdp, "Write the report");
++      await setDone(cdp, "Walk the dog", true);
++
++      await clickFilter(cdp, "all");
++      await cdp.screenshot(path.join(SHOTS, "desktop-all.png"), { width: 900, height: 700 });
++      await clickFilter(cdp, "active");
++      await cdp.screenshot(path.join(SHOTS, "desktop-active.png"), { width: 900, height: 700 });
++      await clickFilter(cdp, "completed");
++      await cdp.screenshot(path.join(SHOTS, "desktop-completed.png"), { width: 900, height: 700 });
++      await clickFilter(cdp, "all");
++      await cdp.screenshot(path.join(SHOTS, "mobile-all.png"), {
++        width: 390,
++        height: 844,
++        mobile: true,
++      });
++      for (const name of [
++        "desktop-all.png",
++        "desktop-active.png",
++        "desktop-completed.png",
++        "mobile-all.png",
++      ]) {
++        assert.ok(fs.statSync(path.join(SHOTS, name)).size > 1000, name + " should not be empty");
++      }
++    });
++  } finally {
++    cdp.ws.close();
++    proc.kill();
++    fs.rmSync(dir, { recursive: true, force: true });
++  }
++});
+diff --git a/tests/filters.test.js b/tests/filters.test.js
+new file mode 100644
+index 0000000..72ffe1f
+--- /dev/null
++++ b/tests/filters.test.js
+@@ -0,0 +1,65 @@
++const test = require("node:test");
++const assert = require("node:assert/strict");
++const { FILTERS, filterTodos } = require("../filters.js");
++
++const sample = () => [
++  { id: 1, text: "write tests", done: false },
++  { id: 2, text: "ship filters", done: true },
++  { id: 3, text: "review", done: false },
++];
++
++test("exposes exactly the all/active/completed filters", () => {
++  assert.deepEqual(FILTERS, ["all", "active", "completed"]);
++});
++
++test("all returns every task in order", () => {
++  const todos = sample();
++  assert.deepEqual(filterTodos(todos, "all"), todos);
++});
++
++test("active returns only unfinished tasks", () => {
++  assert.deepEqual(
++    filterTodos(sample(), "active").map((t) => t.id),
++    [1, 3]
++  );
++});
++
++test("completed returns only finished tasks", () => {
++  assert.deepEqual(
++    filterTodos(sample(), "completed").map((t) => t.id),
++    [2]
++  );
++});
++
++test("an empty list yields an empty list for every filter", () => {
++  for (const filter of FILTERS) {
++    assert.deepEqual(filterTodos([], filter), []);
++  }
++});
++
++test("an unknown filter behaves like all", () => {
++  const todos = sample();
++  assert.deepEqual(filterTodos(todos, "bogus"), todos);
++});
++
++test("filtering does not mutate or reorder the stored tasks", () => {
++  const todos = sample();
++  const before = JSON.parse(JSON.stringify(todos));
++  filterTodos(todos, "active");
++  filterTodos(todos, "completed");
++  filterTodos(todos, "all");
++  assert.deepEqual(todos, before);
++});
++
++test("results keep references to the stored task objects", () => {
++  const todos = sample();
++  assert.equal(filterTodos(todos, "active")[0], todos[0]);
++});
++
++test("preserves the saved task shape used by localStorage", () => {
++  const stored = JSON.parse(JSON.stringify(sample()));
++  const visible = filterTodos(stored, "active");
++  for (const t of visible) {
++    assert.deepEqual(Object.keys(t).sort(), ["done", "id", "text"]);
++  }
++});

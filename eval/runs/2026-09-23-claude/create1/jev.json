@@ -1,0 +1,100 @@
+{
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 4010,
+    "output_tokens": 910
+  },
+  "cost_usd": 0.00016842000000000002,
+  "tally": {
+    "supported": 6,
+    "not_covered": 9,
+    "contradicted": 2
+  },
+  "rows": [
+    {
+      "claim": "Add: text is trimmed, the input clears, and Enter also adds. Empty, spaces-only and tab-only input is rejected with \"Enter a task.\" and nothing is saved.",
+      "verdict": "supported",
+      "confidence": 0.44
+    },
+    {
+      "claim": "Complete / incomplete: checking and unchecking a task is saved, and the right state shows after each reload.",
+      "verdict": "supported",
+      "confidence": 1
+    },
+    {
+      "claim": "Delete: deleting the middle of three tasks removes only that one, and it stays gone after reload.",
+      "verdict": "supported",
+      "confidence": 0.9
+    },
+    {
+      "claim": "Reload: the order and checked state of tasks are the same after a reload.",
+      "verdict": "supported",
+      "confidence": 0.81
+    },
+    {
+      "claim": "Opened from disk: adding a task and reloading works when the page is opened as a file.",
+      "verdict": "supported",
+      "confidence": 0.82
+    },
+    {
+      "claim": "Robustness:",
+      "verdict": "supported",
+      "confidence": 0.19
+    },
+    {
+      "claim": "Task text shows as plain text, so HTML typed in can't run.",
+      "verdict": "not_covered",
+      "confidence": 0.91
+    },
+    {
+      "claim": "Corrupted saved data doesn't crash the page.",
+      "verdict": "not_covered",
+      "confidence": 0.96
+    },
+    {
+      "claim": "If the browser can't save (storage full or blocked), an error appears and nothing changes.",
+      "verdict": "not_covered",
+      "confidence": 0.97
+    },
+    {
+      "claim": "After a delete, focus moves to the next task.",
+      "verdict": "not_covered",
+      "confidence": 0.96
+    },
+    {
+      "claim": "The page scrolls sideways at neither size.",
+      "verdict": "not_covered",
+      "confidence": 1
+    },
+    {
+      "claim": "Every test fails if the page throws an error or tries to reach the internet.",
+      "verdict": "not_covered",
+      "confidence": 0.85
+    },
+    {
+      "claim": "Opening the page from disk loaded no code in Chrome, so nothing worked; I confirmed this directly.",
+      "verdict": "contradicted",
+      "confidence": 0.75
+    },
+    {
+      "claim": "If the browser couldn't save, the list on screen no longer matched what was stored, and no error was shown.",
+      "verdict": "contradicted",
+      "confidence": 0.63
+    },
+    {
+      "claim": "After deleting a task, keyboard focus was lost.",
+      "verdict": "not_covered",
+      "confidence": 0.95
+    },
+    {
+      "claim": "Tests ran only in Chromium, not Safari or Firefox.",
+      "verdict": "not_covered",
+      "confidence": 1
+    },
+    {
+      "claim": "There is no CI because the repo has no remote.",
+      "verdict": "not_covered",
+      "confidence": 0.93
+    }
+  ]
+}
