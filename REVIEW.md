@@ -66,4 +66,4 @@ each decision rests on. A rule whose rationale is "unknown" is presumed cuttable
 
 | Date | Reviewer model | AGENTS.md words (before → after) | Notes |
 |---|---|---|---|
-| 2026-09-23 | — | 675 → 675 | Moved from a Google Doc to this repo; no review yet. |
+| 2026-09-23 | — | 675 → 675 | Moved from a Google Doc to this repo; split Python rule into docs/languages/. No review yet. |
