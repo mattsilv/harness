@@ -24,6 +24,7 @@ line in the same PR whenever you add or change a rule.
 | Testing | Unknown; general practice. The "never weaken expectations" clause targets agents that make tests pass by editing them. | author |
 | UI: screenshots on desktop and mobile | Unknown. | author |
 | Delivery: branch + PR, never push to default, never bypass checks | The default branch deploys. | author |
+| Delivery: this file is the standing request to commit and open PRs | Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 6 of 6 eval runs, citing "commit only when asked" (#13). | eval, 2026-09 |
 | Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Delivery: one worktree per parallel writer, from a fresh default branch | A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests. | incident, 2026-09 |
 | Delivery: update before merge; remove worktree and branch after | Unknown. | author |
@@ -41,6 +42,10 @@ them. Vendors get one line each so a choice is recorded once; only the secrets l
 use "Set during setup", because `harness check` nags about every such line and
 most projects don't need every vendor (operator). "Set during setup" values block work until answered because guessing them
 (merge policy especially) would bring back the 2026-09 conflicts above.
+The merge policy meanings sit on their own line because recording a value used to
+replace the line that defined them: the phase 3 pilot's run repos read only
+`on-request`, and one model left its work uncommitted in 4 of 4 runs, 2 of them on
+the default branch (eval, 2026-09).
 
 ## docs/MAINTENANCE.md
 

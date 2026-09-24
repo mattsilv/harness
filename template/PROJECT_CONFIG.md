@@ -8,7 +8,8 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 - **Effort levels:** Starting points; their meaning shifts between model generations.
 - **Committed sprint:** The open GitHub milestone with the nearest due date.
 - **Maintenance tracking issue:** Set during setup.
-- **Merge policy:** Set during setup: `auto` (merge when required checks pass; merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`) or `on-request` (open the PR; merge only when asked). If unset, stop and ask.
+- **Merge policy:** Set during setup: `auto` or `on-request`. If unset, stop and ask.
+- **Merge policies:** Both commit on a branch and open a PR. `auto` merges when required checks pass (merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`); `on-request` merges only when asked.
 - **Docs:** docs/.
 
 ## Vendors
