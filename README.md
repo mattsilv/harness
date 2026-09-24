@@ -35,6 +35,7 @@ flowchart LR
 | `REVIEW.md` | Brief for a model reviewing and lightening this harness, plus the review log. | no |
 | `EVAL.md` | Harness evaluation: fixed prompts and how to run them (issue #13). | no |
 | `eval/check.mjs` | Evaluator: fixed to-do checks and source counts for one run. | no |
+| `eval/run.sh` | Runs one EVAL.md task in a fresh headless agent session, then checks it. | no |
 | `eval/fixture/` | Baseline to-do app that the update task starts from. | no |
 | `eval/runs/` | Saved evaluation notes, checks, usage, diffs, and screenshots. | no |
 | `eval/results.jsonl` | One evaluator record per stored run. | no |

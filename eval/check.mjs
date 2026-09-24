@@ -7,7 +7,7 @@
 
 import { spawn, execFileSync } from "node:child_process";
 import { createServer } from "node:http";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, appendFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, appendFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -310,6 +310,24 @@ function gitRev(cwd, ...paths) {
   } catch { return "unknown"; }
 }
 
+// Delivery: work committed on a branch, default branch left alone. A run repo starts with one
+// baseline commit on its default branch (EVAL.md); reported apart from the score and exit code.
+function delivery(cwd) {
+  const git = (...a) => execFileSync("git", ["-C", cwd, ...a], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  // Only a run repo's own root counts, not an app inside some other checkout.
+  try { if (realpathSync(git("rev-parse", "--show-toplevel")) !== realpathSync(cwd) || !git("rev-parse", "HEAD")) throw 0; } catch { return { committed: "unverified", on_branch: "unverified", default_untouched: "unverified" }; }
+  const base = git("rev-list", "--max-parents=0", "HEAD").split("\n").pop();
+  const def = ["main", "master"].find((b) => { try { return git("rev-parse", "--verify", "-q", b); } catch { return false; } });
+  const branch = git("branch", "--show-current") || "detached";
+  const ahead = Number(git("rev-list", "--count", `${base}..HEAD`));
+  const dirty = git("status", "--porcelain").split("\n").filter(Boolean).length;
+  return {
+    committed: ahead && !dirty ? "pass" : `fail: ${ahead} commits after baseline, ${dirty} uncommitted paths`,
+    on_branch: !def ? "unverified" : branch !== def ? "pass" : `fail: on ${def}`,
+    default_untouched: !def ? "unverified" : git("rev-parse", def) === base ? "pass" : `fail: ${def} moved past baseline`,
+  };
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
 const harnessFile = join(dir, ".harness", "version");
 // The page is <app-dir>/index.html, or the only index.html elsewhere in the app (e.g. src/).
@@ -337,9 +355,10 @@ const record = {
   tokens: args.tokens,
   checks,
   passed: `${passed}/${Object.keys(checks).length}`,
+  delivery: delivery(dir),
   counts: count(dir),
 };
-for (const [k, v] of Object.entries(checks)) console.error(`${v === "pass" ? "PASS" : "FAIL"}  ${k}${v === "pass" ? "" : `  (${v})`}`);
+for (const [k, v] of Object.entries({ ...checks, ...record.delivery })) console.error(`${v === "pass" ? "PASS" : v === "unverified" ? "----" : "FAIL"}  ${k}${v === "pass" ? "" : `  (${v})`}`);
 console.log(JSON.stringify(record));
 if (args.out) appendFileSync(args.out, JSON.stringify(record) + "\n");
 process.exit(passed === Object.keys(checks).length ? 0 : 1);
