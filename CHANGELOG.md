@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **9** · 2026-09-23 · #20 · Delivery: this file is the standing request to commit, push branches, and open PRs. PROJECT_CONFIG: merge policy meanings on their own line, so recording a value keeps them; both policies commit on a branch and open a PR. Existing projects resolve one conflict on apply: keep the recorded value and take the new line.
 - **8** · 2026-09-23 · #12 · Package managers move to PROJECT_CONFIG; every config value is a default unless recorded otherwise.
 - **7** · 2026-09-23 · #11 · PROJECT_CONFIG: Vendors section (secrets, hosting, database, auth, email/SMS, monitoring); secrets manager no longer assumes Doppler.
 - **6** · 2026-09-23 · #10 · Delivery: docs-only changes may skip build/test via CI path filters but still update from the default branch and pass required checks.
