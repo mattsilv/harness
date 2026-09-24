@@ -3,10 +3,12 @@
 Defaults and identifiers only; never store secret values here. Every value is a default unless recorded otherwise.
 
 - **Stack:** TypeScript monorepo (frontend and backend), Tailwind CSS.
-- **T1, planning model (always a subagent: plans, architecture, hard decisions):** OpenAI Astra or Anthropic Fable, medium effort.
-- **T2, primary model (the session: coding, merging):** OpenAI Sol or Anthropic Opus, medium effort.
-- **T3, subagent model (research, testing, review):** OpenAI Luna or Anthropic Sonnet, high effort.
-- **Effort levels:** Starting points; rules name tiers (T1–T3), never models; their meaning shifts between model generations.
+- **Model tiers:** The default procedure for which model does what; rules name tiers, never models.
+  - **T1, planning model:** OpenAI Astra or Anthropic Fable, medium effort. Does any planning, architecture, and hard decisions, always as a subagent of the session.
+  - **T2, primary model:** OpenAI Sol or Anthropic Opus, medium effort. Runs the session and does the coding and merging.
+  - **T3, subagent model:** OpenAI Luna or Anthropic Sonnet, high effort. Every implementation task gets at least one T3 subagent for testing and one for research; T3 also reviews.
+  - **Effort levels:** Starting points; their meaning shifts between model generations.
+  - **One model available:** Use it for every tier.
 - **Committed sprint:** The open GitHub milestone with the nearest due date.
 - **Maintenance tracking issue:** Set during setup.
 - **Merge policy:** Set during setup: `auto` or `on-request`. If unset, stop and ask.

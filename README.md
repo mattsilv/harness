@@ -43,15 +43,24 @@ flowchart LR
 | [`.github/workflows/budget.yml`](.github/workflows/budget.yml) | CI word budget for `template/AGENTS.md`. | no |
 | [`LICENSE`](LICENSE) | MIT. | no |
 
-## Model tiers
+## Default operating procedure
 
-Three tiers; each project names its models and effort in
-[`PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md). Rules refer to tiers (T1–T3), never to models. The session runs on T2 and calls T1 and T3 subagents.
+What one task looks like under the defaults. Each project names its models and effort per tier in
+[`PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md); rules refer to tiers (T1–T3), never to models.
+
+1. **Session starts on T2**, the primary model. It reads `PROJECT_CONFIG.md` and picks up the committed sprint.
+2. **Plan (T1, if needed).** Ambiguous, broad, or risky work goes to a T1 planning subagent; bounded low-risk work skips this.
+3. **Research (T3).** At least one T3 subagent researches the code, docs, or live contracts the task touches.
+4. **Code (T2).** The session implements on a branch in its own worktree.
+5. **Test (T3).** At least one T3 subagent tests the change; T3 also reviews it, sized to risk.
+6. **Deliver (T2).** Open a PR; merge per the project's merge policy once checks pass.
+7. **Hand off.** At the end of a phase, the session writes a handoff primer so the next phase starts in a fresh context.
 
 ```mermaid
 flowchart LR
   T2["T2 · primary model<br>the session: coding, merging"] -->|asks for a plan| T1["T1 · planning model subagent<br>plans, architecture, hard decisions"]
   T2 -->|delegates| T3["T3 · subagent model<br>research, testing, review"]
+  T2 -->|end of phase| H["handoff primer<br>fresh session"]
 ```
 
 ## How agents load it (why it's split this way)
