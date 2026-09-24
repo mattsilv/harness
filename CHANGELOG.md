@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **10** · 2026-09-23 · #PR · PROJECT_CONFIG: `auto` merge policy says the agent merges its own PRs without asking once required checks pass, using the host's auto-merge when available. No action needed.
 - **9** · 2026-09-23 · #20 · Delivery: this file is the standing request to commit, push branches, and open PRs. PROJECT_CONFIG: merge policy meanings on their own line, so recording a value keeps them; both policies commit on a branch and open a PR. Existing projects resolve one conflict on apply: keep the recorded value and take the new line.
 - **8** · 2026-09-23 · #12 · Package managers move to PROJECT_CONFIG; every config value is a default unless recorded otherwise.
 - **7** · 2026-09-23 · #11 · PROJECT_CONFIG: Vendors section (secrets, hosting, database, auth, email/SMS, monitoring); secrets manager no longer assumes Doppler.
