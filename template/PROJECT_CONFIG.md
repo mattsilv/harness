@@ -3,8 +3,9 @@
 Defaults and identifiers only; never store secret values here. Every value is a default unless recorded otherwise.
 
 - **Stack:** TypeScript monorepo (frontend and backend), Tailwind CSS.
-- **Primary model:** OpenAI Sol or Anthropic Opus, medium effort.
-- **Subagent model (research, testing, review):** OpenAI Terra or Anthropic Sonnet, high effort.
+- **Planning model (always a subagent: plans, architecture, hard decisions):** OpenAI Astra or Anthropic Fable, medium effort.
+- **Primary model (the session: coding, merging):** OpenAI Sol or Anthropic Opus, medium effort.
+- **Subagent model (research, testing, review):** OpenAI Luna or Anthropic Sonnet, high effort.
 - **Effort levels:** Starting points; their meaning shifts between model generations.
 - **Committed sprint:** The open GitHub milestone with the nearest due date.
 - **Maintenance tracking issue:** Set during setup.

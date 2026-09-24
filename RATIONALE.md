@@ -34,6 +34,7 @@ line in the same PR whenever you add or change a rule.
 | Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness check` now nags when it's overdue. | incident, 2026-09 |
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
 | Model selection: never claim an unverifiable model/effort change | Unknown. | author |
+| Model selection: planning model as a subagent of the primary session | Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review. | operator |
 | Languages: read `docs/languages/<language>.md` before editing | Keeps language rules out of every session's context. | design |
 
 ## PROJECT_CONFIG.md

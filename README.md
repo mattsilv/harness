@@ -45,14 +45,13 @@ flowchart LR
 
 ## Model tiers
 
-Two tiers, set per project in [`PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md) (defaults
-shown). The primary model delegates bounded work to subagents and keeps the decisions.
+Three tiers; each project names its models and effort in
+[`PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md). The session runs on the primary model and calls subagents on the other two.
 
 ```mermaid
 flowchart LR
-  T1["Tier 1: primary model<br>Opus or Sol, medium effort"] -->|delegates| T2["Tier 2: subagent model<br>Sonnet or Terra, high effort"]
-  T1 --- W1[Plan, implement, merge]
-  T2 --- W2[Research, testing, review]
+  T2["Primary model<br>the session: coding, merging"] -->|asks for a plan| T1["Planning model subagent<br>plans, architecture, hard decisions"]
+  T2 -->|delegates| T3["Subagent model<br>research, testing, review"]
 ```
 
 ## How agents load it (why it's split this way)
