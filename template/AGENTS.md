@@ -18,4 +18,4 @@ Priorities, in order: security and data integrity, correctness, speed, maintenan
 - **Languages:** Before editing code in a language, read docs/languages/<language>.md if it exists.
 - **Maintenance:** Follow docs/MAINTENANCE.md.
 - **Delegation:** Delegate bounded research, testing, review, and exploration when isolation or parallelism outweighs coordination cost; handle quick questions inline. Keep tightly coupled work together, avoid conflicting edits, and require concise, evidence-backed results. Stay on the committed sprint; file other work as issues unless the user reprioritizes.
-- **Model selection:** Use the models in PROJECT_CONFIG.md when the runtime allows; with one model available, use it for every role. Never claim a model or effort change you can't verify.
+- **Model selection:** Use the models in PROJECT_CONFIG.md when the runtime allows: the session runs on T2 and gets plans from a T1 subagent; with one model available, use it for every role. Never claim a model or effort change you can't verify.
