@@ -24,6 +24,7 @@ line in the same PR whenever you add or change a rule.
 | Testing | Unknown; general practice. The "never weaken expectations" clause targets agents that make tests pass by editing them. | author |
 | UI: screenshots on desktop and mobile | Unknown. | author |
 | Delivery: branch + PR, never push to default, never bypass checks | The default branch deploys. | author |
+| Delivery: this file is the standing request to commit and open PRs | Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 6 of 6 eval runs, citing "commit only when asked" (#13). | eval, 2026-09 |
 | Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness-sync check` enforces it. | design |
 | Delivery: one worktree per parallel writer, from a fresh default branch | A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests. | incident, 2026-09 |
 | Delivery: update before merge; remove worktree and branch after | Unknown. | author |
