@@ -39,7 +39,7 @@ case $agent in
       --setting-sources project --strict-mcp-config --no-chrome --output-format stream-json --verbose) \
       > "$run.events.jsonl" 2> "$run.stderr" || true
     node -e '
-      const lines = require("fs").readFileSync(process.argv[1], "utf8").trim().split("\n").map(JSON.parse);
+      const lines = require("fs").readFileSync(process.argv[1], "utf8").split("\n").filter(Boolean).map(JSON.parse);
       const r = lines.findLast((l) => l.type === "result") || {};
       const texts = lines.filter((l) => l.type === "assistant").flatMap((l) => l.message.content).filter((c) => c.type === "text");
       const u = Object.values(r.modelUsage || {});

@@ -318,13 +318,16 @@ function delivery(cwd) {
   try { if (realpathSync(git("rev-parse", "--show-toplevel")) !== realpathSync(cwd) || !git("rev-parse", "HEAD")) throw 0; } catch { return { committed: "unverified", on_branch: "unverified", default_untouched: "unverified" }; }
   const base = git("rev-list", "--max-parents=0", "HEAD").split("\n").pop();
   const def = ["main", "master"].find((b) => { try { return git("rev-parse", "--verify", "-q", b); } catch { return false; } });
-  const branch = git("branch", "--show-current") || "detached";
-  const ahead = Number(git("rev-list", "--count", `${base}..HEAD`));
+  // Judge where the commits live, not which branch happens to be checked out.
+  const ahead = (ref) => Number(git("rev-list", "--count", `${base}..${ref}`));
+  const others = git("for-each-ref", "--format=%(refname:short)", "refs/heads").split("\n").filter((b) => b && b !== def);
+  const work = Math.max(ahead("HEAD"), ...others.map(ahead));
   const dirty = git("status", "--porcelain").split("\n").filter(Boolean).length;
+  const onBranch = others.some((b) => ahead(b) > 0);
   return {
-    committed: ahead && !dirty ? "pass" : `fail: ${ahead} commits after baseline, ${dirty} uncommitted paths`,
-    on_branch: !def ? "unverified" : branch !== def ? "pass" : `fail: on ${def}`,
-    default_untouched: !def ? "unverified" : git("rev-parse", def) === base ? "pass" : `fail: ${def} moved past baseline`,
+    committed: work && !dirty ? "pass" : `fail: ${work} commits after baseline, ${dirty} uncommitted paths`,
+    on_branch: onBranch ? "pass" : `fail: no commits on a branch other than ${def || "the default"}`,
+    default_untouched: !def ? "fail: no main or master branch" : git("rev-parse", def) === base ? "pass" : `fail: ${def} moved past baseline`,
   };
 }
 
