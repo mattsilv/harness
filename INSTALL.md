@@ -4,11 +4,11 @@ Instructions for a coding agent. The operator only needs to say "Follow INSTALL.
 in github.com/mattsilv/harness" from inside the target repo. Works for new and
 existing repos; nothing is overwritten.
 
-1. **Get `harness-sync`.** If `command -v harness-sync` finds nothing:
+1. **Get the `harness` CLI.** If `command -v harness` finds nothing:
    `git clone https://github.com/mattsilv/harness ~/gh/harness` (or `git -C ~/gh/harness pull`
-   if it exists), then `ln -sf ~/gh/harness/harness-sync ~/.local/bin/harness-sync`.
+   if it exists), then `ln -sf ~/gh/harness/harness ~/.local/bin/harness`.
 2. **Branch.** Work on a new branch (or worktree) from a freshly fetched default branch.
-3. **Run `harness-sync init`** at the repo root.
+3. **Run `harness init`** at the repo root.
 4. **Merge existing files.** For each file init reports as already existing, merge the
    harness version from `.harness/base/<path>` into it by hand. Keep project-specific
    content; remove anything the harness duplicates. Where they contradict, don't
@@ -25,8 +25,8 @@ existing repos; nothing is overwritten.
 8. **Ship.** Commit only what init created or you changed (`AGENTS.md`, `CLAUDE.md`,
    `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/languages/`, `.harness/`), not
    unrelated files already in `docs/`, and open a PR. Merge per the merge policy just recorded.
-9. **Verify.** `harness-sync check` prints nothing, except possibly a notice that the
+9. **Verify.** `harness check` prints nothing, except possibly a notice that the
    maintenance audit has never run.
-10. **Session hook (once per machine).** If `harness-sync check` doesn't already run at
+10. **Session hook (once per machine).** If `harness check` doesn't already run at
     session start, tell the operator the README's "Session start" line. Don't edit
     global settings unasked.

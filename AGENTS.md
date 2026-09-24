@@ -15,12 +15,12 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
   model's judgment for the details, and leave project specifics to each project.
 - **Budget:** CI caps `template/AGENTS.md` by word count (`.github/workflows/budget.yml`).
   Raise the cap only deliberately, with the reason in the PR.
-- **Parsed strings:** `harness-sync` reads "Set during setup", `**Merge policy:**`,
+- **Parsed strings:** the `harness` CLI reads "Set during setup", `**Merge policy:**`,
   `**Maintenance tracking issue:**`, and "<N> or more days ago" in
-  `template/docs/MAINTENANCE.md`. Change them only together with `harness-sync`.
+  `template/docs/MAINTENANCE.md`. Change them only together with the `harness` CLI.
 - **Preview:** from a project that uses the harness, run
-  `HARNESS_SYNC_SOURCE=<this checkout>/template harness-sync diff`.
-- **harness-sync:** standard-library Python only. Before merging a change, test `init`
+  `HARNESS_SYNC_SOURCE=<this checkout>/template harness diff`.
+- **harness CLI:** standard-library Python only. Before merging a change, test `init`
   in a scratch git repo and `check`/`diff` in a real project.
 - **Public:** no PII, hostnames, secrets, or project specifics anywhere in this repo.
 - **Delivery:** branch and PR; squash-merge when CI passes. Merging publishes to every
@@ -29,4 +29,4 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
 - **Maintenance (monthly, or when touching these files):** README's file table matches
   the tree; every rule in `template/` has a `RATIONALE.md` line; no rule is duplicated
   across template files; no vendor, tool, or project is named outside `PROJECT_CONFIG.md`
-  and nothing private appears; `INSTALL.md` still matches how `harness-sync` behaves.
+  and nothing private appears; `INSTALL.md` still matches how the `harness` CLI behaves.
