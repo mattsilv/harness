@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **12** · 2026-09-23 · #PR · Process: end each phase or sprint with a handoff primer for a fresh session.
 - **11** · 2026-09-23 · #25 · Model tiers T1 (planning), T2 (session, coding), T3 (research, testing, review); rules name tiers, not models. Planning model tier (Astra or Fable), always a subagent of the primary session; subagent default OpenAI Luna replaces Terra.
 - **10** · 2026-09-23 · #22 · PROJECT_CONFIG: `auto` merge policy says the agent merges its own PRs without asking once required checks pass, using the host's auto-merge when available. No action needed.
 - **9** · 2026-09-23 · #20 · Delivery: this file is the standing request to commit, push branches, and open PRs. PROJECT_CONFIG: merge policy meanings on their own line, so recording a value keeps them; both policies commit on a branch and open a PR. Existing projects resolve one conflict on apply: keep the recorded value and take the new line.
