@@ -6,7 +6,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 - **Model tiers:** The default procedure for which model does what; rules name tiers, never models.
   - **T1, planning model:** OpenAI Astra or Anthropic Fable, medium effort. Does any planning, architecture, and hard decisions, always as a subagent of the session.
   - **T2, primary model:** OpenAI Sol or Anthropic Opus, medium effort. Runs the session and does the coding and merging.
-  - **T3, subagent model:** OpenAI Luna or Anthropic Sonnet, high effort. Every implementation task gets at least one T3 subagent for testing and one for research; T3 also reviews.
+  - **T3, subagent model:** OpenAI Luna or Anthropic Sonnet, high effort. Every implementation task gets at least one T3 subagent for testing and one for research, and a T3 subagent reviews each PR before it merges.
   - **Effort levels:** Starting points; their meaning shifts between model generations.
   - **One model available:** Use it for every tier.
 - **Committed sprint:** The open GitHub milestone with the nearest due date.

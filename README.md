@@ -52,14 +52,15 @@ What one task looks like under the defaults. Each project names its models and e
 2. **Plan (T1, if needed).** Ambiguous, broad, or risky work goes to a T1 planning subagent; bounded low-risk work skips this.
 3. **Research (T3).** At least one T3 subagent researches the code, docs, or live contracts the task touches.
 4. **Code (T2).** The session implements on a branch in its own worktree.
-5. **Test (T3).** At least one T3 subagent tests the change; T3 also reviews it, sized to risk.
-6. **Deliver (T2).** Open a PR; merge per the project's merge policy once checks pass.
-7. **Hand off.** At the end of a phase, the session writes a handoff primer so the next phase starts in a fresh context.
+5. **Test (T3).** At least one T3 subagent tests the change.
+6. **PR review (T3).** The session opens a PR and a T3 subagent reviews it, sized to risk; the session fixes what it finds.
+7. **Deliver (T2).** Merge per the project's merge policy once review and checks pass.
+8. **Hand off.** At the end of a phase, the session writes a handoff primer so the next phase starts in a fresh context.
 
 ```mermaid
 flowchart LR
   T2["T2 · primary model<br>the session: coding, merging"] -->|asks for a plan| T1["T1 · planning model subagent<br>plans, architecture, hard decisions"]
-  T2 -->|delegates| T3["T3 · subagent model<br>research, testing, review"]
+  T2 -->|delegates| T3["T3 · subagent model<br>research, testing, PR review"]
   T2 -->|end of phase| H["handoff primer<br>fresh session"]
 ```
 
