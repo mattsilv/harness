@@ -6,8 +6,7 @@ them up to date without overwriting local edits.
 
 ```mermaid
 flowchart LR
-  R[Model review<br>REVIEW.md] -->|keeps it lean| H((Harness))
-  H -->|harness CLI| P
+  H((Harness)) -->|harness CLI| P
   subgraph P[Your project]
     A[Rules<br>AGENTS.md]
     C[Config<br>PROJECT_CONFIG.md]
