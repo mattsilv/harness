@@ -36,7 +36,7 @@ line in the same PR whenever you add or change a rule.
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
 | Model selection: never claim an unverifiable model/effort change | Unknown. | author |
 | Model tiers: planning model as a subagent of the primary session | Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review. | operator |
-| Model tiers: at least one T3 subagent each for testing and research per implementation task | Operator's choice: keeps testing and research off the T2 session's context and cost. | operator |
+| Model tiers: at least one T3 subagent each for testing and research per implementation task, and a T3 PR review | Operator's choice: keeps testing and research off the T2 session's context and cost. | operator |
 | Languages: read `docs/languages/<language>.md` before editing | Keeps language rules out of every session's context. | design |
 
 ## PROJECT_CONFIG.md

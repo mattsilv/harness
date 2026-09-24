@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **14** · 2026-09-23 · #28 · PROJECT_CONFIG: a T3 subagent reviews each PR before it merges.
 - **13** · 2026-09-23 · #27 · PROJECT_CONFIG: model tiers grouped under one **Model tiers** bullet as the default procedure; every implementation task gets at least one T3 testing and one T3 research subagent. AGENTS.md Model selection now points there. Projects that recorded their own models resolve one conflict on apply: keep their model names in the new sub-bullets.
 - **12** · 2026-09-23 · #26 · Process: end each phase or sprint with a handoff primer for a fresh session.
 - **11** · 2026-09-23 · #25 · Model tiers T1 (planning), T2 (session, coding), T3 (research, testing, review); rules name tiers, not models. Planning model tier (Astra or Fable), always a subagent of the primary session; subagent default OpenAI Luna replaces Terra.
