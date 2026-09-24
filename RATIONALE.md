@@ -19,6 +19,7 @@ line in the same PR whenever you add or change a rule.
 | Implementation: libraries over custom code; shared logic; define values once | Unknown. | author |
 | Process: scale process to blast radius; review sized to risk | Carried over from the predecessor harness. Incident not recorded. | predecessor |
 | Process: stop after two failing review/fix cycles | Carried over from the predecessor harness, to stop fix loops. Incident not recorded. | predecessor |
+| Process: handoff primer at the end of each phase | Operator's choice: long sessions accumulate stale context, so each phase starts fresh from a self-contained primer. | operator |
 | Security | Operator's safety boundary. | operator |
 | Secrets | Operator's safety boundary. | operator |
 | Testing | Unknown; general practice. The "never weaken expectations" clause targets agents that make tests pass by editing them. | author |
