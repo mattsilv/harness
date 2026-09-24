@@ -41,6 +41,10 @@ them. Vendors get one line each so a choice is recorded once; only the secrets l
 use "Set during setup", because `harness-sync check` nags about every such line and
 most projects don't need every vendor (operator). "Set during setup" values block work until answered because guessing them
 (merge policy especially) would bring back the 2026-09 conflicts above.
+The merge policy meanings sit on their own line because recording a value used to
+replace the line that defined them: the phase 3 pilot's run repos read only
+`on-request`, and one model left its work uncommitted in 4 of 4 runs, 2 of them on
+the default branch (eval, 2026-09).
 
 ## docs/MAINTENANCE.md
 
