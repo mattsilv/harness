@@ -27,7 +27,9 @@ projects: `harness-sync` copies only `template/`. Past runs are in [eval/runs/](
    Run each task twice per harness revision, each as a fresh headless session given only
    the prompt, and record the CLI version, model, and effort. Report both runs: a
    difference between revisions counts only when it exceeds the gap between a
-   revision's own two runs.
+   revision's own two runs. `eval/run.sh claude|opencode create|update <run-dir> [model]`
+   does steps 1–3 for one run and saves its usage, final report, check record, and
+   screenshot beside `<run-dir>`; start runs one after another.
 3. **Check and count** the result (needs Node 22+ and a local Chrome or Chromium; no
    packages):
 
@@ -49,6 +51,9 @@ projects: `harness-sync` copies only `template/`. Past runs are in [eval/runs/](
   reload. Update adds: saved baseline tasks survive, and the All/Active/Completed
   filters work. Elements are found by role and accessible name, so the app's markup
   is free.
+- **Delivery** is reported apart from the score and exit code: work committed, on a
+  branch, and the default branch still at the baseline commit, as `on-request` expects.
+  It assumes the run repo starts with one baseline commit on its default branch.
 - **Counts** are descriptive, not targets: non-blank lines in authored source files,
   whole-line comments, and lines in test files. Excluded: dependencies, build output,
   lockfiles, config, Markdown, and harness docs.

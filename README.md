@@ -25,23 +25,24 @@ flowchart LR
 
 | Path | Purpose | Copied into projects? |
 |---|---|---|
-| `template/AGENTS.md` | The rules. Loaded in full every session. | yes |
-| `template/PROJECT_CONFIG.md` | Per-project defaults; values marked "Set during setup" must be answered. | yes |
-| `template/docs/MAINTENANCE.md` | The recurring maintenance audit. | yes |
-| `template/docs/languages/*.md` | Language-specific rules, read on demand. | yes |
-| `VERSION`, `CHANGELOG.md` | Harness version (one integer, bumped per template change) and one line per version. | no |
-| `INSTALL.md` | Steps an agent follows to install the harness into a repo. | no |
-| `harness-sync` | Installs and updates the template in a repo. | no |
-| `REVIEW.md` | Brief for a model reviewing and lightening this harness, plus the review log. | no |
-| `EVAL.md` | Harness evaluation: fixed prompts and how to run them (issue #13). | no |
-| `eval/check.mjs` | Evaluator: fixed to-do checks and source counts for one run. | no |
-| `eval/fixture/` | Baseline to-do app that the update task starts from. | no |
-| `eval/runs/` | Saved evaluation notes, checks, usage, diffs, and screenshots. | no |
-| `eval/results.jsonl` | One evaluator record per stored run. | no |
-| `RATIONALE.md` | Why each rule exists. | no |
-| `AGENTS.md`, `CLAUDE.md` | Rules for agents working on this repo itself. | no |
-| `.github/workflows/budget.yml` | CI word budget for `template/AGENTS.md`. | no |
-| `LICENSE` | MIT. | no |
+| [`template/AGENTS.md`](template/AGENTS.md) | The rules. Loaded in full every session. | yes |
+| [`template/PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md) | Per-project defaults; values marked "Set during setup" must be answered. | yes |
+| [`template/docs/MAINTENANCE.md`](template/docs/MAINTENANCE.md) | The recurring maintenance audit. | yes |
+| [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
+| [`VERSION`](VERSION), [`CHANGELOG.md`](CHANGELOG.md) | Harness version (one integer, bumped per template change) and one line per version. | no |
+| [`INSTALL.md`](INSTALL.md) | Steps an agent follows to install the harness into a repo. | no |
+| [`harness-sync`](harness-sync) | Installs and updates the template in a repo. | no |
+| [`REVIEW.md`](REVIEW.md) | Brief for a model reviewing and lightening this harness, plus the review log. | no |
+| [`EVAL.md`](EVAL.md) | Harness evaluation: fixed prompts and how to run them (issue #13). | no |
+| [`eval/check.mjs`](eval/check.mjs) | Evaluator: fixed to-do checks and source counts for one run. | no |
+| [`eval/run.sh`](eval/run.sh) | Runs one EVAL.md task in a fresh headless agent session, then checks it. | no |
+| [`eval/fixture/`](eval/fixture/) | Baseline to-do app that the update task starts from. | no |
+| [`eval/runs/`](eval/runs/) | Saved evaluation notes, checks, usage, diffs, and screenshots. | no |
+| [`eval/results.jsonl`](eval/results.jsonl) | One evaluator record per stored run. | no |
+| [`RATIONALE.md`](RATIONALE.md) | Why each rule exists. | no |
+| [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md) | Rules for agents working on this repo itself. | no |
+| [`.github/workflows/budget.yml`](.github/workflows/budget.yml) | CI word budget for `template/AGENTS.md`. | no |
+| [`LICENSE`](LICENSE) | MIT. | no |
 
 ## How agents load it (why it's split this way)
 
