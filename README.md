@@ -46,12 +46,12 @@ flowchart LR
 ## Model tiers
 
 Three tiers; each project names its models and effort in
-[`PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md). The session runs on the primary model and calls subagents on the other two.
+[`PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md). Rules refer to tiers (T1–T3), never to models. The session runs on T2 and calls T1 and T3 subagents.
 
 ```mermaid
 flowchart LR
-  T2["Primary model<br>the session: coding, merging"] -->|asks for a plan| T1["Planning model subagent<br>plans, architecture, hard decisions"]
-  T2 -->|delegates| T3["Subagent model<br>research, testing, review"]
+  T2["T2 · primary model<br>the session: coding, merging"] -->|asks for a plan| T1["T1 · planning model subagent<br>plans, architecture, hard decisions"]
+  T2 -->|delegates| T3["T3 · subagent model<br>research, testing, review"]
 ```
 
 ## How agents load it (why it's split this way)
