@@ -2,7 +2,7 @@
 
 A cheap smoke test that compares harness revisions on the same two tasks, tracked in
 [issue #13](https://github.com/mattsilv/harness/issues/13). Nothing here ships to
-projects: `harness-sync` copies only `template/`. Past runs are in [eval/runs/](eval/runs/).
+projects: the `harness` CLI copies only `template/`. Past runs are in [eval/runs/](eval/runs/).
 
 ## Create prompt
 
@@ -15,7 +15,7 @@ projects: `harness-sync` copies only `template/`. Past runs are in [eval/runs/](
 ## Run
 
 1. **Create:** in an empty disposable git repo, run
-   `HARNESS_SYNC_SOURCE=<this checkout>/template harness-sync init` for the harness
+   `HARNESS_SYNC_SOURCE=<this checkout>/template harness init` for the harness
    under test, answer its setup values, and give an agent the create prompt. Setup
    values: Stack "A single static HTML/JS page with localStorage; no build step and no
    server.", Merge policy `on-request`, Secrets none, Maintenance tracking issue none;

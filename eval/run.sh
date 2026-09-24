@@ -18,7 +18,7 @@ prompt=$(sed -n "/^## $heading prompt/,/^## /s/^> //p" "$here/../EVAL.md")
 mkdir -p "$run"
 [ "$task" = update ] && cp "$here/fixture/index.html" "$run/"
 git -C "$run" init -q -b main
-(cd "$run" && HARNESS_SYNC_SOURCE=${HARNESS_SYNC_SOURCE:-$here/../template} harness-sync init >/dev/null)
+(cd "$run" && HARNESS_SYNC_SOURCE=${HARNESS_SYNC_SOURCE:-$here/../template} harness init >/dev/null)
 sed -i.bak -E \
   -e 's/^- \*\*Stack:\*\*.*/- **Stack:** A single static HTML\/JS page with localStorage; no build step and no server./' \
   -e 's/^- \*\*Maintenance tracking issue:\*\*.*/- **Maintenance tracking issue:** None./' \

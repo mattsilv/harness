@@ -54,9 +54,9 @@ harness, scored by [eval/check.mjs](eval/check.mjs), and cite the stored results
   Secrets rules.
   These are safety boundaries set by the operator, not crutches for weak models.
   You may propose clearer wording, never removal or loosening.
-- Anything `harness-sync` parses: "Set during setup", the `**Merge policy:**` and
+- Anything the `harness` CLI parses: "Set during setup", the `**Merge policy:**` and
   `**Maintenance tracking issue:**` labels, and "N or more days ago" in
-  `docs/MAINTENANCE.md`. Changing those needs a matching `harness-sync` change.
+  `docs/MAINTENANCE.md`. Changing those needs a matching change to the `harness` CLI.
 
 ## Also check
 

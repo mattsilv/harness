@@ -13,7 +13,7 @@ line in the same PR whenever you add or change a rule.
 |---|---|---|
 | Priorities order | Unknown. A tiebreaker when rules pull in different directions. | author |
 | Configuration: one config file, no duplicated policy | Five tools once gave agents contradictory merge and push rules, and which one won depended on load order. | incident, 2026-09 |
-| Configuration: ask for "Set during setup" values first | Guessing merge policy would bring back the conflict above. `harness-sync check` repeats the question until it's answered. | design |
+| Configuration: ask for "Set during setup" values first | Guessing merge policy would bring back the conflict above. `harness check` repeats the question until it's answered. | design |
 | Autonomy: merge/deploy per merge policy | Same merge-rule conflict as above. The policy is now one value per project. | incident, 2026-09 |
 | Autonomy: ask-first list | Operator's safety boundary for irreversible, auth, spend, and external actions. Not a model-capability rule. | operator |
 | Implementation: libraries over custom code; shared logic; define values once | Unknown. | author |
@@ -25,12 +25,12 @@ line in the same PR whenever you add or change a rule.
 | UI: screenshots on desktop and mobile | Unknown. | author |
 | Delivery: branch + PR, never push to default, never bypass checks | The default branch deploys. | author |
 | Delivery: this file is the standing request to commit and open PRs | Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 6 of 6 eval runs, citing "commit only when asked" (#13). | eval, 2026-09 |
-| Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness-sync check` enforces it. | design |
+| Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Delivery: one worktree per parallel writer, from a fresh default branch | A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests. | incident, 2026-09 |
 | Delivery: update before merge; remove worktree and branch after | Unknown. | author |
 | Delivery: scope CI to what changed | Full build and test runs on docs-only changes cost time for no signal. Required checks must still report, and a path-skipped required workflow blocks the merge, so the rule says to still pass them. | operator |
 | Documentation: wiki of small, cross-linked pages indexed by docs/README.md | Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one. | design |
-| Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness-sync check` now nags when it's overdue. | incident, 2026-09 |
+| Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness check` now nags when it's overdue. | incident, 2026-09 |
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
 | Model selection: never claim an unverifiable model/effort change | Unknown. | author |
 | Languages: read `docs/languages/<language>.md` before editing | Keeps language rules out of every session's context. | design |
@@ -39,7 +39,7 @@ line in the same PR whenever you add or change a rule.
 
 Values, not rules. Each is the author's default and projects are expected to change
 them. Vendors get one line each so a choice is recorded once; only the secrets lines
-use "Set during setup", because `harness-sync check` nags about every such line and
+use "Set during setup", because `harness check` nags about every such line and
 most projects don't need every vendor (operator). "Set during setup" values block work until answered because guessing them
 (merge policy especially) would bring back the 2026-09 conflicts above.
 The merge policy meanings sit on their own line because recording a value used to
