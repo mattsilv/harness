@@ -9,7 +9,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 - **Committed sprint:** The open GitHub milestone with the nearest due date.
 - **Maintenance tracking issue:** Set during setup.
 - **Merge policy:** Set during setup: `auto` or `on-request`. If unset, stop and ask.
-- **Merge policies:** Both commit on a branch and open a PR. `auto` merges when required checks pass (merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`); `on-request` merges only when asked.
+- **Merge policies:** Both commit on a branch and open a PR. `auto` means the agent merges its own PRs without asking once required checks pass, queuing the host's auto-merge when available (merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`); `on-request` merges only when asked.
 - **Docs:** docs/.
 
 ## Vendors
