@@ -27,6 +27,7 @@ flowchart LR
 | [`template/AGENTS.md`](template/AGENTS.md) | The rules. Loaded in full every session. | yes |
 | [`template/PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md) | Per-project defaults; values marked "Set during setup" must be answered. | yes |
 | [`template/docs/MAINTENANCE.md`](template/docs/MAINTENANCE.md) | The recurring maintenance audit. | yes |
+| [`template/docs/RUNBOOK.md`](template/docs/RUNBOOK.md) | Skeleton for the project's working commands and known vendor errors, read on demand. | yes |
 | [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
 | [`VERSION`](VERSION), [`CHANGELOG.md`](CHANGELOG.md) | Harness version (one integer, bumped per template change) and one line per version. | no |
 | [`INSTALL.md`](INSTALL.md) | Steps an agent follows to install the harness into a repo. | no |

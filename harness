@@ -184,6 +184,10 @@ def report_maintenance():
         return  # claimed by a running audit
     last = re.search(r"Last completed:\**\s*(\S+)", issue["body"])
     date = re.match(r"\d{4}-\d{2}-\d{2}", last.group(1)) if last else None
+    if not date:  # never completed: count from the harness install (first commit of .harness/)
+        log = subprocess.run(["git", "log", "--reverse", "--format=%as", "--", str(STATE)],
+                             capture_output=True, text=True).stdout
+        date = re.match(r"\d{4}-\d{2}-\d{2}", log)
     if date:
         age = (datetime.date.today() - datetime.date.fromisoformat(date.group(0))).days
         if age < int(days.group(1)):
@@ -191,6 +195,14 @@ def report_maintenance():
     print(f"harness: maintenance audit overdue (last completed: "
           f"{last.group(1) if last else 'unknown'}); follow {MAINTENANCE_FILE} "
           f"and record results in #{issue['number']}.")
+
+
+def report_unindexed(created):
+    """Docs pages the harness just created need a link in the docs index."""
+    index = read(Path("docs/README.md"))
+    for p in created:
+        if index is not None and p.startswith("docs/") and Path(p).name not in index:
+            print(f"link {p} from docs/README.md")
 
 
 def cmd_check():
@@ -254,6 +266,7 @@ def merge(local, base, new):
 def cmd_apply(only):
     upstream = fetch()
     files = [p for p in changed(upstream) if not only or p in only]
+    created = [p for p in files if read(Path(p)) is None]
     for p in files:
         local, base = read(Path(p)), read(BASE / p)
         if local is None or local == base:
@@ -269,6 +282,7 @@ def cmd_apply(only):
         write(APPLIED, upstream_version() + "\n")
     if not files:
         print("harness: nothing to apply.")
+    report_unindexed(created)
     report_local()
     if any("<<<<<<< local" in (read(Path(p)) or "") for p in upstream):
         sys.exit(1)  # stop callers (commit/merge chains) until conflicts are resolved
@@ -276,10 +290,12 @@ def cmd_apply(only):
 
 def cmd_init():
     upstream = fetch()
+    created = []
     for p, text in upstream.items():
         local = read(Path(p))
         if local is None:
             write(Path(p), text)
+            created.append(p)
             print(f"created {p}")
         elif local != text:
             print(f"{p} already exists: merge the harness version from "
@@ -292,6 +308,7 @@ def cmd_init():
         print("created CLAUDE.md (imports AGENTS.md for Claude Code)")
     elif "@AGENTS.md" not in claude.read_text():
         print("CLAUDE.md exists: add an `@AGENTS.md` line so Claude Code loads the rules.")
+    report_unindexed(created)
     report_local()
 
 

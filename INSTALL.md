@@ -27,10 +27,10 @@ existing repos; nothing is overwritten.
 7. **Languages.** If the repo uses a language with no `docs/languages/<language>.md`,
    tell the operator. Don't write one unasked.
 8. **Ship.** Commit only what init created or you changed (`AGENTS.md`, `CLAUDE.md`,
-   `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/languages/`, `.harness/`), not
+   `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/RUNBOOK.md`, `docs/languages/`, `.harness/`), not
    unrelated files already in `docs/`, and open a PR. Merge per the merge policy just recorded.
-9. **Verify.** `harness check` prints nothing, except possibly a notice that the
-   maintenance audit has never run.
+9. **Verify.** `harness check` prints nothing. If `docs/README.md` exists, it links the
+   pages init created (init names any it doesn't).
 10. **Session hook (once per machine).** If `harness check` doesn't already run at
     session start, tell the operator the README's "Session start" line. Don't edit
     global settings unasked.

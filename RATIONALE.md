@@ -15,6 +15,7 @@ line in the same PR whenever you add or change a rule.
 | Configuration: one config file, no duplicated policy | Five tools once gave agents contradictory merge and push rules, and which one won depended on load order. | incident, 2026-09 |
 | Configuration: ask for "Set during setup" values first | Guessing merge policy would bring back the conflict above. `harness check` repeats the question until it's answered. | design |
 | Autonomy: merge/deploy per merge policy | Same merge-rule conflict as above. The policy is now one value per project. | incident, 2026-09 |
+| Autonomy: end each task report with PR and merge state, deploy state, and a link to check | The operator had to ask for status in most sessions of one project ("are we done here" in 5, "is ci done", "did that deploy?", "link me to what I'm checking") (#33). | incident, 2026-09 |
 | Autonomy: ask-first list | Operator's safety boundary for irreversible, auth, spend, and external actions. Not a model-capability rule. | operator |
 | Implementation: libraries over custom code; shared logic; define values once | Unknown. | author |
 | Process: scale process to blast radius; review sized to risk | Carried over from the predecessor harness. Incident not recorded. | predecessor |
@@ -36,11 +37,14 @@ line in the same PR whenever you add or change a rule.
 | Documentation: wiki of small, cross-linked pages indexed by docs/README.md | Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one. | design |
 | Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness check` now nags when it's overdue. | incident, 2026-09 |
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
+| Delegation: search open issues before filing found work | Parallel sessions filed the same issue twice, two pairs in two days (#33). | incident, 2026-09 |
 | Delegation: start a subagent on newly found work unless it needs an operator decision | Filing discovered work and stopping left it waiting on the operator to start another session mid-sprint. | operator, 2026-09 |
 | Apply rules unprompted; quick questions exempt | The operator had to say "use our harness" before feature work. | operator, 2026-09 |
 | Model selection: never claim an unverifiable model/effort change | Unknown. | author |
 | Model tiers: planning model as a subagent of the primary session | Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review. | operator |
 | Model tiers: at least one T3 subagent each for testing and research per implementation task, and a T3 PR review | Operator's choice: keeps testing and research off the T2 session's context and cost. | operator |
+| Runbook: read docs/RUNBOOK.md before bootstrapping, running, or calling a vendor CLI; record what took more than one attempt | Every worktree re-derived the local dev recipe (38 fresh installs, 53 env-file edits, 6 port collisions, the hosting CLI invoked 4 ways), and vendor errors learned by failure were recorded nowhere reusable (#33). | incident, 2026-09 |
+| Migrations: check other sessions and worktrees before adding one; pause on conflict | Two parallel branches both created the same migration number, and a table rebuild on one failed after another branch changed a child table. Worktrees on one machine are the normal case (#33). | incident, 2026-09 |
 | Languages: read `docs/languages/<language>.md` before editing | Keeps language rules out of every session's context. | design |
 
 ## PROJECT_CONFIG.md
@@ -66,7 +70,13 @@ and pares them down, dedupes, or merges them so they don't drift; it also confir
 every page is linked from docs/README.md, fixing orphans and broken links, so a
 stray page doesn't sit unfindable. (design)
 
+When the audit has never completed, the clock starts at the harness install (first commit of `.harness/`), which `harness check` reads from git: 8 sessions on a 2-day-old repo were told the audit was due, and none ran it, since a new repo has nothing to audit (#33). (incident, 2026-09)
+
 The stale-area check (one folder or feature set untouched 4+ months per audit) catches features that are dead or hard to work on before an agent has to touch them under pressure; one area keeps each audit small, in the spirit of kaizen. (operator)
+
+## docs/RUNBOOK.md
+
+A skeleton the project fills in: the exact commands for bootstrapping a worktree, running locally, migrations, remote vendor commands, finishing a PR, launching subagents and review, and known vendor errors. It is on demand, like `docs/languages/`, because the content is project- and vendor-specific (#33). The guidance for many worktrees on one machine (per-worktree values derived from one identifier and passed as flags, runtime secret injection instead of a local env file, two idempotent scripts, collision-proof migration ids) comes from the same sessions: the 53 env-file edits were port changes, and two branches picked the same migration number. (incident, 2026-09)
 
 ## docs/languages/python.md
 
