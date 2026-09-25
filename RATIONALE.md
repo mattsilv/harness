@@ -28,6 +28,7 @@ line in the same PR whenever you add or change a rule.
 | Delivery: this file is the standing request to commit and open PRs | Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 6 of 6 eval runs, citing "commit only when asked" (#13). | eval, 2026-09 |
 | Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Merge policies: `auto` merges without asking | An agent under `auto` still asked the operator before each merge. | incident, 2026-09 |
+| Merge policies: `auto` turns on auto-merge when the PR opens | A subagent waited in a CI poller to merge by hand, stopped, and left a green PR unmerged overnight. | incident, 2026-09 |
 | Delivery: one worktree per parallel writer, from a fresh default branch | A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests. | incident, 2026-09 |
 | Delivery: update the branch before merge only on conflict or overlapping files | With branch protection's "require branches to be up to date" on, every merge invalidated every other open PR's check, so parallel agents queued behind each other for reruns. CI runs again on the default branch after each merge, which catches the rare semantic clash between non-overlapping PRs. | incident, 2026-09 |
 | Delivery: remove worktree and branch after merge | Unknown. | author |
