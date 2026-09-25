@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **16** · 2026-09-25 · #30 · PROJECT_CONFIG: under `auto`, turn on the host's auto-merge the moment the PR opens instead of waiting on CI to merge by hand. No action needed.
 - **15** · 2026-09-24 · #29 · Fast path for small changes. UI: screenshots only for layout, styling, or page-structure changes; copy-only changes need none. Delivery: update a branch before merging only when it conflicts or the default branch changed files it touches, otherwise merge on a green check; docs-only changes no longer update first. Projects should require the CI check but turn off "require branches to be up to date" (INSTALL.md step 6).
 - **14** · 2026-09-23 · #28 · PROJECT_CONFIG: a T3 subagent reviews each PR before it merges.
 - **13** · 2026-09-23 · #27 · PROJECT_CONFIG: model tiers grouped under one **Model tiers** bullet as the default procedure; every implementation task gets at least one T3 testing and one T3 research subagent. AGENTS.md Model selection now points there. Projects that recorded their own models resolve one conflict on apply: keep their model names in the new sub-bullets.
