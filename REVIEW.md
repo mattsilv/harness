@@ -55,8 +55,9 @@ harness, scored by [eval/check.mjs](eval/check.mjs), and cite the stored results
   These are safety boundaries set by the operator, not crutches for weak models.
   You may propose clearer wording, never removal or loosening.
 - Anything the `harness` CLI parses: "Set during setup", the `**Merge policy:**` and
-  `**Maintenance tracking issue:**` labels, and "N or more days ago" in
-  `docs/MAINTENANCE.md`. Changing those needs a matching change to the `harness` CLI.
+  `**Maintenance tracking issue:**` labels, and the "## <List>: ... N or more days ago"
+  headings in `docs/MAINTENANCE.md` with their "<List> last completed:" fields in the
+  tracking issue. Changing those needs a matching change to the `harness` CLI.
 
 ## Also check
 

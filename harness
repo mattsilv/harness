@@ -164,7 +164,8 @@ def default_branch():
 
 def maintenance_issue():
     """Tracking issue's labels and body via gh, cached per repo."""
-    m = re.search(r"Maintenance tracking issue:\*\*\s*#(\d+)", read(Path(CONFIG_FILE)) or "")
+    m = re.search(r"Maintenance tracking issue:\*\*\s*(?:[\w.-]+/[\w.-]+)?#(\d+)",
+                  read(Path(CONFIG_FILE)) or "")
     if not m:
         return None
     return gh_cached("maintenance", ["issue", "view", m.group(1), "--json",
@@ -172,29 +173,38 @@ def maintenance_issue():
 
 
 def report_maintenance():
-    """Nag when the audit in docs/MAINTENANCE.md is overdue; the interval comes from that file."""
-    days = re.search(r"(\d+) or more days ago", read(MAINTENANCE_FILE) or "")
+    """Nag for each list in docs/MAINTENANCE.md whose interval has passed."""
+    lists = re.findall(r"^## (\w+)\b.*?(\d+) or more days ago", read(MAINTENANCE_FILE) or "", re.M)
     try:
         issue = maintenance_issue()
     except Exception:
         issue = None
-    if not days or not issue:
+    if not lists or not issue:
         return
     if any("audit" in lbl["name"] for lbl in issue["labels"]):
         return  # claimed by a running audit
-    last = re.search(r"Last completed:\**\s*(\S+)", issue["body"])
-    date = re.match(r"\d{4}-\d{2}-\d{2}", last.group(1)) if last else None
-    if not date:  # never completed: count from the harness install (first commit of .harness/)
-        log = subprocess.run(["git", "log", "--reverse", "--format=%as", "--", str(STATE)],
-                             capture_output=True, text=True).stdout
-        date = re.match(r"\d{4}-\d{2}-\d{2}", log)
-    if date:
-        age = (datetime.date.today() - datetime.date.fromisoformat(date.group(0))).days
-        if age < int(days.group(1)):
-            return
-    print(f"harness: maintenance audit overdue (last completed: "
-          f"{last.group(1) if last else 'unknown'}); follow {MAINTENANCE_FILE} "
-          f"and record results in #{issue['number']}.")
+    log = subprocess.run(["git", "log", "--reverse", "--format=%as", "--", str(STATE)],
+                         capture_output=True, text=True).stdout
+    installed = re.match(r"\d{4}-\d{2}-\d{2}", log)  # first commit of .harness/
+    for name, days in lists:
+        # "Last completed:" is the pre-v19 single-audit field; it still counts for any list.
+        last = (re.search(rf"{name} last completed:\**\s*(\S+)", issue["body"], re.I)
+                or re.search(r"Last completed:\**\s*(\S+)", issue["body"]))
+        date = (re.match(r"\d{4}-\d{2}-\d{2}", last.group(1)) if last else None) or installed
+        if date and (datetime.date.today()
+                     - datetime.date.fromisoformat(date.group(0))).days < int(days):
+            continue
+        extra = ""
+        if name.lower() == "weekly":
+            try:
+                opened = gh_cached("open-issues", ["issue", "list", "--state", "open",
+                                                   "--limit", "1000", "--json", "number"])
+                extra = f", {len(opened)} open issues" if opened is not None else ""
+            except Exception:
+                pass
+        print(f"harness: {name.lower()} maintenance due (last completed: "
+              f"{last.group(1) if last else 'unknown'}{extra}); follow {MAINTENANCE_FILE} "
+              f"and record results in #{issue['number']}.")
 
 
 def report_unindexed(created):
