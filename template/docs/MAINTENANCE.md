@@ -2,7 +2,7 @@
 
 Audit state (last attempted, last completed, open findings) lives in the maintenance tracking issue named in PROJECT_CONFIG.md, not in this file.
 
-At session start, check that issue. If the audit has never completed or last completed 30 or more days ago, claim it (assign yourself or add an audit-in-progress label), run it after the current task, delegating the checks to T3 subagents (PROJECT_CONFIG.md) and reviewing their findings yourself, and surface overdue or blocked work in one line. Retry incomplete audits next session.
+At session start, check that issue. If the audit last completed 30 or more days ago, or never completed and the harness was installed (the first commit of .harness/) that long ago, claim it (assign yourself or add an audit-in-progress label), run it after the current task, delegating the checks to T3 subagents (PROJECT_CONFIG.md) and reviewing their findings yourself, and surface overdue or blocked work in one line. Retry incomplete audits next session.
 
 - Reconcile docs with current behavior. Review docs changed since the last completed audit (git log) and pare down, dedupe, or merge them so they don't drift. Check every page is linked from docs/README.md; fix orphans and broken links.
 - Consolidate repeated values and definitions into single sources of truth.
