@@ -20,6 +20,9 @@ existing repos; nothing is overwritten.
    branch requires a CI status check. If the repo has no CI or no such rule, say so and
    offer to add a CI workflow and a ruleset requiring it (a permission change: ask
    first), or record `on-request`.
+   The ruleset should require the check but not that branches be up to date: that
+   setting makes every merge re-run every open PR's check, and CI runs again on the
+   default branch after each merge anyway.
 7. **Languages.** If the repo uses a language with no `docs/languages/<language>.md`,
    tell the operator. Don't write one unasked.
 8. **Ship.** Commit only what init created or you changed (`AGENTS.md`, `CLAUDE.md`,
