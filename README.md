@@ -55,13 +55,14 @@ What one task looks like under the defaults. Each project names its models and e
 5. **Test (T3).** At least one T3 subagent tests the change.
 6. **PR review (T3).** The session opens a PR and a T3 subagent reviews it, sized to risk; the session fixes what it finds.
 7. **Deliver (T2).** Merge per the project's merge policy once review and checks pass.
-8. **Hand off.** At the end of a phase, the session writes a handoff primer so the next phase starts in a fresh context.
+8. **Follow-ups.** Newly found work becomes an issue; unless it needs an operator decision, the session starts a subagent on it.
+9. **Hand off.** Context lives in the issue, so a handoff is a short prompt naming it, and the next phase starts in a fresh context.
 
 ```mermaid
 flowchart LR
   T2["T2 · primary model<br>the session: coding, merging"] -->|asks for a plan| T1["T1 · planning model subagent<br>plans, architecture, hard decisions"]
   T2 -->|delegates| T3["T3 · subagent model<br>research, testing, PR review"]
-  T2 -->|end of phase| H["handoff primer<br>fresh session"]
+  T2 -->|end of phase| H["prompt naming the issue<br>fresh session"]
 ```
 
 ## How agents load it (why it's split this way)

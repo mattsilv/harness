@@ -19,7 +19,7 @@ line in the same PR whenever you add or change a rule.
 | Implementation: libraries over custom code; shared logic; define values once | Unknown. | author |
 | Process: scale process to blast radius; review sized to risk | Carried over from the predecessor harness. Incident not recorded. | predecessor |
 | Process: stop after two failing review/fix cycles | Carried over from the predecessor harness, to stop fix loops. Incident not recorded. | predecessor |
-| Process: handoff primer at the end of each phase | Operator's choice: long sessions accumulate stale context, so each phase starts fresh from a self-contained primer. | operator |
+| Process: context lives in the issue; handoff is a short prompt naming it | Long self-contained primers were slow to write and read, and their context was lost once pasted. Keeping it in the issue makes the handoff trivial and the context durable. Fresh sessions still avoid stale context. | operator, 2026-09 |
 | Security | Operator's safety boundary. | operator |
 | Secrets | Operator's safety boundary. | operator |
 | Testing | Unknown; general practice. The "never weaken expectations" clause targets agents that make tests pass by editing them. | author |
@@ -36,6 +36,8 @@ line in the same PR whenever you add or change a rule.
 | Documentation: wiki of small, cross-linked pages indexed by docs/README.md | Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one. | design |
 | Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness check` now nags when it's overdue. | incident, 2026-09 |
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
+| Delegation: start a subagent on newly found work unless it needs an operator decision | Filing discovered work and stopping left it waiting on the operator to start another session mid-sprint. | operator, 2026-09 |
+| Apply rules unprompted; quick questions exempt | The operator had to say "use our harness" before feature work. | operator, 2026-09 |
 | Model selection: never claim an unverifiable model/effort change | Unknown. | author |
 | Model tiers: planning model as a subagent of the primary session | Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review. | operator |
 | Model tiers: at least one T3 subagent each for testing and research per implementation task, and a T3 PR review | Operator's choice: keeps testing and research off the T2 session's context and cost. | operator |
