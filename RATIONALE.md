@@ -61,16 +61,22 @@ the default branch (eval, 2026-09).
 
 ## docs/MAINTENANCE.md
 
-A monthly audit, so docs, branches, issues, and live contracts don't rot between
+A monthly audit, so docs, branches, and live contracts don't rot between
 feature work. The interval is a default; monthly replaces an earlier weekly
 default, which was more cadence than a small project needs (operator preference).
+
+A weekly list holds only issue triage, run on a T3 subagent, which closes done or
+superseded issues, puts others on hold, and assigns the rest to a sprint, and
+reports the open-issue count (`harness check` shows it when the list is due).
+Parallel agents open issues faster than a monthly review of 30-day-old ones
+clears them; the goal is that none lingers unplanned (operator, 2026-09).
 
 The docs check reviews pages changed since the last completed audit (via git log)
 and pares them down, dedupes, or merges them so they don't drift; it also confirms
 every page is linked from docs/README.md, fixing orphans and broken links, so a
 stray page doesn't sit unfindable. (design)
 
-When the audit has never completed, the clock starts at the harness install (first commit of `.harness/`), which `harness check` reads from git: 8 sessions on a 2-day-old repo were told the audit was due, and none ran it, since a new repo has nothing to audit (#33). (incident, 2026-09)
+When a list has never completed, its clock starts at the harness install (first commit of `.harness/`), which `harness check` reads from git: 8 sessions on a 2-day-old repo were told the audit was due, and none ran it, since a new repo has nothing to audit (#33). (incident, 2026-09)
 
 The stale-area check (one folder or feature set untouched 4+ months per audit) catches features that are dead or hard to work on before an agent has to touch them under pressure; one area keeps each audit small, in the spirit of kaizen. (operator)
 

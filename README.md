@@ -11,7 +11,7 @@ flowchart LR
     A[Rules<br>AGENTS.md]
     C[Config<br>PROJECT_CONFIG.md]
     V[Vendors<br>secrets, hosting, database]
-    M[Maintenance<br>monthly audit]
+    M[Maintenance<br>weekly triage, monthly audit]
     L[Language rules<br>read on demand]
   end
   A -. reads .-> C
@@ -107,7 +107,8 @@ harness apply [path]  # 3-way merge harness changes into local files, keeping lo
 - **Unset values:** any `PROJECT_CONFIG.md` line still reading "Set during setup" is
   reported every session until answered.
 - **Maintenance:** `check` reads the tracking issue named in `PROJECT_CONFIG.md` (via
-  `gh`, cached 1h) and nags when the audit interval in `docs/MAINTENANCE.md` has passed.
+  `gh`, cached 1h) and nags when a weekly or monthly list in `docs/MAINTENANCE.md` is due, with the
+  open-issue count on the weekly one.
 - **CI gate:** with merge policy `auto`, `check` confirms the default branch requires
   status checks and warns to treat merges as `on-request` until it does.
 - **Session start:** run `harness check` from a Claude Code `SessionStart` hook

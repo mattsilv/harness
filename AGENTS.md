@@ -16,8 +16,8 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
 - **Budget:** CI caps `template/AGENTS.md` by word count (`.github/workflows/budget.yml`).
   Raise the cap only deliberately, with the reason in the PR.
 - **Parsed strings:** the `harness` CLI reads "Set during setup", `**Merge policy:**`,
-  `**Maintenance tracking issue:**`, and "<N> or more days ago" in
-  `template/docs/MAINTENANCE.md`. Change them only together with the `harness` CLI.
+  `**Maintenance tracking issue:**`, the "## <List>: ... <N> or more days ago" headings in
+  `template/docs/MAINTENANCE.md`, and "<List> last completed:" in the tracking issue. Change them only together with the `harness` CLI.
 - **Preview:** from a project that uses the harness, run
   `HARNESS_SYNC_SOURCE=<this checkout>/template harness diff`.
 - **harness CLI:** standard-library Python only. Before merging a change, test `init`
