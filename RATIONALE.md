@@ -23,14 +23,15 @@ line in the same PR whenever you add or change a rule.
 | Security | Operator's safety boundary. | operator |
 | Secrets | Operator's safety boundary. | operator |
 | Testing | Unknown; general practice. The "never weaken expectations" clause targets agents that make tests pass by editing them. | author |
-| UI: screenshots on desktop and mobile | Unknown. | author |
+| UI: screenshots on desktop and mobile for layout, styling, or structure changes | Unknown for the screenshots themselves. Copy-only changes are exempt because a screenshot of changed words catches nothing a diff doesn't, and it slowed small PRs. | operator, 2026-09 |
 | Delivery: branch + PR, never push to default, never bypass checks | The default branch deploys. | author |
 | Delivery: this file is the standing request to commit and open PRs | Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 6 of 6 eval runs, citing "commit only when asked" (#13). | eval, 2026-09 |
 | Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Merge policies: `auto` merges without asking | An agent under `auto` still asked the operator before each merge. | incident, 2026-09 |
 | Delivery: one worktree per parallel writer, from a fresh default branch | A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests. | incident, 2026-09 |
-| Delivery: update before merge; remove worktree and branch after | Unknown. | author |
-| Delivery: scope CI to what changed | Full build and test runs on docs-only changes cost time for no signal. Required checks must still report, and a path-skipped required workflow blocks the merge, so the rule says to still pass them. | operator |
+| Delivery: update the branch before merge only on conflict or overlapping files | With branch protection's "require branches to be up to date" on, every merge invalidated every other open PR's check, so parallel agents queued behind each other for reruns. CI runs again on the default branch after each merge, which catches the rare semantic clash between non-overlapping PRs. | incident, 2026-09 |
+| Delivery: remove worktree and branch after merge | Unknown. | author |
+| Delivery: scope CI to what changed | Full build and test runs on docs-only changes cost time for no signal. Required checks must still report, and a path-skipped required workflow blocks the merge, so the rule says to still pass them. Docs-only branches no longer update from the default branch first (see the update rule above). | operator |
 | Documentation: wiki of small, cross-linked pages indexed by docs/README.md | Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one. | design |
 | Maintenance: follow docs/MAINTENANCE.md | The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness check` now nags when it's overdue. | incident, 2026-09 |
 | Delegation | Carried over from the predecessor harness. Incident not recorded. | predecessor |
