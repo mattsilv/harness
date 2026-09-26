@@ -3,8 +3,9 @@
 This repo is the harness itself. Files under `template/` ship to every project that
 uses it; everything else is for maintaining it. These rules apply here, not in projects.
 
-- **Changing a rule:** edit `template/`, and in the same PR add or update the rule's
-  line in `RATIONALE.md`. Before adding a rule, try the REVIEW.md test: would a current
+- **Changing a rule:** edit `template/`, and in the same PR add or update its rationale:
+  the comment under it in `template/AGENTS.md` (new rules take the next unused id),
+  or its line in `RATIONALE.md` for other files. Before adding a rule, try the REVIEW.md test: would a current
   frontier model get this wrong without it? Prefer cutting or moving (to
   `PROJECT_CONFIG.md` or an on-demand file) over adding.
 - **Version:** any PR that changes `template/` bumps `VERSION` by one and adds a
@@ -27,6 +28,6 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
   project on its next `check`, and each project still approves `apply`.
 - **Model review:** when a new frontier model ships, or quarterly, follow `REVIEW.md`.
 - **Maintenance (monthly, or when touching these files):** README's file table matches
-  the tree; every rule in `template/` has a `RATIONALE.md` line; no rule is duplicated
+  the tree; every rule in `template/` has a rationale; no rule is duplicated
   across template files; no vendor, tool, or project is named outside `PROJECT_CONFIG.md`
   and nothing private appears; `INSTALL.md` still matches how the `harness` CLI behaves.

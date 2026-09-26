@@ -44,8 +44,18 @@ def git(*args):
                           text=True, check=True, timeout=30).stdout
 
 
+def strip_comments(text):
+    """Drop maintainer-only comment lines (rule ids and rationale) from Markdown."""
+    return re.sub(r"^[ \t]*<!--.*?-->[ \t]*\n", "", text, flags=re.M | re.S)
+
+
 def fetch(max_age=0):
     """Map file path -> content for every file under the harness template."""
+    return {p: strip_comments(t) if p.endswith(".md") else t
+            for p, t in fetch_raw(max_age).items()}
+
+
+def fetch_raw(max_age):
     if SOURCE:
         root = Path(SOURCE)
         return {str(f.relative_to(root)): f.read_text()

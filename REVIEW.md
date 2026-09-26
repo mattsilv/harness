@@ -14,7 +14,8 @@ weakness that justified them. Your job is to find both.
 
 1. `README.md`, for how the files are loaded.
 2. Everything in `template/`, the only text projects receive.
-3. `RATIONALE.md`, for why each rule exists.
+3. The comment under each rule in `template/AGENTS.md`, and `RATIONALE.md` for the
+   other files, for why each rule exists.
 4. Your vendor's current prompting guide for the model you are. Guidance changes
    between generations. For example, newer models over-follow emphatic wording
    (capitals, "CRITICAL", "NEVER"), and older harnesses shout. Cite the guide
@@ -37,7 +38,7 @@ different verdicts. For every rule, ask:
 - **Rewrite** it if it's right but wordy, emphatic, vague, or duplicated elsewhere.
 - **Keep** it if it prevents a failure you'd plausibly make, or one the evidence shows.
 
-Weigh evidence over self-report. A transcript showing the failure, or `RATIONALE.md`
+Weigh evidence over self-report. A transcript showing the failure, or a rationale
 naming an incident, outweighs your opinion of what you'd do. Say which kind of evidence
 each decision rests on. A rule whose rationale is "Unknown" or "Incident not recorded" is presumed
 cuttable. Cite the vendor guide wherever it informs a verdict, including a keep.
@@ -69,8 +70,9 @@ harness, scored by [eval/check.mjs](eval/check.mjs), and cite the stored results
 ## Deliver
 
 1. A table: rule, verdict (keep/cut/move/rewrite), one-line reason, evidence type.
-2. A PR (or patch) against `template/` and `RATIONALE.md`, with rationale lines
-   removed or updated to match. Net size must not grow unless the PR says why.
+2. A PR (or patch) against `template/` and `RATIONALE.md`, with rationale comments
+   and lines removed or updated to match, and each reviewed rule's `review:` line
+   set to your verdict, confidence, model, and date. Net size must not grow unless the PR says why.
    Report the before/after word count of `template/AGENTS.md`.
 3. A row appended to the log below.
 

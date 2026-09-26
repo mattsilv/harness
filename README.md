@@ -40,7 +40,7 @@ flowchart LR
 | [`eval/fixture/`](eval/fixture/) | Baseline to-do app that the update task starts from. | no |
 | [`eval/runs/`](eval/runs/) | Saved evaluation notes, checks, usage, diffs, and screenshots. | no |
 | [`eval/results.jsonl`](eval/results.jsonl) | One evaluator record per stored run. | no |
-| [`RATIONALE.md`](RATIONALE.md) | Why each rule exists. | no |
+| [`RATIONALE.md`](RATIONALE.md) | Why each rule outside `template/AGENTS.md` exists; AGENTS.md rules carry theirs inline. | no |
 | [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md) | Rules for agents working on this repo itself. | no |
 | [`.github/workflows/budget.yml`](.github/workflows/budget.yml) | CI word budget for `template/AGENTS.md`. | no |
 | [`LICENSE`](LICENSE) | MIT. | no |
@@ -125,7 +125,9 @@ Open a PR against `template/`. Preview its effect on a project before merging:
 cd your-repo && HARNESS_SYNC_SOURCE=/path/to/harness-branch/template harness diff
 ```
 
-Every rule needs a line in `RATIONALE.md`. CI fails if `template/AGENTS.md` grows past
+Every rule in `template/AGENTS.md` is one bullet followed by an HTML comment with its
+id, why, source, and latest review; the CLI strips those comments before projects get
+the file. Rules in other template files get a line in `RATIONALE.md`. CI fails if `template/AGENTS.md` grows past
 its word budget (`.github/workflows/budget.yml`); raising the budget is a deliberate
 edit in the same PR.
 
