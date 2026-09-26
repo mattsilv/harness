@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: template/AGENTS.md stays within its word budget
         run: |
-          budget=990  # 984 words at v22 (UI: use the frontend-design skill for any frontend change); raise deliberately, never casually
+          budget=1025  # 1019 words at v23 (Delivery: sync worktrees to the default branch after each merge); raise deliberately, never casually
           words=$(wc -w < template/AGENTS.md)
           echo "template/AGENTS.md: $words / $budget words"
           [ "$words" -le "$budget" ] || { echo "::error::AGENTS.md is $words words, over the $budget budget. Cut, move to an on-demand file, or raise the budget in this PR with a reason."; exit 1; }
