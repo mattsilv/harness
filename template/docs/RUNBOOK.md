@@ -20,7 +20,7 @@ How the secrets manager feeds the hosting and database CLIs, with the one invoca
 
 ## Wait on CI and finish a PR
 
-How to wait for checks and confirm the merge and deploy in this runtime and host.
+How to wait for checks and confirm the merge and deploy in this runtime and host. On GitHub, `bash scripts/branch-check.sh` before opening reports a conflict with the remote default branch (exit 1) and `bash scripts/pr-wait.sh` waits until the PR merges, stopping on a conflict, a failed check, or a closed PR; wrap them in repo commands.
 
 ## Subagents and review
 

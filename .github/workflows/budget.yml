@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: template/AGENTS.md stays within its word budget
         run: |
-          budget=960  # 947 words at v18 (#33: runbook, migrations, status report); raise deliberately, never casually
+          budget=980  # 976 words at v21 (fresh remote branch everywhere, conflict stalls a PR); raise deliberately, never casually
           words=$(wc -w < template/AGENTS.md)
           echo "template/AGENTS.md: $words / $budget words"
           [ "$words" -le "$budget" ] || { echo "::error::AGENTS.md is $words words, over the $budget budget. Cut, move to an on-demand file, or raise the budget in this PR with a reason."; exit 1; }
