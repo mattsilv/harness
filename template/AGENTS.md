@@ -119,12 +119,12 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     source: author
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): editing tests to pass is a known agent failure mode; self-report, no stored transcript -->
 - **UI:**
-  - Use the design skill named in PROJECT_CONFIG.md for any frontend change.
+  - Use the design skill PROJECT_CONFIG.md names for your runtime, if any, for any frontend change.
     <!-- ui-1
     why: Unknown. Agents defaulted to templated-looking UI without a nudge to reach for the design skill first.
     source: operator, 2026-09
     review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator request (#38), but it names a runtime-specific skill, which this repo's rules put in PROJECT_CONFIG
-    decision: moved the skill name to PROJECT_CONFIG.md (operator, 2026-09-26); the rule stays -->
+    decision: moved the skill name to PROJECT_CONFIG.md (operator, 2026-09-26); the rule stays. Claude Code only: Codex has no official equivalent, and naming none keeps other runtimes from hunting for it. -->
   - Check desktop and mobile screenshots for every change to layout, styling, or page structure and fix issues before finishing; copy-only changes need none.
     <!-- ui-2
     why: Unknown for the screenshots themselves. Copy-only changes are exempt because a screenshot of changed words catches nothing a diff doesn't, and it slowed small PRs.
