@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **23** · 2026-09-26 · #39 · Delivery: after a PR merges, the orchestrating session fast-forwards the main checkout to the freshly fetched default branch, merges it (never rebases or force-pushes) into clean active branches, skips worktrees with uncommitted changes, and notifies the agent that owns each updated branch. Word budget raised to 1025 (1019 words at v23).
 - **22** · 2026-09-26 · #38 · UI: use the frontend-design skill for any frontend change. Word budget raised to 990 (984 words at v22).
 - **21** · 2026-09-26 · #37 · Delivery: every branch, including one cut in the main checkout, starts from the freshly fetched remote default branch. Rebase only on a conflict, which stalls a PR (no CI run, auto-merge never fires); overlapping files no longer call for a rebase, since the default-branch rerun gates the deploy. New `scripts/branch-check.sh` and `scripts/pr-wait.sh`, referenced from the runbook; wrap them in repo commands (the CLI does not set the executable bit).
 - **20** · 2026-09-25 · #36 · Delivery: a green PR refused as not up to date means the ruleset's up-to-date requirement drifted back on; fix the setting (INSTALL.md step 6) rather than updating again. No action needed.
