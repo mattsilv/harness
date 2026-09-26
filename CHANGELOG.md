@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **26** · 2026-09-26 · #42 · The design skill is `frontend-design` in Claude Code and none for other runtimes; the UI rule uses the skill named for your runtime, if any. No action needed.
 - **25** · 2026-09-26 · #41 · Per the Fable rule review: cut "prefer maintained libraries" (impl-1), "above the fold" (ui-3), and "keep docs pages concise" (docs-2); impl-3 trimmed to design tokens; the UI rule points to a new **Design skill:** value in PROJECT_CONFIG.md instead of naming the skill. Word budget lowered to 1015 (1007 words). No action needed.
 - **24** · 2026-09-26 · #40 · AGENTS.md is one bullet per rule, with no wording changes beyond the splits. In the harness repo each rule carries an inline comment (id, why, source, review) that `harness` strips before shipping, so projects see only the rules. No action needed.
 - **23** · 2026-09-26 · #39 · Delivery: after a PR merges, the orchestrating session fast-forwards the main checkout to the freshly fetched default branch, merges it (never rebases or force-pushes) into clean active branches, skips worktrees with uncommitted changes, and notifies the agent that owns each updated branch. Word budget raised to 1025 (1019 words at v23).
