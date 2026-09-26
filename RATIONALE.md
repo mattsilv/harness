@@ -25,6 +25,7 @@ line in the same PR whenever you add or change a rule.
 | Secrets | Operator's safety boundary. | operator |
 | Testing | Unknown; general practice. The "never weaken expectations" clause targets agents that make tests pass by editing them. | author |
 | UI: screenshots on desktop and mobile for layout, styling, or structure changes | Unknown for the screenshots themselves. Copy-only changes are exempt because a screenshot of changed words catches nothing a diff doesn't, and it slowed small PRs. | operator, 2026-09 |
+| UI: use the frontend-design skill for any frontend change | Unknown. Agents defaulted to templated-looking UI without a nudge to reach for the design skill first. | operator, 2026-09 |
 | Delivery: branch + PR, never push to default, never bypass checks | The default branch deploys. | author |
 | Delivery: this file is the standing request to commit and open PRs | Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 6 of 6 eval runs, citing "commit only when asked" (#13). | eval, 2026-09 |
 | Delivery: auto-merge only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
