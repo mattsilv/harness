@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **22** · 2026-09-26 · #38 · UI: use the frontend-design skill for any frontend change. Word budget raised to 990 (984 words at v22).
 - **21** · 2026-09-26 · #37 · Delivery: every branch, including one cut in the main checkout, starts from the freshly fetched remote default branch. Rebase only on a conflict, which stalls a PR (no CI run, auto-merge never fires); overlapping files no longer call for a rebase, since the default-branch rerun gates the deploy. New `scripts/branch-check.sh` and `scripts/pr-wait.sh`, referenced from the runbook; wrap them in repo commands (the CLI does not set the executable bit).
 - **20** · 2026-09-25 · #36 · Delivery: a green PR refused as not up to date means the ruleset's up-to-date requirement drifted back on; fix the setting (INSTALL.md step 6) rather than updating again. No action needed.
 - **19** · 2026-09-25 · #35 · MAINTENANCE.md splits into a weekly list (a T3 subagent triages every open issue: close done or superseded, put on hold with a reason, or assign to a sprint; report the open-issue count) and the existing monthly list, which drops the 30-day issue review. `harness check` nags per list, with the open-issue count on the weekly one, and now accepts `owner/repo#N` as the tracking issue. Record **Weekly last completed:** and **Monthly last completed:** in the tracking issue; an old **Last completed:** still counts.
