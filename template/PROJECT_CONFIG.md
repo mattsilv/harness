@@ -3,6 +3,7 @@
 Defaults and identifiers only; never store secret values here. Every value is a default unless recorded otherwise.
 
 - **Stack:** TypeScript monorepo (frontend and backend), Tailwind CSS.
+- **Design skill:** frontend-design.
 - **Model tiers:** The default procedure for which model does what; rules name tiers, never models.
   - **T1, planning model:** OpenAI Astra or Anthropic Fable, medium effort. Does any planning, architecture, and hard decisions, always as a subagent of the session.
   - **T2, primary model:** OpenAI Sol or Anthropic Opus, medium effort. Runs the session and does the coding and merging.

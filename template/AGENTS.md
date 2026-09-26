@@ -47,21 +47,18 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     source: incident, 2026-09
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident with counts across sessions (#33) -->
 - **Implementation:**
-  - Prefer maintained libraries and boilerplates over custom code; avoid unnecessary dependencies.
-    <!-- impl-1
-    why: Unknown.
-    source: author
-    review: cut, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; restates default behavior, and its two clauses pull against each other; self-report -->
   - Share business logic and authorization across all interfaces (web, API, MCP, chat, jobs); keep interfaces thin.
     <!-- impl-2
     why: Unknown.
     source: author
-    review: cut, confidence low (claude-fable-5-1, 2026-09-26): Unknown; the authorization half is covered by security-1, the rest is architecture preference; self-report -->
-  - Define each shared value once (schema, constants, mappings, formulas, and design tokens like colors, fonts, sizes, and spacing) and reference it everywhere; extract a shared definition only when a value repeats or changes together.
+    review: cut, confidence low (claude-fable-5-1, 2026-09-26): Unknown; the authorization half is covered by security-1, the rest is architecture preference; self-report
+    decision: keep (operator, 2026-09-26): agents duplicate logic per interface, and the non-auth half isn't covered elsewhere -->
+  - Define each shared value once, including design tokens (colors, fonts, sizes, spacing), and reference it everywhere; extract a shared definition only when a value repeats or changes together.
     <!-- impl-3
     why: Unknown.
     source: author
-    review: rewrite, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; the design-token clause is the part agents miss, the rest is a wordy list; self-report -->
+    review: rewrite, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; the design-token clause is the part agents miss, the rest is a wordy list; self-report
+    decision: rewritten (operator, 2026-09-26): kept the design-token clause, dropped the list -->
 - **Process:**
   - Scale process to the blast radius if wrong, not diff size: bounded low-risk work goes straight to implement and verify; ambiguous, broad, or risky work gets a plan first.
     <!-- process-1
@@ -108,33 +105,31 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     <!-- testing-3
     why: Unknown; general practice.
     source: author
-    review: move, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; applies only when external dependencies exist, so an on-demand file fits; self-report -->
+    review: move, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; applies only when external dependencies exist, so an on-demand file fits; self-report
+    decision: keep (operator, 2026-09-26): an on-demand file costs more than these lines save -->
   - AI features: stub model responses for deterministic tests; evaluate real outcomes, tool use, and permissions when prompts, models, or tools change.
     <!-- testing-4
     why: Unknown; general practice.
     source: author
-    review: move, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; applies only to AI features, so an on-demand file with a trigger fits; self-report -->
+    review: move, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; applies only to AI features, so an on-demand file with a trigger fits; self-report
+    decision: keep (operator, 2026-09-26): an on-demand file costs more than these lines save -->
   - Bugs: add the cheapest reproducing test before fixing. Fix flakes. Never weaken expectations or refresh fixtures just to pass.
     <!-- testing-5
     why: Unknown; general practice. "Never weaken expectations" targets agents that make tests pass by editing them.
     source: author
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): editing tests to pass is a known agent failure mode; self-report, no stored transcript -->
 - **UI:**
-  - Use the frontend-design skill for any frontend change.
+  - Use the design skill named in PROJECT_CONFIG.md for any frontend change.
     <!-- ui-1
     why: Unknown. Agents defaulted to templated-looking UI without a nudge to reach for the design skill first.
     source: operator, 2026-09
-    review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator request (#38), but it names a runtime-specific skill, which this repo's rules put in PROJECT_CONFIG -->
+    review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator request (#38), but it names a runtime-specific skill, which this repo's rules put in PROJECT_CONFIG
+    decision: moved the skill name to PROJECT_CONFIG.md (operator, 2026-09-26); the rule stays -->
   - Check desktop and mobile screenshots for every change to layout, styling, or page structure and fix issues before finishing; copy-only changes need none.
     <!-- ui-2
     why: Unknown for the screenshots themselves. Copy-only changes are exempt because a screenshot of changed words catches nothing a diff doesn't, and it slowed small PRs.
     source: operator, 2026-09
     review: keep, confidence medium (claude-fable-5-1, 2026-09-26): operator; #33 saw no friction; I'd skip mobile screenshots without it; self-report -->
-  - Put essential content and actions above the fold; avoid excess whitespace without hurting readability, accessibility, or touch usability.
-    <!-- ui-3
-    why: Unknown.
-    source: author
-    review: cut, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; generic design advice now covered by the design skill in ui-1; self-report -->
 - **Delivery:**
   - Work on a branch and merge via PR when checks pass. Never push directly to the default branch, which is what deploys, and never bypass required checks.
     <!-- delivery-1
@@ -160,7 +155,8 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     <!-- delivery-5
     why: Unknown.
     source: author
-    review: cut, confidence low (claude-fable-5-1, 2026-09-26): Unknown; overlaps delivery-1 (never bypass checks) and delivery-3; self-report -->
+    review: cut, confidence low (claude-fable-5-1, 2026-09-26): Unknown; overlaps delivery-1 (never bypass checks) and delivery-3; self-report
+    decision: keep (operator, 2026-09-26): delivery-1 covers PR checks, this gates the deploy pipeline itself -->
   - Re-check live contracts before shipping integration changes. Keep a recovery path; verify deploys with safe synthetic data.
     <!-- delivery-6
     why: Unknown.
@@ -195,18 +191,13 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     <!-- delivery-12
     why: Unknown. Parallel branches drifted from a merged default branch until their own PR update, hiding conflicts and stale dependencies from the agents working on them.
     source: operator, 2026-09
-    review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator, no incident; a long procedure that fits the runbook's finish-a-PR section behind a one-line trigger -->
-- **Documentation:**
-  - docs/ is a wiki: small, single-topic Markdown pages, cross-linked, indexed by docs/README.md, which links every page. Link an existing page instead of repeating it; update it, or add one and link it from the index, as part of the change or before closing a sprint.
-    <!-- docs-1
-    why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.
-    source: design
-    review: keep, confidence medium (claude-fable-5-1, 2026-09-26): design; #33 item 2 shows a fix recorded in an unrelated doc -->
-  - Keep pages concise; verification notes say what was actually checked. Record non-obvious learnings in docs/.
-    <!-- docs-2
-    why: Unknown.
-    source: author
-    review: cut, confidence medium (claude-fable-5-1, 2026-09-26): Unknown; overlaps runbook-1 (record learnings) and autonomy-3 (say what was checked); self-report -->
+    review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator, no incident; a long procedure that fits the runbook's finish-a-PR section behind a one-line trigger
+    decision: keep (operator, 2026-09-26): added in v23, too new to judge -->
+- **Documentation:** docs/ is a wiki: small, single-topic Markdown pages, cross-linked, indexed by docs/README.md, which links every page. Link an existing page instead of repeating it; update it, or add one and link it from the index, as part of the change or before closing a sprint.
+  <!-- docs-1
+  why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.
+  source: design
+  review: keep, confidence medium (claude-fable-5-1, 2026-09-26): design; #33 item 2 shows a fix recorded in an unrelated doc -->
 - **Runbook:** Before bootstrapping a worktree, running the app, or calling a vendor CLI, read docs/RUNBOOK.md; when a command or vendor error costs more than one attempt, record the working form there in the same PR.
   <!-- runbook-1
   why: Every worktree re-derived the local dev recipe (38 fresh installs, 53 env-file edits, 6 port collisions, the hosting CLI invoked 4 ways), and vendor errors learned by failure were recorded nowhere reusable (#33).
