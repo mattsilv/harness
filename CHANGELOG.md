@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **24** · 2026-09-26 · #TBD · AGENTS.md is one bullet per rule, with no wording changes beyond the splits. In the harness repo each rule carries an inline comment (id, why, source, review) that `harness` strips before shipping, so projects see only the rules. No action needed.
 - **23** · 2026-09-26 · #39 · Delivery: after a PR merges, the orchestrating session fast-forwards the main checkout to the freshly fetched default branch, merges it (never rebases or force-pushes) into clean active branches, skips worktrees with uncommitted changes, and notifies the agent that owns each updated branch. Word budget raised to 1025 (1019 words at v23).
 - **22** · 2026-09-26 · #38 · UI: use the frontend-design skill for any frontend change. Word budget raised to 990 (984 words at v22).
 - **21** · 2026-09-26 · #37 · Delivery: every branch, including one cut in the main checkout, starts from the freshly fetched remote default branch. Rebase only on a conflict, which stalls a PR (no CI run, auto-merge never fires); overlapping files no longer call for a rebase, since the default-branch rerun gates the deploy. New `scripts/branch-check.sh` and `scripts/pr-wait.sh`, referenced from the runbook; wrap them in repo commands (the CLI does not set the executable bit).
