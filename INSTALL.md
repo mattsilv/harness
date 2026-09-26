@@ -27,7 +27,7 @@ existing repos; nothing is overwritten.
 7. **Languages.** If the repo uses a language with no `docs/languages/<language>.md`,
    tell the operator. Don't write one unasked.
 8. **Ship.** Commit only what init created or you changed (`AGENTS.md`, `CLAUDE.md`,
-   `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/RUNBOOK.md`, `docs/languages/`, `.harness/`), not
+   `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/RUNBOOK.md`, `docs/languages/`, `scripts/`, `.harness/`), not
    unrelated files already in `docs/`, and open a PR. Merge per the merge policy just recorded.
 9. **Verify.** `harness check` prints nothing. If `docs/README.md` exists, it links the
    pages init created (init names any it doesn't).
