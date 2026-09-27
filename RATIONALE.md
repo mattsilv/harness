@@ -57,6 +57,8 @@ The stale-area check (one folder or feature set untouched 4+ months per audit) c
 
 A skeleton the project fills in: the exact commands for bootstrapping a worktree, running locally, migrations, remote vendor commands, finishing a PR, launching subagents and review, and known vendor errors. It is on demand, like `docs/languages/`, because the content is project- and vendor-specific (#33). The guidance for many worktrees on one machine (per-worktree values derived from one identifier and passed as flags, runtime secret injection instead of a local env file, two idempotent scripts, collision-proof migration ids) comes from the same sessions: the 53 env-file edits were port changes, and two branches picked the same migration number. (incident, 2026-09)
 
+Test runners take the per-worktree ports and never reuse a server they didn't start: an end-to-end config reused whatever answered on its fixed default port, and another project's dev server held that port, so a default run in any worktree would have silently tested the wrong app. (incident, 2026-09)
+
 ## docs/languages/python.md
 
 | Rule | Why | Source |

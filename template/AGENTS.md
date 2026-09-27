@@ -203,6 +203,10 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
   why: Every worktree re-derived the local dev recipe (38 fresh installs, 53 env-file edits, 6 port collisions, the hosting CLI invoked 4 ways), and vendor errors learned by failure were recorded nowhere reusable (#33).
   source: incident, 2026-09
   review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident with counts (#33) -->
+- **Processes:** Stop every process you start (servers, test runners, watchers, browsers and their pages or sessions) before the task ends, and report any left running; give persistent automation daemons an idle timeout.
+  <!-- processes-1
+  why: Agents across many sessions left a shared browser-automation daemon running for 10 days with its idle timeout disabled: 14 named browsers, some idle 45+ hours, ~140 headless browser processes, one browser with 71 tabs. Load average reached 10-12 and parallel E2E runs slowed to a crawl. Every task can start a process, so the rule is every-task.
+  source: incident, 2026-09 -->
 - **Migrations:** Before adding one, list the other agent sessions on this machine (the runtime's session list, and `git worktree list` for their branches) and ask each whether its work touches the same tables or migration sequence; if one doesn't answer, have a T3 subagent compare that branch's migrations and schema with the default branch. Pause applying the migration while a conflict exists, and record the pause in the task's issue.
   <!-- migrations-1
   why: Two parallel branches both created the same migration number, and a table rebuild on one failed after another branch changed a child table. Worktrees on one machine are the normal case (#33).

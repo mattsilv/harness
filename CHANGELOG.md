@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **27** · 2026-09-26 · #PR · New Processes rule: stop every process you start (servers, test runners, watchers, browsers and their pages or sessions) before the task ends, name any left running in the report, and run persistent automation daemons with an idle timeout. RUNBOOK's worktree bootstrap: test runners take per-worktree ports and never reuse a server they didn't start. Word budget raised to 1050. Action: make your E2E config read its ports from env vars (keeping the current defaults) and record the per-worktree command in docs/RUNBOOK.md.
 - **26** · 2026-09-26 · #42 · The design skill is `frontend-design` in Claude Code and none for other runtimes; the UI rule uses the skill named for your runtime, if any. No action needed.
 - **25** · 2026-09-26 · #41 · Per the Fable rule review: cut "prefer maintained libraries" (impl-1), "above the fold" (ui-3), and "keep docs pages concise" (docs-2); impl-3 trimmed to design tokens; the UI rule points to a new **Design skill:** value in PROJECT_CONFIG.md instead of naming the skill. Word budget lowered to 1015 (1007 words). No action needed.
 - **24** · 2026-09-26 · #40 · AGENTS.md is one bullet per rule, with no wording changes beyond the splits. In the harness repo each rule carries an inline comment (id, why, source, review) that `harness` strips before shipping, so projects see only the rules. No action needed.
