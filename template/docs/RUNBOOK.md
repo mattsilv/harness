@@ -4,7 +4,7 @@ The working commands for this project, recorded once so each worktree and sessio
 
 ## Bootstrap a worktree
 
-Many worktrees share one machine. Derive every per-worktree value (ports, base URL) from one identifier such as the worktree path, keep local state (database, caches) relative to the checkout, and wrap install, local database setup, and migrations in one idempotent repo script.
+Many worktrees share one machine. Derive every per-worktree value (ports, base URL) from one identifier such as the worktree path, keep local state (database, caches) relative to the checkout, and wrap install, local database setup, and migrations in one idempotent repo script. Test runners take those ports too (env vars with the current defaults work) and never reuse a server they didn't start, since a fixed port may be held by another worktree's or project's server; record here the exact command that runs one spec on a non-default port.
 
 ## Run locally
 
