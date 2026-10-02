@@ -68,6 +68,29 @@ class ContextWatch(Fixture):
         self.assertEqual(r.returncode, 2)
         self.assertIn("no assistant usage line", r.stderr)
 
+    def test_one_bad_agent_does_not_hide_others(self):
+        self.agent("bad", ["x" * 100] * 3)
+        self.agent("big", [turn(300000)], "big")
+        r = self.run_watch(CONTEXT_TAIL_BYTES="100")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("big  300000  handoff  big", r.stdout)
+
+    def test_truncated_tail_reads_last_full_line(self):
+        self.agent("a", ["y" * 5000, turn(260000), "z" * 10])
+        r = self.run_watch(CONTEXT_TAIL_BYTES="400")
+        self.assertEqual((r.returncode, r.stdout), (0, "a  260000  handoff  task\n"))
+
+    def test_zero_usage_turn_skipped(self):
+        self.agent("a", [turn(300000), turn(12)])
+        self.assertEqual(self.run_watch().stdout, "a  300000  handoff  task\n")
+
+    def test_session_id_argument(self):
+        self.agent("a", [turn(300000)])
+        e = {**os.environ, "CLAUDE_PROJECTS_DIR": self.tmp.name}
+        e.pop("CLAUDE_CODE_SESSION_ID", None)
+        r = subprocess.run([sys.executable, str(SCRIPT), SID], capture_output=True, text=True, env=e)
+        self.assertIn("a  300000  handoff", r.stdout)
+
     def test_just_started_agent_is_fine(self):
         self.agent("new", ['{"type":"user"}'])
         r = self.run_watch()

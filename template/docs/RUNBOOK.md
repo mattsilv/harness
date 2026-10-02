@@ -24,7 +24,7 @@ How to wait for checks and confirm the merge and deploy in this runtime and host
 
 ## Subagents and review
 
-How to launch a T3 subagent and a PR review in this runtime. In Claude Code, `python3 scripts/context-watch.py` prints subagents at 200k+ context (`warn`, `handoff` from 250k) and `compact-now` for the session; it finds the session via `$CLAUDE_CODE_SESSION_ID`, takes an id argument, and honors `CONTEXT_WARN`, `CONTEXT_HANDOFF`; poll it with `/loop 5m` or a Monitor until-loop.
+How to launch a T3 subagent and a PR review in this runtime. `scripts/context-watch.py` reads Claude Code transcripts (session from `$CLAUDE_CODE_SESSION_ID` or an id argument; `CONTEXT_WARN`/`CONTEXT_HANDOFF` override 200k/250k); poll it with `/loop 5m` or a Monitor until-loop. It treats a subagent as running if its transcript changed in the last 2 minutes.
 
 ## Known vendor errors
 

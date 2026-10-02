@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Context-window watchdog for Claude Code sessions (AGENTS.md Process; dependency-free).
+"""Context-window watchdog for Claude Code sessions (AGENTS.md Delegation; dependency-free, Python 3.9+).
 
 Prints one line per running subagent whose context is at or above WARN, and a
 `compact-now` line for the orchestrating session when it is at or above HANDOFF while
@@ -23,9 +23,12 @@ TAIL = int(os.environ.get("CONTEXT_TAIL_BYTES", 524288))
 ROOT = Path(os.environ.get("CLAUDE_PROJECTS_DIR", "~/.claude/projects")).expanduser()
 
 
+class Fail(Exception):
+    pass
+
+
 def die(msg):
-    print(f"context-watch: {msg}", file=sys.stderr)
-    sys.exit(2)
+    raise Fail(msg)
 
 
 def find_session():
@@ -63,10 +66,12 @@ def context_tokens(path):
         u = (d.get("message") or {}).get("usage")
         if isinstance(u, dict):
             try:
-                return sum(int(u.get(k, 0) or 0) for k in
-                           ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
+                total = sum(int(u.get(k, 0) or 0) for k in
+                            ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
             except (TypeError, ValueError):
                 die(f"{path.name}: non-numeric usage fields")
+            if total:  # all-zero usage is a synthetic turn; keep looking
+                return total
     if size <= TAIL:
         return None  # whole file read, no assistant turn yet: agent just started
     die(f"{path}: no assistant usage line in the last {TAIL} bytes; transcript format changed?")
@@ -75,12 +80,16 @@ def context_tokens(path):
 def main():
     sid, session_file = find_session()
     sub_dir = session_file.parent / sid / "subagents"
-    now, out, running = time.time(), [], 0
+    now, out, running, errors = time.time(), [], 0, []
     for f in sorted(sub_dir.glob("agent-*.jsonl")) if sub_dir.is_dir() else []:
-        if now - f.stat().st_mtime > RUNNING:
+        try:
+            if now - f.stat().st_mtime > RUNNING:
+                continue
+            running += 1
+            tokens = context_tokens(f)
+        except (Fail, OSError) as e:  # one bad transcript must not hide the others
+            errors.append(str(e))
             continue
-        running += 1
-        tokens = context_tokens(f)
         if tokens is None or tokens < WARN:
             continue
         desc = ""
@@ -90,14 +99,24 @@ def main():
             pass
         out.append(f"{f.stem.removeprefix('agent-')}  {tokens}  {'handoff' if tokens >= HANDOFF else 'warn'}  {desc}")
     if running:
-        tokens = context_tokens(session_file)
-        if tokens is None:
-            die(f"{session_file}: no assistant usage line")
-        if tokens >= HANDOFF:
-            out.append(f"session  {tokens}  compact-now  orchestrator")
+        try:
+            tokens = context_tokens(session_file)
+            if tokens is None:
+                die(f"{session_file}: no assistant usage line")
+            if tokens >= HANDOFF:
+                out.append(f"session  {tokens}  compact-now  orchestrator")
+        except (Fail, OSError) as e:
+            errors.append(str(e))
     if out:
         print("\n".join(out))
+    for e in errors:
+        print(f"context-watch: {e}", file=sys.stderr)
+    return 2 if errors else 0
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        sys.exit(main())
+    except Fail as e:
+        print(f"context-watch: {e}", file=sys.stderr)
+        sys.exit(2)
