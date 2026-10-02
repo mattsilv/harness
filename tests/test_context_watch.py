@@ -69,9 +69,9 @@ class ContextWatch(Fixture):
         self.assertIn("no assistant usage line", r.stderr)
 
     def test_one_bad_agent_does_not_hide_others(self):
-        self.agent("bad", ["x" * 100] * 3)
+        self.agent("bad", ["x" * 5000] * 3)
         self.agent("big", [turn(300000)], "big")
-        r = self.run_watch(CONTEXT_TAIL_BYTES="100")
+        r = self.run_watch(CONTEXT_TAIL_BYTES="400")
         self.assertEqual(r.returncode, 2)
         self.assertIn("big  300000  handoff  big", r.stdout)
 
@@ -81,7 +81,8 @@ class ContextWatch(Fixture):
         self.assertEqual((r.returncode, r.stdout), (0, "a  260000  handoff  task\n"))
 
     def test_zero_usage_turn_skipped(self):
-        self.agent("a", [turn(300000), turn(12)])
+        zero = json.dumps({"type": "assistant", "message": {"usage": {"input_tokens": 0}}})
+        self.agent("a", [turn(300000), zero])
         self.assertEqual(self.run_watch().stdout, "a  300000  handoff  task\n")
 
     def test_session_id_argument(self):
