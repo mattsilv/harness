@@ -7,10 +7,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: template/AGENTS.md stays within its word budget
         run: |
-          budget=1050  # 1044 words at v27 (added processes-1 after a leaked-daemon incident); raise deliberately, never casually
+          budget=1090  # 1083 words at v28 (added delegation-4, context watchdog; operator-approved); raise deliberately, never casually
           words=$(python3 -c "from importlib.machinery import SourceFileLoader as L; print(L('h', 'harness').load_module().strip_comments(open('template/AGENTS.md').read()))" | wc -w)
           echo "template/AGENTS.md: $words / $budget words"
           [ "$words" -le "$budget" ] || { echo "::error::AGENTS.md is $words words, over the $budget budget. Cut, move to an on-demand file, or raise the budget in this PR with a reason."; exit 1; }
+  script-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: template scripts pass their fixture tests
+        run: python3 -m unittest discover tests
   rule-ids:
     runs-on: ubuntu-latest
     steps:
