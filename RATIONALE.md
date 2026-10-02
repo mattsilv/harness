@@ -65,6 +65,10 @@ Test runners take the per-worktree ports and never reuse a server they didn't st
 |---|---|---|
 | Use the configured package manager, no ad-hoc global installs | One environment manager per project; which one is a config default (uv). | author |
 
+## scripts/context-watch.py
+
+Reads the last assistant `usage` line of each running subagent transcript (modified in the last two minutes) and of the orchestrating session; context is input plus cache-read plus cache-creation tokens. It only reports, because the orchestrator, not a script, decides when to stop an agent or tell the operator. The transcript format is undocumented, so it exits non-zero rather than guess. Subagents had run past 250k tokens of context unnoticed. (operator, 2026-10)
+
 ## docs/languages/typescript.md
 
 | Rule | Why | Source |

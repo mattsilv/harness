@@ -29,10 +29,11 @@ flowchart LR
 | [`template/docs/MAINTENANCE.md`](template/docs/MAINTENANCE.md) | The recurring maintenance audit. | yes |
 | [`template/docs/RUNBOOK.md`](template/docs/RUNBOOK.md) | Skeleton for the project's working commands and known vendor errors, read on demand. | yes |
 | [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
-| [`template/scripts/`](template/scripts/) | `branch-check.sh` (conflict with the remote default branch?) and `pr-wait.sh` (wait for a PR to merge, stop on a conflict or failure), linked from the runbook. | yes |
+| [`template/scripts/`](template/scripts/) | `branch-check.sh` (conflict with the remote default branch?), `pr-wait.sh` (wait for a PR to merge, stop on a conflict or failure), and `context-watch.py` (flag subagents near their context limit), linked from the runbook or AGENTS.md. | yes |
 | [`VERSION`](VERSION), [`CHANGELOG.md`](CHANGELOG.md) | Harness version (one integer, bumped per template change) and one line per version. | no |
 | [`INSTALL.md`](INSTALL.md) | Steps an agent follows to install the harness into a repo. | no |
 | [`harness`](harness) | CLI that installs and updates the template in a repo (`harness-sync` is an alias). | no |
+| [`tests/`](tests/) | Fixture tests for the template scripts, run in CI. | no |
 | [`REVIEW.md`](REVIEW.md) | Brief for a model reviewing and lightening this harness, plus the review log. | no |
 | [`EVAL.md`](EVAL.md) | Harness evaluation: fixed prompts and how to run them (issue #13). | no |
 | [`eval/check.mjs`](eval/check.mjs) | Evaluator: fixed to-do checks and source counts for one run. | no |
