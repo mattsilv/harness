@@ -46,6 +46,10 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: The operator had to ask for status in most sessions of one project ("are we done here" in 5, "is ci done", "did that deploy?", "link me to what I'm checking") (#33).
     source: incident, 2026-09
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident with counts across sessions (#33) -->
+  - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: short active sentences, one point each, "must" or "can" instead of "should" or "may", and one name for each thing.
+    <!-- autonomy-4
+    why: The operator reads and answers this text, and users follow instructions step by step, so both must be fast to scan and unambiguous. Models default to long, hedged prose; "should" and "may" hide whether a step is required. Borrows the controlled-English rules of ASD-STE100, not its word list, which costs words and flags normal technical terms.
+    source: operator, 2026-10 -->
 - **Implementation:**
   - Share business logic and authorization across all interfaces (web, API, MCP, chat, jobs); keep interfaces thin.
     <!-- impl-2
