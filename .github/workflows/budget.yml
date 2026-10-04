@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: template/AGENTS.md stays within its word budget
         run: |
-          budget=1090  # 1083 words at v28 (added delegation-4, context watchdog; operator-approved); raise deliberately, never casually
+          budget=1120  # 1118 words at v29 (added autonomy-4, ASD-STE100 style for operator and user text; operator-approved); raise deliberately, never casually
           words=$(python3 -c "from importlib.machinery import SourceFileLoader as L; print(L('h', 'harness').load_module().strip_comments(open('template/AGENTS.md').read()))" | wc -w)
           echo "template/AGENTS.md: $words / $budget words"
           [ "$words" -le "$budget" ] || { echo "::error::AGENTS.md is $words words, over the $budget budget. Cut, move to an on-demand file, or raise the budget in this PR with a reason."; exit 1; }
