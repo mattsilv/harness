@@ -191,12 +191,16 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Unknown.
     source: author
     review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; cheap, and I'd leave worktrees behind without it; self-report -->
-  - After merging, fast-forward the main checkout to the freshly fetched default branch, merge it (never rebase or force-push) into clean active branches, skip worktrees with uncommitted changes, and notify the agent that owns each updated branch.
+  - After merging, fast-forward the main checkout to the freshly fetched default branch, merge it (never rebase or force-push) into clean active branches, skip worktrees with uncommitted changes, and notify the agent that owns each updated branch; merge it into any open PR that now conflicts and has no active agent.
     <!-- delivery-12
-    why: Unknown. Parallel branches drifted from a merged default branch until their own PR update, hiding conflicts and stale dependencies from the agents working on them.
+    why: Unknown. Parallel branches drifted from a merged default branch until their own PR update, hiding conflicts and stale dependencies from the agents working on them. Conflicting PRs whose agent had stopped waited on the operator, who got only a conflict email.
     source: operator, 2026-09
     review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator, no incident; a long procedure that fits the runbook's finish-a-PR section behind a one-line trigger
     decision: keep (operator, 2026-09-26): added in v23, too new to judge -->
+  - Before the first edit and again before opening a PR, run `scripts/overlap-check.sh` with the paths you plan to touch; on a hit, agree with the owning agent who lands first.
+    <!-- delivery-13
+    why: In one project 12 PRs in 7 days conflicted with the default branch because parallel sessions edited the same files (one route file in 7 of them, the docs index in 6), and nothing surfaced it before the merge. The script lists files that other open PRs and local worktrees also change.
+    source: incident, 2026-10 -->
 - **Documentation:** docs/ is a wiki: small, single-topic Markdown pages, cross-linked, indexed by docs/README.md, which links every page. Link an existing page instead of repeating it; update it, or add one and link it from the index, as part of the change or before closing a sprint.
   <!-- docs-1
   why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.

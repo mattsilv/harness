@@ -29,7 +29,7 @@ flowchart LR
 | [`template/docs/MAINTENANCE.md`](template/docs/MAINTENANCE.md) | The recurring maintenance audit. | yes |
 | [`template/docs/RUNBOOK.md`](template/docs/RUNBOOK.md) | Skeleton for the project's working commands and known vendor errors, read on demand. | yes |
 | [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
-| [`template/scripts/`](template/scripts/) | `branch-check.sh` (conflict with the remote default branch?), `pr-wait.sh` (wait for a PR to merge, stop on a conflict or failure), and `context-watch.py` (flag subagents near their context limit), linked from the runbook or AGENTS.md. | yes |
+| [`template/scripts/`](template/scripts/) | `branch-check.sh` (conflict with the remote default branch?), `pr-wait.sh` (wait for a PR to merge, stop on a conflict or failure), `overlap-check.sh` (files another open PR or worktree also changes), and `context-watch.py` (flag subagents near their context limit), linked from the runbook or AGENTS.md. | yes |
 | [`VERSION`](VERSION), [`CHANGELOG.md`](CHANGELOG.md) | Harness version (one integer, bumped per template change) and one line per version. | no |
 | [`INSTALL.md`](INSTALL.md) | Steps an agent follows to install the harness into a repo. | no |
 | [`harness`](harness) | CLI that installs and updates the template in a repo (`harness-sync` is an alias). | no |

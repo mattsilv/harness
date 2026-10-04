@@ -69,6 +69,10 @@ Test runners take the per-worktree ports and never reuse a server they didn't st
 
 Reads the last assistant `usage` line of each running subagent transcript (modified in the last two minutes) and of the orchestrating session; context is input plus cache-read plus cache-creation tokens. It only reports, because the orchestrator, not a script, decides when to stop an agent or tell the operator. The transcript format is undocumented, so it exits non-zero rather than guess (after still reporting the other agents). It is runtime-specific to Claude Code, an accepted exception to the no-tool-names rule since projects on other runtimes can ignore it. Running means the transcript changed in the last two minutes, so a long silent tool call can read as not running. Subagents had run past 250k tokens of context unnoticed. (operator, 2026-10)
 
+## scripts/overlap-check.sh
+
+Lists the files this branch, or the given paths, share with other open PRs and local worktrees, so parallel sessions agree on an order before they conflict. It always exits 0, because an overlap needs a conversation, not a failure. It came from a project where 12 PRs in 7 days conflicted after parallel edits to the same files. (incident, 2026-10)
+
 ## docs/languages/typescript.md
 
 | Rule | Why | Source |
