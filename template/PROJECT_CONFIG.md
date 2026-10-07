@@ -21,6 +21,14 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 Record each choice once, here; adding a vendor is new spend, so ask first.
 
 - **Secrets:** Set during setup (e.g. Doppler, 1Password, a cloud secret manager, or a gitignored .env). If unset, stop and ask.
+  - **Secret names:** Each name must carry a project prefix, so one config can hold several projects' secrets (`<PROJECT>_CLOUDFLARE_API_TOKEN`, not `CLOUDFLARE_API_TOKEN`).
+  - **Operator enters a value:** The agent must hand the operator the vendor's native interactive prompt, so the value never goes into the chat, a command argument, or shell history.
+    - The agent must never ask for the value in chat, put it in a command argument, or wrap it in its own `read` prompt.
+    - With Doppler, the agent must give the bare command with no value: `doppler secrets set <SECRET_NAME> --project <project> --config <config>`.
+    - The agent must give these steps with it: 1. Paste the value. 2. Press Enter twice. 3. Type `.` and press Enter.
+    - When the project also needs the value elsewhere, the agent gives the matching no-value command; for a GitHub Actions secret, `gh secret set <NAME>` also prompts.
+    - The agent must copy the command to the clipboard when the platform supports it (macOS `pbcopy`).
+    - The agent must say the command needs a real terminal window, not the Claude Code `!` prefix or an agent-run shell.
 - **Secrets location:** Set during setup (project and config, vault, or file path; one per repo or client, separate app and environment configs).
 - **Hosting/deploy:** Serverless (e.g. Cloudflare) unless recorded otherwise.
 - **Database:** SQL (e.g. Cloudflare D1) unless recorded otherwise.

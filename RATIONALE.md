@@ -21,6 +21,8 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Model tiers: planning model as a subagent of the primary session | Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review. | operator |
 | Model tiers: at least one T3 subagent each for testing and research per implementation task, and a T3 PR review | Operator's choice: keeps testing and research off the T2 session's context and cost. | operator |
+| Secrets: operator enters a value through the vendor's native interactive prompt | A value pasted into chat, a command argument, or an agent-run shell reaches the model's context, logs, or shell history; the vendor's no-value prompt keeps it in the operator's terminal. | operator |
+| Secrets: project prefix on secret names | One config can hold several projects' secrets; generic names collide. | operator |
 
 Values, not rules. Each is the author's default and projects are expected to change
 them. Vendors get one line each so a choice is recorded once; only the secrets lines
