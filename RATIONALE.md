@@ -66,7 +66,7 @@ Test runners take the per-worktree ports and never reuse a server they didn't st
 
 ## docs/FRONTEND.md and scripts/ui-capture.mjs
 
-The operator reported unclear, verbose, poorly spaced interfaces and requested committed screenshots and independent review (2026-10). One representative per distinct template limits capture cost; a generated sitemap makes references findable. Batch capture and freshness checks prevent ad hoc navigation and stale images. The opt-in workflow extends existing screenshot review to copy that affects fit. The CLI uses the configured browser driver, with project-owned setup hooks for authentication and readiness.
+The operator reported unclear, verbose, poorly spaced interfaces and requested committed screenshots and independent review (2026-10). One representative per distinct template limits capture cost; a generated sitemap makes references findable. Batch capture and freshness checks prevent ad hoc navigation and stale images. The opt-in workflow extends existing screenshot review to copy that affects fit. The CLI uses the configured browser driver, with project-owned setup hooks for authentication and readiness. Screenshot storage is a project choice because live-data full-page captures can churn tens of megabytes per run (2026-10).
 
 ## docs/languages/python.md
 

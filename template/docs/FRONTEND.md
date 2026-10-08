@@ -6,7 +6,7 @@ Applies when **Frontend review** is `on` in PROJECT_CONFIG.md.
 
 - Create `docs/ui/templates.json` with `viewports` and `templates`, giving each distinct page template or materially different state a stable `id`, `title`, representative `path`, optional `parent`, and a visible `ready` selector; data-only variants share an entry.
 - Wrap the configured capture command with the project's server startup and safe sample-data setup, using `--setup <module>` when a capture needs authentication or interaction.
-- Keep captures reproducible with fixed data, fonts, and rendering environment, and wire `--check` into PR verification for UI, styles, layouts, assets, dependencies, or capture-setup changes.
+- Keep captures reproducible with fixed data, fonts, and rendering environment, and, when **Screenshots** is `committed`, wire `--check` into PR verification for UI, styles, layouts, assets, dependencies, or capture-setup changes.
 
 Manifest shape (replace the example route and selector):
 
@@ -24,12 +24,13 @@ Manifest shape (replace the example route and selector):
 ```
 
 The optional setup module exports `prepare(context)` for authentication and
-`ready(page, template)` for interactions and data readiness after navigation.
+`ready(page, template)` for interactions and data readiness after navigation;
+when data loads client-side, wait there for loading states (skeletons, `aria-busy`) to clear.
 Keep credentials and browser session files out of source control.
 
 ## Capture and review
 
-- Run the capture command after frontend changes, including copy that can affect fit, and commit the generated `docs/ui/README.md` sitemap and `docs/ui/screenshots/<id>/{desktop,mobile}.png` with the change.
+- Run the capture command after frontend changes, including copy that can affect fit, and commit the generated `docs/ui/README.md` sitemap and, per **Screenshots**, `docs/ui/screenshots/<id>/{desktop,mobile}.png` with the change.
 - Give the configured reviewer the sitemap, affected images, intended change, and previous images for comparison before shipping.
 - Check clear controls and hierarchy, consistent spacing and alignment, purposeful whitespace, readable text and contrast, usable mobile targets, and clipping or overflow.
 - Prefer short, specific action labels and familiar words understandable around an eighth-grade reading level, keeping text needed to explain consequences or prevent mistakes.
