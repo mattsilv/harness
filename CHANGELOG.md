@@ -3,7 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
-- **33** · 2026-10-08 · #PR · Frontend review fixes: `ui-capture.mjs` loads CommonJS drivers (playwright) via their default export and ignores a trailing slash when checking redirects; new **Screenshots** setting (`committed` default or `local`); FRONTEND.md says to wait for client-side loading states in `ready`. Action: run `harness apply`.
+- **33** · 2026-10-08 · #50 · Frontend review fixes: `ui-capture.mjs` loads CommonJS drivers (playwright) via their default export and ignores a trailing slash when checking redirects; new **Screenshots** setting (`committed` default or `local`); FRONTEND.md says to wait for client-side loading states in `ready`. Action: run `harness apply`.
 - **32** · 2026-10-08 · #49 · Optional frontend review: batch capture CLI, committed desktop/mobile screenshots per distinct template, a generated visual sitemap, freshness checks, and independent T2 visual review. Action: run `harness apply`; opt in via PROJECT_CONFIG and configure the manifest and capture command.
 
 - **31** · 2026-10-07 · #48 · PROJECT_CONFIG Secrets: when the operator must enter a secret value, the agent hands over the vendor's native no-value prompt (or stdin), copies it to the clipboard, and says it needs a real terminal; never in chat, an argument, or its own `read`. Agents never print values. New Doppler sub-bullets: one project per app (prefix names in a shared project), the set/check commands, `doppler run` for local dev, read-only expiring CI service tokens, sync for targets without one, rotation, and three pitfalls. Action: run `harness apply`.
