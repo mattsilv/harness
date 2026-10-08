@@ -21,6 +21,7 @@ async function main() {
   const base = new URL(args.url);
   if (!['http:', 'https:'].includes(base.protocol)) throw Error('App URL must use http or https');
   const manifest = JSON.parse(await readFile(args.manifest, 'utf8'));
+  const root = dirname(resolve(args.manifest));
   const { viewports, templates } = manifest;
   if (!Array.isArray(templates) || !templates.length) throw Error('Manifest needs at least one template');
   for (const name of ['desktop', 'mobile']) {
@@ -75,7 +76,29 @@ async function main() {
                 ]);
               } finally { clearTimeout(timer); }
             });
-            outputs.set(`screenshots/${t.id}/${name}.png`, await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' }));
+            const file = `screenshots/${t.id}/${name}.png`;
+            const captured = await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' });
+            let previous;
+            try { previous = await readFile(join(root, file)); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+            // Keep existing bytes when only image encoding or one-level color rounding differs.
+            const equivalent = previous && (previous.equals(captured) || await page.evaluate(async encoded => {
+              try {
+                const pixels = [];
+                for (const data of encoded) {
+                  const bitmap = await createImageBitmap(new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], { type: 'image/png' }));
+                  const canvas = document.createElement('canvas');
+                  canvas.width = bitmap.width;
+                  canvas.height = bitmap.height;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(bitmap, 0, 0);
+                  bitmap.close();
+                  pixels.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+                }
+                const [a, b] = pixels;
+                return a.width === b.width && a.height === b.height && a.data.every((value, i) => Math.abs(value - b.data[i]) <= 1);
+              } catch { return false; }
+            }, [previous.toString('base64'), captured.toString('base64')]));
+            outputs.set(file, equivalent ? previous : captured);
           } catch (error) {
             throw Error(`${t.id}/${name}: ${error.message}`);
           } finally { await page.close(); }
@@ -96,7 +119,6 @@ async function main() {
   }
   tree(null, 0);
   outputs.set('README.md', Buffer.from(lines.join('\n') + '\n'));
-  const root = dirname(resolve(args.manifest));
   const stale = [];
   for (const entry of await readdir(join(root, 'screenshots'), { withFileTypes: true }).catch(e => { if (e.code === 'ENOENT') return []; throw e; })) {
     if (!entry.isDirectory() || ids.has(entry.name)) continue;

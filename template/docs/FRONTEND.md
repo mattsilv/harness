@@ -37,4 +37,5 @@ Keep credentials and browser session files out of source control.
 - Link the sitemap and record the reviewed code commit and result in the PR; report unavailable capture or visual review as a blocker.
 
 The CLI reuses one browser for the batch; `--check` compares without overwriting.
+Image comparison allows one color level of rounding noise per channel.
 These captures supply the screenshots required by AGENTS.md.
