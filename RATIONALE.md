@@ -21,6 +21,7 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Model tiers: planning model as a subagent of the primary session | Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review. | operator |
 | Model tiers: at least one T3 subagent each for testing and research per implementation task, and a T3 PR review | Operator's choice: keeps testing and research off the T2 session's context and cost. | operator |
+| Frontend review: off by default, independent T2 visual review when enabled | Projects opt into a stronger visual pass without changing the T3 code review or adding always-loaded UI rules; capture runner, command, and initial viewports stay project defaults. | operator, 2026-10 |
 | Secrets: operator enters a value through the vendor's native interactive prompt | A value pasted into chat, a command argument, or an agent-run shell reaches the model's context, logs, or shell history; the vendor's no-value prompt keeps it in the operator's terminal. | operator |
 | Secrets: Doppler structure, prefix in shared projects | Follows Doppler's one-project-per-app guidance; when apps share a project, generic names collide. | vendor docs, operator |
 | Secrets: never print values; check by name or length | A printed value reaches the model's context and logs. | design |
@@ -62,6 +63,10 @@ The stale-area check (one folder or feature set untouched 4+ months per audit) c
 A skeleton the project fills in: the exact commands for bootstrapping a worktree, running locally, migrations, remote vendor commands, finishing a PR, launching subagents and review, and known vendor errors. It is on demand, like `docs/languages/`, because the content is project- and vendor-specific (#33). The guidance for many worktrees on one machine (per-worktree values derived from one identifier and passed as flags, runtime secret injection instead of a local env file, two idempotent scripts, collision-proof migration ids) comes from the same sessions: the 53 env-file edits were port changes, and two branches picked the same migration number. (incident, 2026-09)
 
 Test runners take the per-worktree ports and never reuse a server they didn't start: an end-to-end config reused whatever answered on its fixed default port, and another project's dev server held that port, so a default run in any worktree would have silently tested the wrong app. (incident, 2026-09)
+
+## docs/FRONTEND.md and scripts/ui-capture.mjs
+
+The operator reported unclear, verbose, poorly spaced interfaces and requested committed screenshots and independent review (2026-10). One representative per distinct template limits capture cost; a generated sitemap makes references findable. Batch capture and freshness checks prevent ad hoc navigation and stale images. The opt-in workflow extends existing screenshot review to copy that affects fit. The CLI uses the configured browser driver, with project-owned setup hooks for authentication and readiness.
 
 ## docs/languages/python.md
 
