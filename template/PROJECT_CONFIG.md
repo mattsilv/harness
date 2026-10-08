@@ -4,6 +4,11 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 
 - **Stack:** TypeScript monorepo (frontend and backend), Tailwind CSS.
 - **Design skill:** frontend-design in Claude Code; none for other runtimes.
+- **Frontend review:** `off`; set to `on` to follow [docs/FRONTEND.md](docs/FRONTEND.md) for frontend changes.
+  - **Visual reviewer:** Independent T2 subagent, alongside the T3 PR review.
+  - **Capture runner:** Playwright with Chromium; reuse an equivalent project runner when available.
+  - **Capture command:** `node scripts/ui-capture.mjs --driver playwright --browser chromium --url <local-app-url>`; add `--check` in CI.
+  - **Viewports:** Initially desktop 1440 × 900 and mobile 390 × 844; record the chosen sizes in `docs/ui/templates.json` when enabling.
 - **Model tiers:** The default procedure for which model does what; rules name tiers, never models.
   - **T1, planning model:** OpenAI Astra or Anthropic Fable, medium effort. Does any planning, architecture, and hard decisions, always as a subagent of the session.
   - **T2, primary model:** OpenAI Sol or Anthropic Opus, medium effort. Runs the session and does the coding and merging.

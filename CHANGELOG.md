@@ -3,6 +3,8 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **32** · 2026-10-08 · #49 · Optional frontend review: batch capture CLI, committed desktop/mobile screenshots per distinct template, a generated visual sitemap, freshness checks, and independent T2 visual review. Action: run `harness apply`; opt in via PROJECT_CONFIG and configure the manifest and capture command.
+
 - **31** · 2026-10-07 · #48 · PROJECT_CONFIG Secrets: when the operator must enter a secret value, the agent hands over the vendor's native no-value prompt (or stdin), copies it to the clipboard, and says it needs a real terminal; never in chat, an argument, or its own `read`. Agents never print values. New Doppler sub-bullets: one project per app (prefix names in a shared project), the set/check commands, `doppler run` for local dev, read-only expiring CI service tokens, sync for targets without one, rotation, and three pitfalls. Action: run `harness apply`.
 - **30** · 2026-10-04 · #47 · New `scripts/overlap-check.sh` and rule delivery-13: run it before the first edit and before opening a PR, and agree an order with the owning agent on a hit. delivery-12 also merges the default branch into conflicting open PRs that have no active agent. Word budget raised to 1170. Action: run `harness apply`, then add a repo command for the script.
 - **29** · 2026-10-04 · #46 · New Autonomy rule: write questions and reports for the operator, and instructions for users, in ASD-STE100 style (short active sentences, one point each, "must"/"can" not "should"/"may", one name per thing). Word budget raised to 1120. No action needed.
