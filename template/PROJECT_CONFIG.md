@@ -8,6 +8,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
   - **Visual reviewer:** Independent T2 subagent, alongside the T3 PR review.
   - **Capture runner:** Playwright with Chromium; reuse an equivalent project runner when available.
   - **Capture command:** `node scripts/ui-capture.mjs --driver playwright --browser chromium --url <local-app-url>`; add `--check` in CI.
+  - **Screenshots:** `committed` (default) or `local` (gitignore `docs/ui/screenshots/`; commit the manifest and sitemap; no `--check`).
   - **Viewports:** Initially desktop 1440 × 900 and mobile 390 × 844; record the chosen sizes in `docs/ui/templates.json` when enabling.
 - **Model tiers:** The default procedure for which model does what; rules name tiers, never models.
   - **T1, planning model:** OpenAI Astra or Anthropic Fable, medium effort. Does any planning, architecture, and hard decisions, always as a subagent of the session.

@@ -46,8 +46,10 @@ async function main() {
     }
   }
   const localRequire = createRequire(resolve('package.json'));
-  const driver = await import(pathToFileURL(localRequire.resolve(args.driver)).href);
-  if (!driver[args.browser]?.launch) throw Error('Configured driver does not expose the requested browser engine');
+  const driverModule = await import(pathToFileURL(localRequire.resolve(args.driver)).href);
+  // CommonJS drivers (playwright's require entry) expose engines only on the default export.
+  const driver = driverModule[args.browser] ? driverModule : driverModule.default;
+  if (!driver?.[args.browser]?.launch) throw Error('Configured driver does not expose the requested browser engine');
   const setup = args.setup ? await import(pathToFileURL(resolve(args.setup)).href) : {};
   const outputs = new Map();
   const browser = await driver[args.browser].launch({ headless: true });
@@ -62,7 +64,8 @@ async function main() {
           try {
             const response = await page.goto(new URL(t.path, base).href);
             if (!response || !response.ok()) throw Error(`${t.id}: navigation failed (${response?.status() ?? 'no response'})`);
-            if (new URL(page.url()).pathname !== new URL(t.path, base).pathname) throw Error(`${t.id}: unexpected redirect to ${page.url()}`);
+            const bare = url => new URL(url, base).pathname.replace(/(.)\/$/, '$1');
+            if (bare(page.url()) !== bare(t.path)) throw Error(`${t.id}: unexpected redirect to ${page.url()}`);
             await setup.ready?.(page, t);
             await page.locator(t.ready).waitFor({ state: 'visible' });
             await page.evaluate(async () => {

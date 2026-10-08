@@ -18,7 +18,7 @@ export const engine = { launch: async () => ({
       let url;
       return {
         goto: async value => { url = value; return { ok: () => !url.includes('fail'), status: () => 500 }; },
-        url: () => url,
+        url: () => url + (process.env.CAPTURE_SUFFIX || ''),
         locator: () => ({ waitFor: async () => {} }),
         evaluate: async () => {},
         screenshot: async () => Buffer.from(`${url}:${viewport.width}:${process.env.CAPTURE_REV || '1'}`),
@@ -49,12 +49,12 @@ class CaptureTests(unittest.TestCase):
             ],
         }
 
-    def run_capture(self, *args, revision="1"):
+    def run_capture(self, *args, revision="1", suffix=""):
         self.manifest.write_text(json.dumps(self.data))
         return subprocess.run([
             "node", str(SCRIPT), "--driver", str(self.driver), "--browser", "engine",
             "--url", "http://localhost:1234", "--manifest", str(self.manifest), *args,
-        ], cwd=self.root, env={**os.environ, "CAPTURE_LOG": str(self.log), "CAPTURE_REV": revision},
+        ], cwd=self.root, env={**os.environ, "CAPTURE_LOG": str(self.log), "CAPTURE_REV": revision, "CAPTURE_SUFFIX": suffix},
             capture_output=True, text=True, timeout=30)
 
     def test_capture_sitemap_and_nonmutating_freshness_check(self):
@@ -85,6 +85,19 @@ class CaptureTests(unittest.TestCase):
         self.assertNotEqual(self.run_capture("--check").returncode, 0)
         self.assertEqual(self.run_capture().returncode, 0)
         self.assertFalse((self.root / "screenshots/detail/desktop.png").exists())
+
+    def test_commonjs_driver_default_export(self):
+        self.driver = self.root / "driver.cjs"
+        self.driver.write_text(DRIVER.replace("import { appendFileSync } from 'node:fs';", "const { appendFileSync } = require('node:fs');")
+                               .replace("export const engine =", "const engine =") + "module.exports = (() => ({ engine }))();\n")
+        result = self.run_capture()
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_trailing_slash_is_not_a_redirect(self):
+        self.assertEqual(self.run_capture(suffix="/").returncode, 0)
+        result = self.run_capture(suffix="x")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unexpected redirect", result.stderr)
 
     def test_invalid_tree_and_paths_fail_before_browser_launch(self):
         for field, value in [("id", "../escape"), ("parent", "detail"), ("path", "//example.invalid/")]:
