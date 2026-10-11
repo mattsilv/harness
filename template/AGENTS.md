@@ -246,9 +246,9 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Filing discovered work and stopping left it waiting on the operator to start another session mid-sprint.
     source: operator, 2026-09
     review: keep, confidence medium (claude-fable-5-1, 2026-09-26): operator; the failure is described but not counted -->
-  - While subagents run, poll `scripts/context-watch.py` every 5 minutes. On `handoff`, stop that subagent at a safe point, relaunch it fresh with a short prompt naming its issue and branch, and tell the operator; on `compact-now`, tell the operator.
+  - While subagents run, keep `bash scripts/snitch.sh` running in the background. When it exits, act on each line, then restart it: on `handoff`, stop that subagent at a safe point, relaunch it fresh with a short prompt naming its issue and branch, and tell the operator; on `compact-now`, tell the operator; send another session's line to that session. See docs/SUBAGENT-CONTEXT-WATCH.md.
     <!-- delegation-4
-    why: Subagents silently ran past 250k tokens of context (one reached 259k) and degraded; the orchestrator had no signal. The script reads transcript usage; the orchestrator only notifies, never compacts itself.
+    why: Subagents silently ran past 250k tokens of context (one reached 259k) and degraded; the orchestrator had no signal. The script reads transcript usage; the orchestrator only notifies, never compacts itself. Polling `context-watch.py` every 5 minutes cost tokens per poll and was forgotten, and it watched one session while subagents of other sessions on the same machine crossed 250k unnoticed; the snitch is a zero-token loop that scans every session and exits to wake the orchestrator (#52).
     source: operator, 2026-10 -->
 - **Model selection:**
   - Follow the model tiers in PROJECT_CONFIG.md when the runtime allows.

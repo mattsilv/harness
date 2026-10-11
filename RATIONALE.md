@@ -78,6 +78,10 @@ The operator reported unclear, verbose, poorly spaced interfaces and requested c
 
 Reads the last assistant `usage` line of each running subagent transcript (modified in the last two minutes) and of the orchestrating session; context is input plus cache-read plus cache-creation tokens. It only reports, because the orchestrator, not a script, decides when to stop an agent or tell the operator. The transcript format is undocumented, so it exits non-zero rather than guess (after still reporting the other agents). It is runtime-specific to Claude Code, an accepted exception to the no-tool-names rule since projects on other runtimes can ignore it. Running means the transcript changed in the last two minutes, so a long silent tool call can read as not running. Subagents had run past 250k tokens of context unnoticed. (operator, 2026-10)
 
+## scripts/snitch.sh and docs/SUBAGENT-CONTEXT-WATCH.md
+
+A bash loop that runs `context-watch.py` for every session with active subagents and exits on the first new alert, so a background task notification wakes the orchestrator at zero model tokens. It replaced the rule to poll `context-watch.py` every 5 minutes, which cost tokens per poll and was forgotten; it scans every project because the polled script saw one session while other sessions' subagents on the same machine crossed 250k unnoticed. It is a separate file so `context-watch.py` keeps its single-shot contract and tests; one shared seen-file per machine gives at-most-once delivery, since a duplicate `handoff` would have two orchestrators relaunch the same subagent; the idle exit follows the Processes rule. The doc is on demand: AGENTS.md carries only the three actions, and the doc holds the output format, env, and dedupe shapes. (#52; incident, 2026-10)
+
 ## scripts/overlap-check.sh
 
 Lists the files this branch, or the given paths, share with other open PRs and local worktrees, so parallel sessions agree on an order before they conflict. It always exits 0, because an overlap needs a conversation, not a failure. It came from a project where 12 PRs in 7 days conflicted after parallel edits to the same files. (incident, 2026-10)

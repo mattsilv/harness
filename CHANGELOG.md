@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **34** · 2026-10-11 · #53 · New `scripts/snitch.sh` and `docs/SUBAGENT-CONTEXT-WATCH.md`: a zero-token background loop that runs `context-watch.py` for every session with active subagents (any project), exits on the first new alert so the task notification wakes the orchestrator, dedupes per (session, agent, status) in one shared seen-file, reports watcher errors, and exits when idle. delegation-4 now says keep it running in the background, act on each line (including forwarding another session's line), and restart it; the 5-minute poll is gone. Word budget raised to 1190 (#52). Action: run `harness apply`, link `docs/SUBAGENT-CONTEXT-WATCH.md` from `docs/README.md`, and start the snitch per the rule.
 - **33** · 2026-10-08 · #50 · Frontend review fixes: `ui-capture.mjs` loads CommonJS drivers (playwright) via their default export and ignores a trailing slash when checking redirects; new **Screenshots** setting (`committed` default or `local`); FRONTEND.md says to wait for client-side loading states in `ready`. Action: run `harness apply`.
 - **32** · 2026-10-08 · #49 · Optional frontend review: batch capture CLI, committed desktop/mobile screenshots per distinct template, a generated visual sitemap, freshness checks, and independent T2 visual review. Action: run `harness apply`; opt in via PROJECT_CONFIG and configure the manifest and capture command.
 
