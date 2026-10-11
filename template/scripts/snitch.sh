@@ -68,8 +68,11 @@ seen() {
 claim() {
   seen "$1" && return 1
   [ "$ONCE" = 1 ] && return 0
-  ( set -C; : >"$(marker "$1")" ) 2>/dev/null || return 1
-  echo "$1" >>"$SEEN"   # append-only log, never rewritten
+  if ! ( set -C; : >"$(marker "$1")" ) 2>/dev/null; then
+    [ -e "$(marker "$1")" ] && return 1                   # another snitch won
+    echo "snitch: cannot write $STATE_DIR; delivering unclaimed" >&2   # never drop an alert for a lost state dir
+  fi
+  echo "$1" >>"$SEEN" 2>/dev/null   # append-only log, never rewritten
 }
 compact_pending() { [ -e "$(marker "$1 session compact-now")" ]; }
 

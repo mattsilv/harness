@@ -13,8 +13,9 @@ Session id: argument, else $CLAUDE_CODE_SESSION_ID, else the newest transcript i
 project dir derived from the current directory. Transcripts are found by session id
 under $CLAUDE_PROJECTS_DIR (default $CLAUDE_CONFIG_DIR/projects, then ~/.claude/projects),
 so worktrees work too. A subagent is running if its transcript changed within
-CONTEXT_RUNNING_SECS and its last message is not a finished assistant turn (stop_reason
-end_turn); a finished agent is never reported, however recent.
+CONTEXT_RUNNING_SECS and its last message is neither a finished assistant turn (stop_reason
+end_turn) nor the user's interrupt; such an agent is not reported, however recent. An agent
+that ended its turn to wait on its own background work reads as finished until it resumes.
 Env: CONTEXT_WARN (200000), CONTEXT_HANDOFF (250000), CONTEXT_RUNNING_SECS (120),
 CONTEXT_TAIL_BYTES (524288).
 """
@@ -64,9 +65,9 @@ def tail_records(path):
 
 
 def finished(lines):
-    """True if the last message record is an assistant turn that ended (stop_reason end_turn).
-    A running agent ends on a tool_use, a tool_result, or a still-streaming record; an agent
-    resumed with a new message ends on that user record."""
+    """True if the last message record is an assistant turn that ended (stop_reason end_turn)
+    or the user's interrupt. A running agent ends on a tool_use, a tool_result, or a
+    still-streaming record; an agent resumed with a new message ends on that user record."""
     for raw in reversed(lines):
         if b'"assistant"' not in raw and b'"user"' not in raw:
             continue
@@ -77,7 +78,9 @@ def finished(lines):
         if d.get("type") == "assistant":
             return (d.get("message") or {}).get("stop_reason") == "end_turn"
         if d.get("type") == "user":
-            return False
+            c = (d.get("message") or {}).get("content")
+            text = c if isinstance(c, str) else "".join(x.get("text", "") for x in c if isinstance(x, dict)) if isinstance(c, list) else ""
+            return text.startswith("[Request interrupted by user")
     return False
 
 

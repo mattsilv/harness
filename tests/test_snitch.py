@@ -153,6 +153,16 @@ class Snitch(unittest.TestCase):
         lines = [l for o in outs for l in o.splitlines() if "handoff" in l]
         self.assertEqual(len(lines), 1, outs)
 
+    def test_3_lost_state_dir_still_delivers(self):
+        self.agent.write_text(turn(260_000))
+        self.state.mkdir()
+        self.seen.write_text("")
+        os.chmod(self.state, 0o555)
+        self.addCleanup(os.chmod, self.state, 0o755)
+        r = self.run_loop(CLAUDE_CODE_SESSION_ID="someone-else")
+        self.assertIn("handoff", alerts(r))
+        self.assertIn("snitch: cannot write", r.stderr)
+
     def test_4_idle_timer_ignores_sessions_owned_by_another_snitch(self):
         self.agent.write_text(turn(260_000))
         self.state.mkdir()

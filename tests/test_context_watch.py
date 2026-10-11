@@ -130,6 +130,11 @@ class ContextWatch(Fixture):
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout, "done  300000  handoff  task\nsession  260000  compact-now  orchestrator\n")
 
+    def test_interrupted_agent_is_finished(self):
+        stop = json.dumps({"type": "user", "message": {"content": [{"type": "text", "text": "[Request interrupted by user for tool use]"}]}})
+        self.agent("a", [turn(300000), stop])
+        self.assertEqual((self.run_watch().returncode, self.run_watch().stdout), (3, ""))
+
     def test_exit_3_when_no_subagent_runs(self):
         self.assertEqual(self.run_watch().returncode, 3)
         self.agent("old", [turn(400000)], age=600)
