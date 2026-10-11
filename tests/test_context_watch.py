@@ -6,9 +6,9 @@ SCRIPT = Path(__file__).resolve().parent.parent / "template/scripts/context-watc
 SID = "sess-1"
 
 
-def turn(tokens, kind="assistant"):
+def turn(tokens, kind="assistant", stop=None):
     u = {"input_tokens": 2, "cache_read_input_tokens": tokens - 12, "cache_creation_input_tokens": 10, "output_tokens": 5}
-    return json.dumps({"type": kind, "message": {"usage": u}})
+    return json.dumps({"type": kind, "message": {"usage": u, "stop_reason": stop}})
 
 
 class Fixture(unittest.TestCase):
@@ -108,6 +108,34 @@ class ContextWatch(Fixture):
     def test_unknown_session_errors(self):
         r = self.run_watch(CLAUDE_CODE_SESSION_ID="nope")
         self.assertEqual(r.returncode, 2)
+
+    def test_claude_config_dir_default(self):
+        self.agent("a", [turn(300000)])
+        root = Path(self.tmp.name) / "cfg"
+        (root / "projects").mkdir(parents=True)
+        self.proj.rename(root / "projects" / "-proj")
+        e = {**os.environ, "CLAUDE_CONFIG_DIR": str(root), "CLAUDE_CODE_SESSION_ID": SID}
+        e.pop("CLAUDE_PROJECTS_DIR", None)
+        r = subprocess.run([sys.executable, str(SCRIPT)], capture_output=True, text=True, env=e)
+        self.assertEqual((r.returncode, r.stdout), (0, "a  300000  handoff  task\n"), r.stderr)
+
+    def test_finished_agent_is_not_running(self):
+        self.agent("done", [turn(240000), turn(300000, stop="end_turn")])
+        self.session(260000)
+        r = self.run_watch()
+        self.assertEqual((r.stdout, r.stderr), ("", ""))
+        self.assertEqual(r.returncode, 3)  # nothing is running: distinct from a quiet watch
+        self.agent("done", [turn(300000, stop="end_turn"), '{"type":"user"}'])  # resumed with a new message
+        r = self.run_watch()
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(r.stdout, "done  300000  handoff  task\nsession  260000  compact-now  orchestrator\n")
+
+    def test_exit_3_when_no_subagent_runs(self):
+        self.assertEqual(self.run_watch().returncode, 3)
+        self.agent("old", [turn(400000)], age=600)
+        self.assertEqual(self.run_watch().returncode, 3)
+        self.agent("a", [turn(1000)])
+        self.assertEqual(self.run_watch().returncode, 0)
 
 
 if __name__ == "__main__":
