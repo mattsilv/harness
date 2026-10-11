@@ -7,13 +7,14 @@
 - Every `SNITCH_INTERVAL` seconds (default 300), it finds every Claude Code session, **in any project**, with a subagent transcript changed in the last `SNITCH_ACTIVE_MINS` minutes (default 15), and runs `scripts/context-watch.py <session-id>` for each. Scanning all sessions is deliberate: `context-watch.py` alone sees only one session, and other sessions' agents went unnoticed. It reads only each transcript's last usage line and the subagent's task description.
 - `context-watch.py` thresholds: `warn` at 200k tokens, `handoff` at 250k (`CONTEXT_WARN`, `CONTEXT_HANDOFF`). It also prints `compact-now` for the orchestrating session itself.
 - The loop **exits** on the first scan that finds a line it has not reported. The exit is the alert: under `run_in_background`, it wakes the orchestrator through the task notification.
-- It sets `CONTEXT_RUNNING_SECS` to `SNITCH_ACTIVE_MINS * 60` (unless set), so a subagent counts as running for exactly as long as its session counts as active. A long tool call is not read as a finished agent, and a finished agent can be reported up to 15 minutes late, once.
+- It sets `CONTEXT_RUNNING_SECS` to `SNITCH_ACTIVE_MINS * 60` (unless set), so a subagent counts as running for exactly as long as its session counts as active. A long tool call is not read as a finished agent. A finished agent (its transcript ends on an assistant turn with `stop_reason: end_turn`, or on the user's interrupt) is not reported, however recent, so a `handoff` names an agent that is still running; an agent resumed with a new message counts as running again. Two edges: an agent that ended its turn to wait on its own background work reads as finished until it resumes (its alert is delayed, not lost), and an agent killed mid-stream (last record without a `stop_reason`) still reads as running until `SNITCH_ACTIVE_MINS` pass.
+- Transcripts are found under `CLAUDE_PROJECTS_DIR`, default `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects`, the same default as `context-watch.py`.
 - Each snitch touches a heartbeat (`alive-<session-id>` beside the seen-file) on every scan. A session whose own snitch is alive (heartbeat within two intervals) is reported only by that snitch, whose exit is the one that wakes it. Other snitches report only sessions that have no live snitch, as `other` lines.
-- An append-only dedupe file (`SNITCH_SEEN`, default `${TMPDIR:-/tmp}/snitch-$USER/seen`) outlives restarts on purpose, and all snitches on the machine share it. It holds three key shapes:
+- An append-only log (`SNITCH_SEEN`, default `${TMPDIR:-/tmp}/snitch-$USER/seen`) outlives restarts on purpose, and all snitches on the machine share it. It holds three key shapes:
   - `<session> <agent> <status>`: a `warn` does not repeat; a later `handoff` for the same agent does.
-  - `<session> session compact-now` and `<session> session compact-clear`: the last one wins. `compact-clear` is appended when a scan of an active session no longer shows `compact-now`, so a regrowth after compaction alerts again.
+  - `<session> session compact-now` and `<session> session compact-clear`: the last one wins. `compact-clear` is recorded only when a successful watch (`context-watch.py` exit 0: a subagent ran and the session transcript was read) no longer shows `compact-now`, so a regrowth after compaction alerts again. A watcher error, or a scan in which no subagent was running, proves nothing and clears nothing.
   - `<session> - error <cksum>`: any output that is not a status line (a `context-watch:` error, a traceback, a missing `python3`) is reported once per distinct message, so the watcher cannot go silent.
-- Delivery is at most once: a key is appended before the alert prints, and the file is never rewritten, so concurrent snitches cannot drop each other's keys.
+- Delivery is at most once, across concurrent snitches: each key is claimed by creating a marker file (`key-<key, spaces as _>` beside the log) with `noclobber`, which is atomic, so of two snitches scanning the same unowned session exactly one prints the line. The log is appended after the claim and never rewritten. `compact-clear` removes the `compact-now` marker. A key in the log without a marker (recorded before this scheme) still counts as seen, except `compact-now`, which fires once more after the upgrade. Restart a running snitch after a sync: the old loop reads the new exit 3 as an error, once per session. If the state directory disappears, the alert is still printed (with a `snitch: cannot write` line on stderr) rather than dropped.
 - It exits with an `idle:` line after `SNITCH_IDLE_SECS` (default 7200) in which no subagent transcript changed within `SNITCH_ACTIVE_MINS`; so the exit comes about 2h15m after the last subagent activity (AGENTS.md, Processes).
 
 ## Start it
@@ -30,7 +31,7 @@ bash scripts/snitch.sh
 
 Output is `SNITCH HH:MM`, then one line per alert: `<self|other>  <session-id>  <project-dir>  <context-watch line>`. `self` means the session whose `CLAUDE_CODE_SESSION_ID` started the snitch.
 
-- `self ... handoff`: stop that subagent at a safe point, relaunch it fresh with a short prompt naming its issue and branch, and tell the operator.
+- `self ... handoff`: stop that subagent at a safe point, relaunch it fresh with a short prompt naming its issue and branch, and tell the operator. The agent was running when reported; if its completion notification has arrived since, there is nothing to relaunch.
 - `self ... warn`: no action; a `handoff` follows if it keeps growing.
 - `self ... compact-now`: tell the operator.
 - `other ...`: the alert belongs to a session with no snitch of its own. Find it in the runtime's session list (match by session start time or project directory) and send it the line.
@@ -39,4 +40,4 @@ Output is `SNITCH HH:MM`, then one line per alert: `<self|other>  <session-id>  
 
 Otherwise, start the snitch again.
 
-The snitch wraps `scripts/context-watch.py` without changing it. Like that script, it is specific to Claude Code transcripts; projects on other runtimes can ignore both.
+The snitch wraps `scripts/context-watch.py` and reads its exit status (0 watched a running subagent, 3 none was running, 2 an error). Like that script, it is specific to Claude Code transcripts; projects on other runtimes can ignore both.
