@@ -191,9 +191,9 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Unknown.
     source: author
     review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; cheap, and I'd leave worktrees behind without it; self-report -->
-  - After merging, fast-forward the main checkout to the freshly fetched default branch, merge it (never rebase or force-push) into clean active branches, skip worktrees with uncommitted changes, and notify the agent that owns each updated branch; merge it into any open PR that now conflicts and has no active agent.
+  - After merging, fast-forward the main checkout to the fetched default branch; merge it (never rebase/force-push) into clean branches and conflicting agentless PRs; skip dirty worktrees, notify owners.
     <!-- delivery-12
-    why: Unknown. Parallel branches drifted from a merged default branch until their own PR update, hiding conflicts and stale dependencies from the agents working on them. Conflicting PRs whose agent had stopped waited on the operator, who got only a conflict email.
+    why: Unknown. Parallel branches drifted from a merged default branch until their own PR update, hiding conflicts and stale dependencies from the agents working on them. Conflicting PRs whose agent had stopped waited on the operator, who got only a conflict email. Tightened 2026-10 to offset docs-3 with no net word growth (#57).
     source: operator, 2026-09
     review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator, no incident; a long procedure that fits the runbook's finish-a-PR section behind a one-line trigger
     decision: keep (operator, 2026-09-26): added in v23, too new to judge -->
@@ -206,6 +206,10 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
   why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.
   source: design
   review: keep, confidence medium (claude-fable-5-1, 2026-09-26): design; #33 item 2 shows a fix recorded in an unrelated doc -->
+  - Area-only context goes in a scoped file beside its code, or a linked doc with a trigger, never in root agent files.
+    <!-- docs-3
+    why: A token audit found ~35 area-specific gotchas accreted in one project's root CLAUDE.md, which every session pays for, because nothing steered them beside their code.
+    source: coindex audit, mattsilv/coindex-monorepo#1715 (via #57), 2026-10 -->
 - **Runbook:** Before bootstrapping a worktree, running the app, or calling a vendor CLI, read docs/RUNBOOK.md; when a command or vendor error costs more than one attempt, record the working form there in the same PR.
   <!-- runbook-1
   why: Every worktree re-derived the local dev recipe (38 fresh installs, 53 env-file edits, 6 port collisions, the hosting CLI invoked 4 ways), and vendor errors learned by failure were recorded nowhere reusable (#33).
