@@ -37,6 +37,8 @@ STATE = Path(".harness")
 BASE = STATE / "base"
 APPLIED = STATE / "version"  # harness VERSION last fully applied here
 SOURCE = os.environ.get("HARNESS_SYNC_SOURCE")  # local template dir, to preview a harness branch
+CONTEXT_FILES = ("AGENTS.md", "CLAUDE.md", CONFIG_FILE)  # loaded every session
+CONTEXT_WARN_BYTES = 20_000
 
 
 def git(*args):
@@ -122,8 +124,19 @@ def unset_values():
     return labels
 
 
+def report_context_size():
+    """Warn when always-loaded root context grows past CONTEXT_WARN_BYTES."""
+    total = sum(p.stat().st_size for name in CONTEXT_FILES
+                if (p := Path(name)).exists())
+    if total > CONTEXT_WARN_BYTES:
+        print(f"harness: always-loaded context ({' + '.join(CONTEXT_FILES)}) is "
+              f"{total} bytes, over {CONTEXT_WARN_BYTES}; move area-only context "
+              "into a scoped file beside its code.")
+
+
 def report_local():
     """Flag unresolved merge conflicts and unset config values."""
+    report_context_size()
     base_files = [f.relative_to(BASE) for f in BASE.rglob("*") if f.is_file()]
     conflicted = [str(p) for p in base_files if "<<<<<<< local" in (read(p) or "")]
     if conflicted:
