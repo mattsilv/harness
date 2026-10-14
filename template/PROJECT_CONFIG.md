@@ -50,6 +50,11 @@ Record each choice once, here; adding a vendor is new spend, so ask first.
     - **Pitfall:** Renaming a referenced secret leaves the `${NAME}` reference as literal text.
 - **Secrets location:** Set during setup (project and config, vault, or file path; one per repo or client, separate app and environment configs).
 - **Hosting/deploy:** Serverless (e.g. Cloudflare) unless recorded otherwise.
+- **CI runners:** Hosted (default). Self-hosted only per [docs/CI.md](docs/CI.md); then record the values below.
+  - **Labels:** None (hosted).
+  - **Slots per host:** None; set from measured throughput.
+  - **Workspace storage:** Ephemeral per job (tmpfs); dependency caches on durable disk.
+  - **Who adds capacity:** The operator; an agent proposes it with a measurement.
 - **Database:** SQL (e.g. Cloudflare D1) unless recorded otherwise.
 - **Package managers:** uv (Python), pnpm (TypeScript).
 - **Auth:** Record when chosen.

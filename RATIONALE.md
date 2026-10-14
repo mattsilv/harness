@@ -26,6 +26,7 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Secrets: Doppler structure, prefix in shared projects | Follows Doppler's one-project-per-app guidance; when apps share a project, generic names collide. | vendor docs, operator |
 | Secrets: never print values; check by name or length | A printed value reaches the model's context and logs. | design |
 | Secrets: Doppler local dev, CI tokens, expiry, sync targets, rotation, pitfalls | Doppler's documented practices and warnings: no `.env` files, least-privilege expiring CI tokens, one-way sync, the CLI's fallback cache, broad env injection. | vendor docs |
+| CI runners: hosted by default; self-hosted records labels, slots, storage, and who adds capacity | Capacity was added by queue length on one host and made the suite slower; recording the measured slot count keeps the next change honest. | incident, 2026-10 |
 
 Values, not rules. Each is the author's default and projects are expected to change
 them. Vendors get one line each so a choice is recorded once; only the secrets lines
@@ -67,6 +68,10 @@ Test runners take the per-worktree ports and never reuse a server they didn't st
 ## docs/FRONTEND.md and scripts/ui-capture.mjs
 
 The operator reported unclear, verbose, poorly spaced interfaces and requested committed screenshots and independent review (2026-10). One representative per distinct template limits capture cost; a generated sitemap makes references findable. Batch capture and freshness checks prevent ad hoc navigation and stale images. The opt-in workflow extends existing screenshot review to copy that affects fit. The CLI uses the configured browser driver, with project-owned setup hooks for authentication and readiness. Screenshot storage is a project choice because live-data full-page captures can churn tens of megabytes per run (2026-10).
+
+## docs/CI.md
+
+The on-demand checklist behind delivery-14. A project ran 8 self-hosted runner slots on one host; its test suite created databases with write-ahead logging and full durability, so concurrent jobs serialized on the shared disk's filesystem journal and a 20 s suite took 337 s. Adding slots made it worse. The fix was ephemeral (tmpfs) workspaces for test data and slots sized from a measured 1/2/4/8 concurrency run. Dependency caches stay on durable disk because they are read-mostly and a loss only costs a rebuild. The path-filter bullet restates the delivery-4 trap (a path-skipped required workflow never reports) where CI is configured. Self-hosted runners must not run untrusted code, since they keep state between jobs and sit on the project's own network (design). (incident, 2026-10)
 
 ## docs/languages/python.md
 

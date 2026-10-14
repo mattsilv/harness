@@ -29,6 +29,7 @@ flowchart LR
 | [`template/docs/MAINTENANCE.md`](template/docs/MAINTENANCE.md) | The recurring maintenance audit. | yes |
 | [`template/docs/RUNBOOK.md`](template/docs/RUNBOOK.md) | Skeleton for the project's working commands and known vendor errors, read on demand. | yes |
 | [`template/docs/FRONTEND.md`](template/docs/FRONTEND.md) | Optional visual sitemap, committed screenshots, and pre-ship review, enabled in project config. | yes |
+| [`template/docs/CI.md`](template/docs/CI.md) | Checklist for CI workflows, runner storage, and runner capacity when many agents merge in parallel, read on demand. | yes |
 | [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
 | [`template/scripts/`](template/scripts/) | `branch-check.sh` (conflict with the remote default branch?), `pr-wait.sh` (wait for a PR to merge, stop on a conflict or failure), `overlap-check.sh` (files another open PR or worktree also changes), `context-watch.py` (flag subagents near their context limit), and `snitch.sh` (background loop over `context-watch.py` that exits to wake the orchestrator), linked from the runbook or AGENTS.md. | yes |
 | [`template/docs/SUBAGENT-CONTEXT-WATCH.md`](template/docs/SUBAGENT-CONTEXT-WATCH.md) | How the snitch works and how to act on each alert line, read on demand. | yes |
