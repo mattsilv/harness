@@ -201,6 +201,11 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     <!-- delivery-13
     why: In one project 12 PRs in 7 days conflicted with the default branch because parallel sessions edited the same files (one route file in 7 of them, the docs index in 6), and nothing surfaced it before the merge. The script lists files that other open PRs and local worktrees also change.
     source: incident, 2026-10 -->
+  - CI jobs write test data and scratch files to ephemeral per-job storage, never to shared durable disk. Set runner concurrency from measured job throughput, not queue length; add capacity only after a measurement, and record it in PROJECT_CONFIG.md. Before changing CI runners or storage, read docs/CI.md.
+    <!-- delivery-14
+    why: A project ran 8 self-hosted runner slots on one host. Its test suite created databases with write-ahead logging and full durability, so concurrent jobs queued on the shared disk's filesystem journal and a 20 s suite took 337 s; adding slots made it worse. Test workspaces on tmpfs and slots sized from measured throughput fixed it.
+    source: incident, 2026-10
+    review: keep, confidence medium (claude-sonnet-5-5, 2026-10-14): one measured incident (20 s to 337 s); the cause is invisible in a single job's output and the obvious response to a slow queue is more slots; self-report on whether a model errs unaided -->
 - **Documentation:** docs/ is a wiki: small, single-topic Markdown pages, cross-linked, indexed by docs/README.md, which links every page. Link an existing page instead of repeating it; update it, or add one and link it from the index, as part of the change or before closing a sprint.
   <!-- docs-1
   why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.
@@ -209,7 +214,7 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
   - Area-only context goes in a scoped file beside its code, or a linked doc with a trigger, never in root agent files.
     <!-- docs-3
     why: A token audit found ~35 area-specific gotchas accreted in one project's root CLAUDE.md, which every session pays for, because nothing steered them beside their code.
-    source: coindex audit, mattsilv/coindex-monorepo#1715 (via #57), 2026-10 -->
+    source: token audit of one project's root context (via #57), 2026-10 -->
 - **Runbook:** Before bootstrapping a worktree, running the app, or calling a vendor CLI, read docs/RUNBOOK.md; when a command or vendor error costs more than one attempt, record the working form there in the same PR.
   <!-- runbook-1
   why: Every worktree re-derived the local dev recipe (38 fresh installs, 53 env-file edits, 6 port collisions, the hosting CLI invoked 4 ways), and vendor errors learned by failure were recorded nowhere reusable (#33).
