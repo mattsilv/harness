@@ -149,17 +149,22 @@ def report_local():
               f"for them before other work and record the answers: {', '.join(labels)}.")
 
 
-def gh_cached(name, args):
-    """JSON from `gh`, cached per repo for CHECK_CACHE_SECONDS; None on failure."""
+def gh_cached(name, args, keep=None):
+    """JSON from `gh`, cached per repo for CHECK_CACHE_SECONDS; None on failure.
+    With `keep`, only answers it accepts are cached or served from cache."""
     key = hashlib.sha1(str(Path.cwd().resolve()).encode()).hexdigest()[:12]
     cache = CACHE / f"{name}-{key}.json"
     if cache.exists() and time.time() - cache.stat().st_mtime < CHECK_CACHE_SECONDS:
-        return json.loads(cache.read_text())
+        data = json.loads(cache.read_text())
+        if keep is None or keep(data):
+            return data
     r = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=15)
     if r.returncode:
         return None
-    write(cache, r.stdout)
-    return json.loads(r.stdout)
+    data = json.loads(r.stdout)
+    if keep is None or keep(data):
+        write(cache, r.stdout)
+    return data
 
 
 def report_ci_gate():
@@ -167,8 +172,10 @@ def report_ci_gate():
     if not re.search(r"Merge policy:\*\*\s*`auto`", read(Path(CONFIG_FILE)) or ""):
         return
     try:
+        # Only a positive answer is cached: "no required checks" is re-asked every run.
         rules = gh_cached("branch-rules", ["api", "repos/{owner}/{repo}/rules/branches/"
-                                           + default_branch()])
+                                           + default_branch()],
+                          keep=lambda rs: any(r["type"] == "required_status_checks" for r in rs))
     except Exception:
         rules = None
     if rules is None:
