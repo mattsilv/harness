@@ -4,7 +4,9 @@ from unittest import mock
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
-harness = SourceFileLoader("harness", str(Path(__file__).parent.parent / "harness")).load_module()
+import types
+harness = types.ModuleType("harness")  # load_module() was removed in Python 3.15
+SourceFileLoader("harness", str(Path(__file__).parent.parent / "harness")).exec_module(harness)
 
 
 class ContextSizeWarning(unittest.TestCase):
@@ -69,6 +71,48 @@ class CiGateCache(unittest.TestCase):
         outs, calls = self.run_gate([[{"type": "required_status_checks"}]], 2)
         self.assertEqual(["", ""], outs)
         self.assertEqual(1, len(calls))
+
+
+class AuditSignals(unittest.TestCase):
+    def session(self, lines):
+        tmp = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
+        self.addCleanup(os.unlink, tmp.name)
+        tmp.write("\n".join(json.dumps(x) for x in lines))
+        tmp.close()
+        return harness.audit_session(Path(tmp.name))
+
+    def test_claude_tool_calls_count(self):
+        fired = self.session([
+            {"cwd": "/repo"},
+            {"message": {"content": [{"type": "tool_use", "name": "Task", "input": {}}]}},
+            {"message": {"content": [{"type": "tool_use", "name": "Bash",
+                                      "input": {"command": "gh pr create"}}]}},
+        ])
+        self.assertEqual({"spawns a subagent", "creates a PR"}, fired)
+
+    def test_prose_mentions_do_not_count(self):
+        # Injected AGENTS.md text mentions every behavior; it must not inflate counts.
+        fired = self.session([{"message": {"content": [
+            {"type": "text", "text": "read PROJECT_CONFIG.md, use a worktree, gh issue create"}]}}])
+        self.assertEqual(set(), fired)
+
+    def test_codex_tool_calls_count(self):
+        fired = self.session([
+            {"payload": {"type": "custom_tool_call", "name": "exec",
+                         "input": 'tools.exec_command({cmd:"cat PROJECT_CONFIG.md"})'}},
+            {"payload": {"type": "function_call", "name": "shell",
+                         "arguments": "cat docs/languages/python.md"}},
+            {"payload": {"type": "custom_tool_call_output",  # output text must not count
+                         "output": "gh issue create PROJECT_CONFIG.md"}},
+        ])
+        self.assertEqual({"touches PROJECT_CONFIG.md", "reads language rules"}, fired)
+
+    def test_session_cwd(self):
+        tmp = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
+        self.addCleanup(os.unlink, tmp.name)
+        tmp.write(json.dumps({"payload": {"cwd": "/repo/sub"}}))
+        tmp.close()
+        self.assertEqual("/repo/sub", harness.session_cwd(Path(tmp.name)))
 
 
 if __name__ == "__main__":
