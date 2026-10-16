@@ -375,8 +375,12 @@ def tool_calls(line):
         obj = json.loads(line)
     except Exception:
         return []
+    if not isinstance(obj, dict):
+        return []
     calls = []
-    for block in (obj.get("message") or {}).get("content") or []:  # Claude Code
+    message = obj.get("message")
+    content = message.get("content") if isinstance(message, dict) else None
+    for block in content or []:  # Claude Code
         if isinstance(block, dict) and block.get("type") == "tool_use":
             calls.append((block.get("name", ""), json.dumps(block.get("input", {}))))
     payload = obj.get("payload")  # Codex
@@ -410,7 +414,10 @@ def session_cwd(path):
                         obj = json.loads(line)
                     except Exception:
                         continue
-                    cwd = obj.get("cwd") or (obj.get("payload") or {}).get("cwd")
+                    if not isinstance(obj, dict):
+                        continue
+                    payload = obj.get("payload")
+                    cwd = obj.get("cwd") or (payload.get("cwd") if isinstance(payload, dict) else None)
                     if cwd:
                         return cwd
     except OSError:

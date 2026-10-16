@@ -107,6 +107,15 @@ class AuditSignals(unittest.TestCase):
         ])
         self.assertEqual({"touches PROJECT_CONFIG.md", "reads language rules"}, fired)
 
+    def test_type_confused_lines_do_not_crash(self):
+        fired = self.session([
+            {"message": "tool_use"}, ["tool_use"], "function_call",
+            {"message": {"content": "tool_use"}}, {"payload": "function_call"},
+            {"message": {"content": [{"type": "tool_use", "name": "Bash",
+                                      "input": {"command": "gh issue create"}}]}},
+        ])
+        self.assertEqual({"creates an issue"}, fired)
+
     def test_session_cwd(self):
         tmp = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
         self.addCleanup(os.unlink, tmp.name)
