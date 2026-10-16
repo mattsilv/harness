@@ -10,6 +10,7 @@ merge that keeps local edits.
   harness check         one-line notice if the harness changed or config is unset
   harness diff          show what the harness changed since the last apply
   harness apply [path]  merge harness changes into local files (after approval)
+  harness audit [n]     how often harness behaviors fired in recent local sessions
 """
 import datetime
 import difflib
@@ -352,6 +353,118 @@ def cmd_init():
     report_local()
 
 
+AUDIT_SIGNALS = (
+    ("spawns a subagent", lambda name, blob: name in ("Task", "Agent", "spawn_agent")),
+    ("touches PROJECT_CONFIG.md", lambda name, blob: "PROJECT_CONFIG" in blob),
+    ("uses a worktree", lambda name, blob: "worktree" in (name + blob).lower()),
+    ("creates an issue", lambda name, blob: "gh issue create" in blob),
+    ("creates a PR", lambda name, blob: "gh pr create" in blob),
+    ("reads language rules", lambda name, blob: "docs/languages/" in blob),
+)
+
+
+def tool_calls(line):
+    """(tool name, searchable input) per tool call on one session-log line.
+
+    Only tool calls count: session prose contains the injected AGENTS.md
+    text, so matching raw logs would report every rule as always followed.
+    """
+    if '"tool_use"' not in line and "_call" not in line:
+        return []
+    try:
+        obj = json.loads(line)
+    except Exception:
+        return []
+    if not isinstance(obj, dict):
+        return []
+    calls = []
+    message = obj.get("message")
+    content = message.get("content") if isinstance(message, dict) else None
+    for block in content or []:  # Claude Code
+        if isinstance(block, dict) and block.get("type") == "tool_use":
+            calls.append((block.get("name", ""), json.dumps(block.get("input", {}))))
+    payload = obj.get("payload")  # Codex
+    if isinstance(payload, dict) and str(payload.get("type", "")).endswith("_call"):
+        calls.append((payload.get("name", ""),
+                      str(payload.get("input") or payload.get("arguments")
+                          or payload.get("action") or "")))
+    return calls
+
+
+def audit_session(path):
+    fired = set()
+    try:
+        with open(path, errors="ignore") as f:
+            for line in f:
+                for name, blob in tool_calls(line):
+                    fired.update(label for label, test in AUDIT_SIGNALS if test(name, blob))
+                if len(fired) == len(AUDIT_SIGNALS):
+                    break
+    except OSError:
+        pass
+    return fired
+
+
+def session_cwd(path):
+    try:
+        with open(path, errors="ignore") as f:
+            for line in f:
+                if '"cwd"' in line:
+                    try:
+                        obj = json.loads(line)
+                    except Exception:
+                        continue
+                    if not isinstance(obj, dict):
+                        continue
+                    payload = obj.get("payload")
+                    cwd = obj.get("cwd") or (payload.get("cwd") if isinstance(payload, dict) else None)
+                    if cwd:
+                        return cwd
+    except OSError:
+        pass
+    return ""
+
+
+def cmd_audit(limit):
+    """Report how often harness behaviors fired in recent local sessions.
+
+    Operator-run only: nothing here is added to `check`, so measurement
+    costs no context in agent sessions.
+    """
+    cwd = str(Path.cwd().resolve())
+    home = Path.home()
+    in_repo = lambda p: p == cwd or p.startswith(cwd + "/")
+    recent = lambda files: sorted(files, key=os.path.getmtime, reverse=True)
+    slug = re.sub(r"[^A-Za-z0-9]", "-", cwd)
+    claude = [f for d in (home / ".claude" / "projects").glob(slug + "*")
+              for f in d.glob("*.jsonl") if in_repo(session_cwd(f))]
+    codex = []
+    for f in recent((home / ".codex" / "sessions").rglob("*.jsonl")):
+        if in_repo(session_cwd(f)):
+            codex.append(f)
+            if len(codex) >= limit:  # newest first; bound the scan of other repos
+                break
+    version = (read(APPLIED) or "?").strip()
+    print(f"harness audit: {cwd} (applied harness v{version})")
+    found = False
+    for source, files in (("Claude Code", claude), ("Codex", codex)):
+        files = recent(files)[:limit]
+        if not files:
+            continue
+        found = True
+        counts = {label: 0 for label, _ in AUDIT_SIGNALS}
+        for f in files:
+            for label in audit_session(f):
+                counts[label] += 1
+        newest = datetime.date.fromtimestamp(os.path.getmtime(files[0]))
+        oldest = datetime.date.fromtimestamp(os.path.getmtime(files[-1]))
+        print(f"\n{source}: {len(files)} most recent sessions ({oldest} to {newest})")
+        for label, n in counts.items():
+            print(f"  {n:>3}/{len(files)}  {label}")
+    if not found:
+        print("no local Claude Code or Codex sessions found for this repo.")
+
+
 def main():
     args = sys.argv[1:]
     cmd = args[0] if args else "check"
@@ -364,6 +477,8 @@ def main():
             cmd_apply(set(args[1:]))
         elif cmd == "init":
             cmd_init()
+        elif cmd == "audit":
+            cmd_audit(max(1, int(args[1])) if len(args) > 1 and args[1].isdigit() else 15)
         else:
             sys.exit(__doc__)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:

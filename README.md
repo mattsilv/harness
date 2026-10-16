@@ -104,6 +104,7 @@ harness init          # new or existing repo: write missing files, record baseli
 harness check         # silent unless the harness changed, config is unset, conflicts remain, or maintenance is overdue
 harness diff          # what the harness changed since this repo last applied it
 harness apply [path]  # 3-way merge harness changes into local files, keeping local edits
+harness audit [n]     # operator-only: how often harness behaviors fired in recent local sessions
 ```
 
 - **Baseline:** `.harness/base/<path>` holds the harness text last applied. Commit it.
