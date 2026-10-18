@@ -103,14 +103,16 @@ def prepare(work, revision, candidate, task, fixture_bytes, helper_bytes):
     work.mkdir()
     env = clean_env(work)
     command(['git', 'init', '-q', '-b', 'main', work], env=env)
-    names = command(['git', 'ls-tree', '-r', '--name-only', revision, '--', 'template']).splitlines()
-    for name in names:
-        target = work / Path(name).relative_to('template')
-        target.parent.mkdir(parents=True, exist_ok=True)
-        data = command(['git', 'show', f'{revision}:{name}']) + '\n'
-        if name.endswith('.md'):
-            data = re.sub(r'^[ \t]*<!--.*?-->[ \t]*\n', '', data, flags=re.M | re.S)
-        target.write_text(data)
+    source = work.parent / '.source'
+    if not source.exists():
+        source.mkdir()
+        names = command(['git', 'ls-tree', '-r', '--name-only', revision, '--', 'template', 'harness', 'VERSION']).splitlines()
+        for name in names:
+            target = source / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(command(['git', 'show', f'{revision}:{name}']) + '\n')
+    install_env = dict(env, HARNESS_SYNC_SOURCE=str(source / 'template'))
+    command([sys.executable, source / 'harness', 'init'], cwd=work, env=install_env)
     cfg = work / 'PROJECT_CONFIG.md'
     values = {'Stack': 'A single static HTML/JS page with localStorage; no build step and no server.',
               'Merge policy': '`on-request`.', 'Maintenance tracking issue': 'None.',
@@ -233,6 +235,7 @@ def main():
                 try:
                     base = prepare(work, revision, variant == 'candidate', task, fixture_bytes, helper_bytes)
                     preflight(work, canary)
+                    instruction_bytes = sum((work / p).stat().st_size for p in ('AGENTS.md', 'CLAUDE.md', 'PROJECT_CONFIG.md'))
                 except (ValueError, OSError, subprocess.SubprocessError) as error:
                     record = {'run': name, 'status': 'blocked', 'error': type(error).__name__}
                     with records.open('a') as dest:
@@ -245,7 +248,6 @@ def main():
                 if (digest((HERE / 'check.mjs').read_bytes()) != manifest['evaluator_sha256'] or
                         digest((HERE / 'delivery.mjs').read_bytes()) != manifest['delivery_evaluator_sha256']):
                     raise RuntimeError('evaluator changed during comparison')
-                instruction_bytes = sum((work / p).stat().st_size for p in ('AGENTS.md', 'CLAUDE.md', 'PROJECT_CONFIG.md'))
                 log = out / f'{name}.events.jsonl'
                 cmd = ['codex', 'exec', *settings(work, args.model, args.effort), '--json', manifest['prompts'][task]]
                 state, rc, elapsed = run_process(cmd, work, log, args.seconds)
