@@ -1,0 +1,13 @@
+diff --git a/index.html b/index.html
+index 69be497..9e88dd7 100644
+--- a/index.html
++++ b/index.html
+@@ -6,7 +6,7 @@
+   <title>To-do</title>
+ </head>
+ <body>
+-  <h1>To-do</h1>
++  <h1>My tasks</h1>
+   <form id="add">
+     <input id="text" aria-label="New task" autocomplete="off">
+     <button>Add</button>

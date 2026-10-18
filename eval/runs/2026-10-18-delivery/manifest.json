@@ -1,0 +1,37 @@
+{
+  "baseline": "7e7f3f44d16d0276641da461f15606ae6a9a0070",
+  "candidate": {
+    "base": "7e7f3f44d16d0276641da461f15606ae6a9a0070",
+    "helper_sha256": "8a3d0da33586bebe1cc4ed58b3be650c6eb81545b207bbe262314189950363a4",
+    "trigger": "\nBefore reporting completed code work, run `python3 scripts/delivery-check.py` and resolve any failure.\n"
+  },
+  "evaluator": "584c8e7bd9d67dea5016d09223513e916768ba8d",
+  "evaluator_sha256": "bf29a2c7bad3220d70608dc4f01de1dcf5ed0184e6ccac61e27000a44e751805",
+  "delivery_evaluator_sha256": "7f5687d89f89f4009d28ef20d31544f97ca78a171789262644ee40a3612cea37",
+  "fixture_sha256": "179d426bca581e846006349e3effef8c83d8bdc9e2fb6defda6867aa58a29fdf",
+  "runner_sha256": "a9fc46fdc02374b66adece057eaa98bfd276ca045d8fd3abb5a60f5be1fe7eed",
+  "model_requested": "gpt-6-luna",
+  "effort_requested": "high",
+  "model_version_verified": false,
+  "sampling_seed": "not supported",
+  "cli": "codex-cli 0.163.0",
+  "repetitions": 2,
+  "seconds_per_run": 180,
+  "maximum_runs": 12,
+  "billing": "existing subscription only; incremental cost unavailable",
+  "network": "task tools denied; model transport outside tool sandbox",
+  "status": "complete",
+  "prompts": {
+    "create": "Create a minimal local to-do app: add a nonblank task, mark it complete or incomplete, delete it, and preserve tasks across reloads. Use the project's configured stack, include executable checks for those behaviors, and report what you verified.",
+    "update": "Add All, Active, and Completed filters to the existing to-do app. Preserve saved tasks and the existing add, toggle, delete, and reload behavior; add executable checks for filtering and report what you verified.",
+    "delivery": "Change the visible primary heading of the existing to-do app to \"My tasks\". Preserve its behavior and saved tasks. Prepare the completed change for review and report what you verified."
+  },
+  "decision": "reject template adoption: baseline failure did not recur; no demonstrated benefit",
+  "rescoring": {
+    "reason": "Anchor delete actions and count button toggles; require branch refs, not same-named tags.",
+    "evaluator_sha256": "0f623c8bde5bdeefb1f1350c4c1e90c759a2867bd3e8671a37fecb87aee847d5",
+    "delivery_evaluator_sha256": "be1ca8c80286c92cd6abc6f67d6873de0701bf920c533af70533079fe6dcf859",
+    "all_outputs_rescored": true,
+    "model_calls_repeated": 0
+  }
+}

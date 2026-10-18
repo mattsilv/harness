@@ -1,0 +1,331 @@
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..054f31c
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,11 @@
++# Today
++
++A small to-do list that stores tasks in this browser on this device. It needs no install or network connection.
++
++## Run
++
++Run `python3 -m http.server 8000` from this folder and open <http://localhost:8000>. The app starts with an empty list. Tasks remain saved in the browser's local storage after reloads.
++
++## Check
++
++Run `node --test tests/todo.test.js` to check adding nonblank tasks, completing and reopening tasks, deleting tasks, saved state after reload, and malformed saved data.
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..fdef805
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,123 @@
++(function () {
++  'use strict';
++
++  const STORAGE_KEY = 'today-tasks-v1';
++
++  function readTasks(storage) {
++    try {
++      const value = JSON.parse(storage.getItem(STORAGE_KEY) || '[]');
++      if (!Array.isArray(value)) return [];
++      return value.filter((task) => task && typeof task.id === 'string' &&
++        typeof task.text === 'string' && task.text.trim() && typeof task.completed === 'boolean');
++    } catch (_) {
++      return [];
++    }
++  }
++
++  function writeTasks(storage, tasks) {
++    storage.setItem(STORAGE_KEY, JSON.stringify(tasks));
++  }
++
++  function createTodoList(storage, makeId) {
++    let tasks = readTasks(storage);
++    return {
++      all: () => tasks.slice(),
++      add(text) {
++        const cleanText = String(text).trim();
++        if (!cleanText) return null;
++        const task = { id: makeId(), text: cleanText, completed: false };
++        tasks = [...tasks, task];
++        writeTasks(storage, tasks);
++        return task;
++      },
++      toggle(id) {
++        let changed = false;
++        tasks = tasks.map((task) => {
++          if (task.id !== id) return task;
++          changed = true;
++          return { ...task, completed: !task.completed };
++        });
++        if (changed) writeTasks(storage, tasks);
++        return changed;
++      },
++      remove(id) {
++        const next = tasks.filter((task) => task.id !== id);
++        if (next.length === tasks.length) return false;
++        tasks = next;
++        writeTasks(storage, tasks);
++        return true;
++      }
++    };
++  }
++
++  if (typeof module !== 'undefined' && module.exports) {
++    module.exports = { STORAGE_KEY, createTodoList };
++    return;
++  }
++
++  const byId = (id) => document.getElementById(id);
++  const listElement = byId('task-list');
++  const emptyElement = byId('empty-state');
++  const countElement = byId('task-count');
++  const form = byId('task-form');
++  const input = byId('task-input');
++  let nextId = 0;
++  const todoList = createTodoList(window.localStorage, () => {
++    nextId += 1;
++    return `${Date.now().toString(36)}-${nextId.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
++  });
++
++  function icon(path) {
++    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
++    svg.setAttribute('viewBox', '0 0 24 24');
++    svg.setAttribute('fill', 'none');
++    svg.setAttribute('stroke', 'currentColor');
++    svg.setAttribute('stroke-width', '2');
++    svg.setAttribute('stroke-linecap', 'round');
++    svg.setAttribute('stroke-linejoin', 'round');
++    const shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
++    shape.setAttribute('d', path);
++    svg.append(shape);
++    return svg;
++  }
++
++  function render() {
++    const tasks = todoList.all();
++    listElement.replaceChildren();
++    emptyElement.hidden = tasks.length > 0;
++    countElement.textContent = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
++    tasks.forEach((task) => {
++      const row = document.createElement('li');
++      row.className = `task-row${task.completed ? ' is-complete' : ''}`;
++      const check = document.createElement('button');
++      check.type = 'button';
++      check.className = 'task-check';
++      check.setAttribute('aria-label', `${task.completed ? 'Mark incomplete' : 'Mark complete'}: ${task.text}`);
++      check.setAttribute('aria-pressed', String(task.completed));
++      if (task.completed) check.append(icon('M5 12l4 4L19 6'));
++      check.addEventListener('click', () => { todoList.toggle(task.id); render(); });
++
++      const text = document.createElement('span');
++      text.className = 'task-text';
++      text.textContent = task.text;
++      const remove = document.createElement('button');
++      remove.type = 'button';
++      remove.className = 'delete-button';
++      remove.setAttribute('aria-label', `Delete: ${task.text}`);
++      remove.append(icon('M3 6h18M8 6V4h8v2m3 0l-1 14H6L5 6m4 4v6m6-6v6'));
++      remove.addEventListener('click', () => { todoList.remove(task.id); render(); });
++
++      row.append(check, text, remove);
++      listElement.append(row);
++    });
++  }
++
++  form.addEventListener('submit', (event) => {
++    event.preventDefault();
++    if (!todoList.add(input.value)) return;
++    input.value = '';
++    render();
++    input.focus();
++  });
++  render();
++})();
+diff --git a/docs/RUNBOOK.md b/docs/RUNBOOK.md
+index 130e3c0..4a2ff7e 100644
+--- a/docs/RUNBOOK.md
++++ b/docs/RUNBOOK.md
+@@ -8,7 +8,7 @@ Many worktrees share one machine. Derive every per-worktree value (ports, base U
+ 
+ ## Run locally
+ 
+-The exact command that starts the app, in a second idempotent repo script. Prefer injecting secrets at runtime from the secrets manager over a local env file, and pass per-worktree values as flags rather than stored copies.
++Run `python3 -m http.server 8000` from the repository root, then open `http://localhost:8000`. Stop the server with Ctrl+C. Run the app checks with `node --test tests/todo.test.js`.
+ 
+ ## Migrations
+ 
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..6ecd7c0
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,36 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <meta name="theme-color" content="#f7f5f0">
++  <title>Today — To-do list</title>
++  <link rel="stylesheet" href="styles.css">
++  <script src="app.js" defer></script>
++</head>
++<body>
++  <main class="app" aria-labelledby="page-title">
++    <header class="page-header">
++      <p class="eyebrow">A little at a time</p>
++      <h1 id="page-title">Today<span class="period">.</span></h1>
++      <p class="intro">Make room for what matters.</p>
++    </header>
++
++    <form id="task-form" class="task-form">
++      <label class="visually-hidden" for="task-input">Add a task</label>
++      <input id="task-input" name="task" type="text" placeholder="What needs doing?" autocomplete="off" required>
++      <button class="add-button" type="submit" aria-label="Add task"><span aria-hidden="true">+</span></button>
++    </form>
++
++    <section class="list-section" aria-labelledby="list-heading">
++      <div class="list-heading-row">
++        <h2 id="list-heading">Your list</h2>
++        <span id="task-count" class="task-count" aria-live="polite"></span>
++      </div>
++      <ul id="task-list" class="task-list" aria-label="Tasks"></ul>
++      <p id="empty-state" class="empty-state">Nothing on your list yet. Add a task above.</p>
++    </section>
++    <p class="save-note"><span aria-hidden="true">↳</span> Your list stays on this device.</p>
++  </main>
++</body>
++</html>
+diff --git a/styles.css b/styles.css
+new file mode 100644
+index 0000000..c8d86f1
+--- /dev/null
++++ b/styles.css
+@@ -0,0 +1,63 @@
++:root {
++  color-scheme: light;
++  --ink: #252822;
++  --muted: #85877e;
++  --accent: #52705a;
++  --accent-dark: #3d5945;
++  --paper: #f7f5f0;
++  --surface: #fffefa;
++  --line: #e9e6de;
++  --soft-green: #e9eee7;
++  --danger: #9f5146;
++  font-family: 'DM Sans', sans-serif;
++}
++
++* { box-sizing: border-box; }
++
++body {
++  min-width: 320px;
++  min-height: 100vh;
++  margin: 0;
++  padding: 56px 20px 40px;
++  color: var(--ink);
++  background: radial-gradient(ellipse at 50% 0%, #eeeee5 0, var(--paper) 54%, #f5f2eb 100%);
++}
++
++.app { width: min(100%, 520px); margin: 0 auto; }
++.page-header { margin: 0 0 38px; text-align: center; }
++.eyebrow { margin: 0 0 11px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
++h1 { margin: 0; font-family: 'Playfair Display', Georgia, serif; font-size: clamp(54px, 12vw, 72px); font-weight: 600; letter-spacing: -.06em; line-height: 1; }
++.period { color: var(--accent); }
++.intro { margin: 13px 0 0; color: var(--muted); font-size: 15px; }
++
++.task-form { display: flex; gap: 10px; padding: 8px; border: 1px solid #e8e6df; border-radius: 17px; background: var(--surface); box-shadow: 0 8px 25px #3835220a; }
++.task-form input { min-width: 0; flex: 1; padding: 11px 12px; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; font-size: 15px; }
++.task-form input::placeholder { color: #a7a79e; }
++.task-form:focus-within { border-color: #8fa08e; box-shadow: 0 0 0 3px #52705a1b; }
++.add-button { display: grid; width: 43px; height: 43px; flex: 0 0 43px; place-items: center; border: 0; border-radius: 12px; color: white; background: var(--accent); cursor: pointer; font: inherit; transition: background .15s ease, transform .15s ease; }
++.add-button span { margin-top: -2px; font-size: 27px; font-weight: 400; line-height: 1; }
++.add-button:hover { background: var(--accent-dark); transform: translateY(-1px); }
++.add-button:focus-visible, .task-check:focus-visible, .delete-button:focus-visible { outline: 3px solid #95ae98; outline-offset: 2px; }
++
++.list-section { margin-top: 37px; }
++.list-heading-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
++h2 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: .01em; }
++.task-count { color: var(--muted); font-size: 12px; }
++.task-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
++.task-row { display: flex; min-height: 61px; align-items: center; gap: 12px; padding: 10px 12px 10px 15px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 3px 10px #38352208; animation: arrive .18s ease-out; }
++.task-check { display: grid; width: 23px; height: 23px; flex: 0 0 23px; place-items: center; border: 1.5px solid #c9cbc1; border-radius: 8px; color: white; background: transparent; cursor: pointer; }
++.task-check[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); }
++.task-check svg { width: 14px; height: 14px; }
++.task-text { min-width: 0; flex: 1; overflow-wrap: anywhere; font-size: 14px; line-height: 1.45; }
++.task-row.is-complete .task-text { color: #9c9d96; text-decoration: line-through; text-decoration-color: #adb2a9; }
++.delete-button { display: grid; width: 35px; height: 35px; flex: 0 0 35px; place-items: center; border: 0; border-radius: 10px; color: #a4a59c; background: transparent; cursor: pointer; }
++.delete-button:hover { color: var(--danger); background: #f8eeeb; }
++.delete-button svg { width: 17px; height: 17px; }
++.empty-state { margin: 0; padding: 22px 12px; border: 1px dashed #deddd5; border-radius: 14px; color: var(--muted); text-align: center; font-size: 13px; }
++.save-note { margin: 22px 0 0; color: #96978f; text-align: center; font-size: 11px; }
++.save-note span { margin-right: 4px; color: var(--accent); }
++.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
++
++@keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
++@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
++@media (max-width: 480px) { body { padding: 40px 19px 32px; } .page-header { margin-bottom: 30px; } .list-section { margin-top: 31px; } }
+diff --git a/tests/todo.test.js b/tests/todo.test.js
+new file mode 100644
+index 0000000..2bf2e8a
+--- /dev/null
++++ b/tests/todo.test.js
+@@ -0,0 +1,55 @@
++'use strict';
++
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { createTodoList, STORAGE_KEY } = require('../app.js');
++
++function memoryStorage(initial = null) {
++  const values = new Map(initial === null ? [] : [[STORAGE_KEY, initial]]);
++  return {
++    getItem: (key) => values.has(key) ? values.get(key) : null,
++    setItem: (key, value) => values.set(key, value)
++  };
++}
++
++test('adds trimmed nonblank tasks and rejects blank input', () => {
++  const list = createTodoList(memoryStorage(), () => 'task-1');
++  assert.equal(list.add('  \n  '), null);
++  assert.deepEqual(list.all(), []);
++  assert.deepEqual(list.add('  Pick up bread  '), { id: 'task-1', text: 'Pick up bread', completed: false });
++});
++
++test('toggles a task complete and incomplete', () => {
++  const list = createTodoList(memoryStorage(), () => 'task-1');
++  list.add('Read');
++  assert.equal(list.toggle('task-1'), true);
++  assert.equal(list.all()[0].completed, true);
++  assert.equal(list.toggle('task-1'), true);
++  assert.equal(list.all()[0].completed, false);
++  assert.equal(list.toggle('missing'), false);
++});
++
++test('deletes a task from the list and saved data', () => {
++  const storage = memoryStorage();
++  const list = createTodoList(storage, () => 'task-1');
++  list.add('Recycle');
++  assert.equal(list.remove('task-1'), true);
++  assert.deepEqual(list.all(), []);
++  assert.deepEqual(JSON.parse(storage.getItem(STORAGE_KEY)), []);
++  assert.equal(list.remove('missing'), false);
++});
++
++test('restores saved tasks after creating a new list from storage', () => {
++  const storage = memoryStorage();
++  const firstVisit = createTodoList(storage, () => 'task-1');
++  firstVisit.add('Call home');
++  firstVisit.toggle('task-1');
++  const afterReload = createTodoList(storage, () => 'task-2');
++  assert.deepEqual(afterReload.all(), [{ id: 'task-1', text: 'Call home', completed: true }]);
++});
++
++test('ignores corrupt saved data and malformed task entries', () => {
++  assert.deepEqual(createTodoList(memoryStorage('{'), () => 'unused').all(), []);
++  const malformed = JSON.stringify([{ id: 4, text: 'Bad', completed: false }, { id: 'ok', text: 'Good', completed: false }]);
++  assert.deepEqual(createTodoList(memoryStorage(malformed), () => 'unused').all(), [{ id: 'ok', text: 'Good', completed: false }]);
++});

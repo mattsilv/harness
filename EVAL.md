@@ -1,6 +1,6 @@
 # Harness evaluation (maintainer-only)
 
-A cheap smoke test that compares harness revisions on the same two tasks, tracked in
+A cheap smoke test that compares harness revisions on the same three tasks, tracked in
 [issue #13](https://github.com/mattsilv/harness/issues/13). Nothing here ships to
 projects: the `harness` CLI copies only `template/`. Past runs are in [eval/runs/](eval/runs/).
 
@@ -11,6 +11,10 @@ projects: the `harness` CLI copies only `template/`. Past runs are in [eval/runs
 ## Update prompt
 
 > Add All, Active, and Completed filters to the existing to-do app. Preserve saved tasks and the existing add, toggle, delete, and reload behavior; add executable checks for filtering and report what you verified.
+
+## Delivery prompt
+
+> Change the visible primary heading of the existing to-do app to "My tasks". Preserve its behavior and saved tasks. Prepare the completed change for review and report what you verified.
 
 ## Run
 
@@ -30,11 +34,13 @@ projects: the `harness` CLI copies only `template/`. Past runs are in [eval/runs
    revision's own two runs. `eval/run.sh claude|opencode create|update <run-dir> [model]`
    does steps 1–3 for one run and saves its usage, final report, check record, and
    screenshot beside `<run-dir>`; start runs one after another.
+   **Delivery:** start from the same fresh fixture as update and use the delivery
+   prompt. Pass the initial commit with `--baseline <SHA>` when scoring it.
 3. **Check and count** the result (needs Node 22+ and a local Chrome or Chromium; no
    packages):
 
    ```bash
-   node eval/check.mjs --task create|update <app-dir> [--url URL] \
+   node eval/check.mjs --task create|update|delivery <app-dir> [--baseline SHA] [--url URL] \
      [--model M] [--effort E] [--tokens N] [--harness REV] [--out eval/results.jsonl] \
      [--shot shot.png]
    ```
@@ -72,3 +78,68 @@ Append each run's record to `eval/results.jsonl`. Put its final report, check re
 classifier verdicts, diff (without lockfiles or dependencies), and screenshot in
 `eval/runs/<date>-v<N>/`, plus the reviewers' findings. Replace local paths with `~` or
 `<run-dir>`, and never commit transcripts.
+
+## Bounded harness comparison
+
+[Issue #63](https://github.com/mattsilv/harness/issues/63) adds one delivery regression
+from the [v8 pilot](eval/runs/2026-09-23-v8.md): working apps were left uncommitted,
+including work on the default branch. The current rules already address this failure.
+A baseline that no longer reproduces it is a valid reason to reject another rule.
+
+`eval/compare.py` compares the pinned current template against the same template plus
+`eval/candidates/delivery-check.py` and one completion trigger. The candidate stays
+maintainer-only. It does not ship through `harness init` or `apply`. Its read-only
+helper reports delivery failures; it does not stage, commit, push, or change policy.
+
+The first adapter supports macOS with a current CLI that supports named permission
+profiles. It uses an existing ChatGPT login only and refuses API-key fallback. It
+launches no model by default:
+
+```bash
+python3 eval/compare.py --baseline <commit> --model <model> --effort high \
+  --seconds 180 --out /tmp/harness-comparison-plan
+# After inspecting the manifest, choose a new output directory for execution:
+python3 eval/compare.py --baseline <commit> --model <model> --effort high \
+  --seconds 180 --out /tmp/harness-comparison-run --run-subscription
+```
+
+Execution is bounded to 12 calls: create, update, and delivery, twice per variant,
+with a wall limit per call. Baseline runs first in repetition 1; candidate runs first
+in repetition 2. Model sampling is not seeded. Model and effort are requested values,
+not verified server versions. New spend is not authorized by this command; check the
+existing subscription entitlement before use. Usage comes from CLI events; monetary
+cost stays `unavailable` when the provider does not report it.
+
+Each task gets a fresh disposable Git repository, the same setup values and prompt,
+no remote, and isolated Git configuration. The initial commit is captured outside
+the task workspace. Named permissions deny home/evaluator files and task-tool network,
+allow only runtime reads and workspace writes, and prevent task changes to tool config.
+A preflight must prove a workspace write, denied private reads, and a denied connection
+before any model call. External integrations, web search, hooks, memory, and delegation
+are disabled. Model transport remains outside the task-tool sandbox. This is a local
+smoke-test boundary, not a claim of resistance to arbitrary sandbox exploits.
+
+The trusted evaluator runs after the model process group exits. It checks the initial
+commit against the final repository, blocks page requests outside the local app origin,
+and refuses symlink escapes from the served tree. It never trusts the candidate helper's verdict.
+Create/update functional scores keep their existing meaning; delivery requires the
+heading change, all create checks, and all three delivery checks. Use
+`node eval/delivery.mjs <repo> <initial-commit>` to inspect delivery alone.
+
+The output directory keeps the input manifest, per-run events and errors, check records,
+and `results.jsonl`. Failed runs and timeouts remain in the results. The runner stops
+on a failed isolation preflight. It terminates each process group, including ordinary
+child processes; children that deliberately create a new session are outside that
+cleanup guarantee. Do not commit raw events, machine paths, or private files. Publish
+only inspected records in `eval/runs/` and append compact results to the existing
+`eval/results.jsonl`.
+
+Before adoption, require all critical checks to pass, the targeted failure to stop in
+every candidate repetition, no new failure, and an explicit cost/time tradeoff decision.
+Record the diff, failure evidence, result, decision, and limits in the existing review
+log. A candidate that adds cost without a demonstrated gain stays out of `template/`.
+The deterministic tests exercise known-good delivery and intentional failures; these
+are evaluator validation, not substitutes for model runs.
+
+The first [delivery-helper comparison](eval/runs/2026-10-18-delivery/README.md)
+rejected template adoption: both variants passed all six runs, with no demonstrated gain.

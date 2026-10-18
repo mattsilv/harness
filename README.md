@@ -41,6 +41,9 @@ flowchart LR
 | [`REVIEW.md`](REVIEW.md) | Brief for a model reviewing and lightening this harness, plus the review log. | no |
 | [`EVAL.md`](EVAL.md) | Harness evaluation: fixed prompts and how to run them (issue #13). | no |
 | [`eval/check.mjs`](eval/check.mjs) | Evaluator: fixed to-do checks and source counts for one run. | no |
+| [`eval/compare.py`](eval/compare.py) | Bounded, isolated baseline/candidate smoke comparison; see EVAL.md. | no |
+| [`eval/delivery.mjs`](eval/delivery.mjs) | Evaluator-owned delivery checks against a pinned initial commit. | no |
+| [`eval/candidates/`](eval/candidates/) | Experimental helpers retained for evaluation, not adopted project rules. | no |
 | [`eval/run.sh`](eval/run.sh) | Runs one EVAL.md task in a fresh headless agent session, then checks it. | no |
 | [`eval/fixture/`](eval/fixture/) | Baseline to-do app that the update task starts from. | no |
 | [`eval/runs/`](eval/runs/) | Saved evaluation notes, checks, usage, diffs, and screenshots. | no |

@@ -1,0 +1,254 @@
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..beaab69
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,94 @@
++const STORAGE_KEY = "simple-todo.tasks.v1";
++
++function loadTasks(storage) {
++  try {
++    const value = JSON.parse(storage.getItem(STORAGE_KEY) ?? "[]");
++    if (!Array.isArray(value)) return [];
++    return value.filter((task) => task && typeof task.id === "string" && typeof task.text === "string" && typeof task.completed === "boolean");
++  } catch {
++    return [];
++  }
++}
++
++function saveTasks(storage, tasks) {
++  storage.setItem(STORAGE_KEY, JSON.stringify(tasks));
++}
++
++function addTask(tasks, text, id = globalThis.crypto.randomUUID()) {
++  const cleanText = text.trim();
++  if (!cleanText) return tasks;
++  return [...tasks, { id, text: cleanText, completed: false }];
++}
++
++function toggleTask(tasks, id) {
++  return tasks.map((task) => task.id === id ? { ...task, completed: !task.completed } : task);
++}
++
++function deleteTask(tasks, id) {
++  return tasks.filter((task) => task.id !== id);
++}
++
++if (typeof document !== "undefined") {
++  const storage = window.localStorage;
++  const form = document.querySelector("#task-form");
++  const input = document.querySelector("#task-input");
++  const list = document.querySelector("#task-list");
++  const count = document.querySelector("#task-count");
++  const emptyState = document.querySelector("#empty-state");
++  let tasks = loadTasks(storage);
++
++  function update(nextTasks) {
++    tasks = nextTasks;
++    saveTasks(storage, tasks);
++    render();
++  }
++
++  function render() {
++    list.replaceChildren();
++    for (const task of tasks) {
++      const row = document.createElement("li");
++      row.className = `task-row${task.completed ? " completed" : ""}`;
++      const toggle = document.createElement("button");
++      toggle.className = "task-toggle";
++      toggle.type = "button";
++      toggle.setAttribute("aria-label", `${task.completed ? "Mark incomplete" : "Mark complete"}: ${task.text}`);
++      toggle.setAttribute("aria-pressed", String(task.completed));
++      toggle.textContent = task.completed ? "✓" : "";
++      toggle.addEventListener("click", () => update(toggleTask(tasks, task.id)));
++      const name = document.createElement("span");
++      name.className = "task-name";
++      name.textContent = task.text;
++      const remove = document.createElement("button");
++      remove.className = "delete-task";
++      remove.type = "button";
++      remove.textContent = "Delete";
++      remove.setAttribute("aria-label", `Delete: ${task.text}`);
++      remove.addEventListener("click", () => update(deleteTask(tasks, task.id)));
++      row.append(toggle, name, remove);
++      list.append(row);
++    }
++    const remaining = tasks.filter((task) => !task.completed).length;
++    count.textContent = `${remaining} ${remaining === 1 ? "task" : "tasks"} left`;
++    emptyState.hidden = tasks.length > 0;
++  }
++
++  form.addEventListener("submit", (event) => {
++    event.preventDefault();
++    const nextTasks = addTask(tasks, input.value);
++    if (nextTasks === tasks) {
++      input.setCustomValidity("Enter a task before adding it.");
++      input.reportValidity();
++      return;
++    }
++    input.setCustomValidity("");
++    update(nextTasks);
++    form.reset();
++    input.focus();
++  });
++  input.addEventListener("input", () => input.setCustomValidity(""));
++  render();
++}
++
++if (typeof window !== "undefined") {
++  window.Todo = { STORAGE_KEY, loadTasks, saveTasks, addTask, toggleTask, deleteTask };
++}
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..c2829c0
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,26 @@
++<!doctype html>
++<html lang="en">
++  <head>
++    <meta charset="utf-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1">
++    <meta name="theme-color" content="#f6f4ef">
++    <title>To-do list</title>
++    <link rel="stylesheet" href="styles.css">
++    <script defer src="app.js"></script>
++  </head>
++  <body>
++    <main class="todo-app">
++      <p class="eyebrow">A little room to think</p>
++      <h1>To-do list</h1>
++      <p class="intro">Keep track of what matters today.</p>
++      <form id="task-form" class="task-form">
++        <label class="visually-hidden" for="task-input">New task</label>
++        <input id="task-input" name="task" type="text" placeholder="Add a task…" autocomplete="off" required>
++        <button type="submit">Add task</button>
++      </form>
++      <p id="task-count" class="task-count" aria-live="polite"></p>
++      <ul id="task-list" class="task-list" aria-label="Tasks"></ul>
++      <p id="empty-state" class="empty-state">Your list is clear. Add a task to get started.</p>
++    </main>
++  </body>
++</html>
+diff --git a/styles.css b/styles.css
+new file mode 100644
+index 0000000..3b60266
+--- /dev/null
++++ b/styles.css
+@@ -0,0 +1,55 @@
++:root {
++  color-scheme: light;
++  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
++  color: #252b2a;
++  background: #f6f4ef;
++  font-synthesis: none;
++  text-rendering: optimizeLegibility;
++}
++
++* { box-sizing: border-box; }
++
++body {
++  min-width: 320px;
++  min-height: 100vh;
++  margin: 0;
++  padding: 64px 20px;
++  background: radial-gradient(ellipse at 50% 0%, #fffdf8 0, #f6f4ef 68%);
++}
++
++.todo-app {
++  width: min(100%, 620px);
++  margin: 0 auto;
++  padding: clamp(26px, 6vw, 52px);
++  border: 1px solid #e7e2d8;
++  border-radius: 20px;
++  background: #fffefa;
++  box-shadow: 0 20px 60px #3f403014;
++}
++
++.eyebrow { margin: 0 0 12px; color: #47766c; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
++h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.3rem, 8vw, 3.5rem); font-weight: 500; letter-spacing: -.04em; }
++.intro { margin: 10px 0 30px; color: #717672; }
++.task-form { display: flex; gap: 10px; }
++.task-form input { min-width: 0; flex: 1; border: 1px solid #d8ddd8; border-radius: 9px; padding: 13px 14px; background: #fff; color: inherit; font: inherit; }
++.task-form input:focus-visible, button:focus-visible { outline: 3px solid #9ec6b9; outline-offset: 2px; }
++button { border: 0; border-radius: 9px; padding: 12px 17px; background: #285c50; color: white; font: inherit; font-weight: 650; cursor: pointer; }
++button:hover { background: #1e493f; }
++.task-count { min-height: 20px; margin: 25px 0 8px; color: #777d78; font-size: .88rem; }
++.task-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
++.task-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 12px; border: 1px solid #ece9e2; border-radius: 10px; background: #fff; }
++.task-toggle { display: grid; flex: 0 0 22px; width: 22px; height: 22px; place-items: center; padding: 0; border: 1.5px solid #a9b4ad; border-radius: 50%; background: transparent; color: #fff; }
++.task-toggle:hover { background: #e9f2ed; }
++.task-toggle[aria-pressed="true"] { border-color: #47766c; background: #47766c; }
++.task-name { min-width: 0; flex: 1; overflow-wrap: anywhere; }
++.task-row.completed .task-name { color: #858a86; text-decoration: line-through; }
++.delete-task { padding: 7px 9px; background: transparent; color: #777d78; font-size: .86rem; }
++.delete-task:hover { background: #f8ece8; color: #913f33; }
++.empty-state { margin: 12px 0 0; padding: 18px; border: 1px dashed #d8ddd8; border-radius: 10px; color: #777d78; text-align: center; }
++.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
++
++@media (max-width: 480px) {
++  body { padding: 24px 14px; }
++  .task-form { align-items: stretch; flex-direction: column; }
++  .task-form button { min-height: 46px; }
++}
+diff --git a/tests/todo.test.mjs b/tests/todo.test.mjs
+new file mode 100644
+index 0000000..342a5be
+--- /dev/null
++++ b/tests/todo.test.mjs
+@@ -0,0 +1,55 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import vm from "node:vm";
++
++const context = { window: {} };
++vm.runInNewContext(readFileSync(new URL("../app.js", import.meta.url), "utf8"), context);
++const { addTask, deleteTask, loadTasks, saveTasks, STORAGE_KEY, toggleTask } = context.window.Todo;
++const plain = (value) => JSON.parse(JSON.stringify(value));
++
++function memoryStorage() {
++  const values = new Map();
++  return {
++    getItem: (key) => values.get(key) ?? null,
++    setItem: (key, value) => values.set(key, value),
++  };
++}
++
++test("adds trimmed, nonblank tasks and rejects blank input", () => {
++  const start = [];
++  const added = addTask(start, "  Read a book  ", "task-1");
++  assert.deepEqual(plain(added), [{ id: "task-1", text: "Read a book", completed: false }]);
++  assert.equal(addTask(added, " \n\t ", "task-2"), added);
++});
++
++test("toggles a task complete and incomplete", () => {
++  const start = [{ id: "task-1", text: "Walk", completed: false }];
++  const completed = toggleTask(start, "task-1");
++  assert.equal(completed[0].completed, true);
++  assert.equal(toggleTask(completed, "task-1")[0].completed, false);
++  assert.equal(start[0].completed, false);
++});
++
++test("deletes only the selected task", () => {
++  const start = [
++    { id: "task-1", text: "Walk", completed: false },
++    { id: "task-2", text: "Read", completed: true },
++  ];
++  assert.deepEqual(plain(deleteTask(start, "task-1")), [start[1]]);
++});
++
++test("keeps tasks in local storage across a reload", () => {
++  const storage = memoryStorage();
++  const beforeReload = addTask([], "Plan dinner", "task-1");
++  saveTasks(storage, beforeReload);
++  const afterReload = loadTasks(storage);
++  assert.deepEqual(plain(afterReload), plain(beforeReload));
++  assert.equal(storage.getItem(STORAGE_KEY), JSON.stringify(beforeReload));
++});
++
++test("ignores malformed stored data", () => {
++  const storage = memoryStorage();
++  storage.setItem(STORAGE_KEY, "not json");
++  assert.deepEqual(plain(loadTasks(storage)), []);
++});

@@ -1,0 +1,168 @@
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..5332aaa
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,83 @@
++(function (root) {
++  "use strict";
++
++  const STORAGE_KEY = "todo-tasks";
++
++  function createTasks(storage) {
++    let tasks;
++    try {
++      const saved = JSON.parse(storage.getItem(STORAGE_KEY) || "[]");
++      tasks = Array.isArray(saved) ? saved.filter(task => task && typeof task.id === "string" && typeof task.text === "string" && typeof task.completed === "boolean") : [];
++    } catch (_) {
++      tasks = [];
++    }
++
++    function save() { storage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
++    return {
++      all: () => tasks.map(task => ({ ...task })),
++      add(text) {
++        const clean = String(text).trim();
++        if (!clean) return false;
++        tasks.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: clean, completed: false });
++        save();
++        return true;
++      },
++      toggle(id) {
++        const task = tasks.find(item => item.id === id);
++        if (!task) return false;
++        task.completed = !task.completed;
++        save();
++        return true;
++      },
++      remove(id) {
++        const next = tasks.filter(item => item.id !== id);
++        if (next.length === tasks.length) return false;
++        tasks = next;
++        save();
++        return true;
++      }
++    };
++  }
++
++  if (typeof module !== "undefined" && module.exports) module.exports = { createTasks, STORAGE_KEY };
++  if (!root.document) return;
++
++  const tasks = createTasks(root.localStorage);
++  const form = root.document.getElementById("task-form");
++  const input = root.document.getElementById("task-input");
++  const list = root.document.getElementById("tasks");
++  const emptyMessage = root.document.getElementById("empty-message");
++
++  function render() {
++    list.replaceChildren();
++    const items = tasks.all();
++    emptyMessage.hidden = items.length > 0;
++    for (const task of items) {
++      const row = root.document.createElement("li");
++      if (task.completed) row.className = "completed";
++      const label = root.document.createElement("span");
++      label.textContent = task.text;
++      const toggle = root.document.createElement("button");
++      toggle.type = "button";
++      toggle.textContent = task.completed ? "Mark incomplete" : "Mark complete";
++      toggle.setAttribute("aria-label", `${toggle.textContent}: ${task.text}`);
++      toggle.addEventListener("click", () => { tasks.toggle(task.id); render(); });
++      const remove = root.document.createElement("button");
++      remove.type = "button";
++      remove.textContent = "Delete";
++      remove.setAttribute("aria-label", `Delete: ${task.text}`);
++      remove.addEventListener("click", () => { tasks.remove(task.id); render(); });
++      row.append(label, toggle, remove);
++      list.append(row);
++    }
++  }
++
++  form.addEventListener("submit", event => {
++    event.preventDefault();
++    if (!tasks.add(input.value)) { input.focus(); return; }
++    input.value = "";
++    render();
++    input.focus();
++  });
++  render();
++})(typeof globalThis !== "undefined" ? globalThis : this);
+diff --git a/checks.mjs b/checks.mjs
+new file mode 100644
+index 0000000..64a490a
+--- /dev/null
++++ b/checks.mjs
+@@ -0,0 +1,31 @@
++import assert from "node:assert/strict";
++import { createRequire } from "node:module";
++import { fileURLToPath } from "node:url";
++
++const require = createRequire(import.meta.url);
++const { createTasks, STORAGE_KEY } = require(fileURLToPath(new URL("./app.js", import.meta.url)));
++const data = new Map();
++const storage = {
++  getItem: key => data.get(key) ?? null,
++  setItem: (key, value) => data.set(key, value)
++};
++
++const tasks = createTasks(storage);
++assert.equal(tasks.add("  \t "), false, "blank tasks are rejected");
++assert.equal(tasks.all().length, 0);
++assert.equal(tasks.add("  Buy milk  "), true, "a nonblank task is added");
++const [task] = tasks.all();
++assert.equal(task.text, "Buy milk", "task text is trimmed");
++assert.equal(task.completed, false, "new tasks start incomplete");
++
++assert.equal(tasks.toggle(task.id), true, "a task can be completed");
++assert.equal(tasks.all()[0].completed, true);
++const afterReload = createTasks(storage);
++assert.equal(afterReload.all()[0].completed, true, "completion survives reload");
++assert.equal(afterReload.toggle(task.id), true, "a task can be marked incomplete");
++assert.equal(createTasks(storage).all()[0].completed, false, "incomplete state survives reload");
++assert.equal(afterReload.remove(task.id), true, "a task can be deleted");
++assert.deepEqual(createTasks(storage).all(), [], "deletion survives reload");
++assert.equal(storage.getItem(STORAGE_KEY), "[]");
++
++console.log("All to-do checks passed.");
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..e011c2f
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,36 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>To-do list</title>
++  <style>
++    :root { color-scheme: light; font: 16px/1.5 system-ui, sans-serif; color: #202124; background: #f5f6f8; }
++    body { max-width: 38rem; margin: 3rem auto; padding: 0 1rem; }
++    main { padding: 1.5rem; background: white; border: 1px solid #dfe1e5; border-radius: .75rem; }
++    h1 { margin: 0 0 1rem; font-size: 1.6rem; }
++    form { display: flex; gap: .5rem; }
++    input { min-width: 0; flex: 1; padding: .65rem; border: 1px solid #9aa0a6; border-radius: .35rem; font: inherit; }
++    button { padding: .55rem .8rem; border: 1px solid #70757a; border-radius: .35rem; background: white; color: inherit; font: inherit; cursor: pointer; }
++    form button { background: #174ea6; border-color: #174ea6; color: white; }
++    ul { list-style: none; margin: 1rem 0 0; padding: 0; }
++    li { display: flex; align-items: center; gap: .6rem; padding: .65rem 0; border-top: 1px solid #e8eaed; }
++    li span { flex: 1; overflow-wrap: anywhere; }
++    li.completed span { color: #5f6368; text-decoration: line-through; }
++    @media (max-width: 420px) { body { margin: 1rem auto; } main { padding: 1rem; } li { gap: .35rem; } li button { padding: .45rem; } }
++  </style>
++</head>
++<body>
++  <main>
++    <h1>To-do list</h1>
++    <form id="task-form">
++      <label for="task-input" hidden>New task</label>
++      <input id="task-input" name="task" type="text" placeholder="Add a task" autocomplete="off" required>
++      <button type="submit">Add</button>
++    </form>
++    <ul id="tasks" aria-label="Tasks"></ul>
++    <p id="empty-message">No tasks yet.</p>
++  </main>
++  <script src="app.js"></script>
++</body>
++</html>
