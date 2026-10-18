@@ -25,16 +25,16 @@ def check(repo):
             raise ValueError("repository metadata is missing or uses a symlink")
         if Path(git(repo, "rev-parse", "--show-toplevel")).resolve(strict=True) != repo.resolve(strict=True):
             raise ValueError("path is not the git repository root")
-        default = next((name for name in ("main", "master")
+        default = next((ref for ref in ("refs/heads/main", "refs/heads/master")
                         if subprocess.run(["git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
-                                          "-c", "core.excludesFile=/dev/null", "-C", str(repo), "rev-parse", "--verify", "-q", name],
+                                          "-c", "core.excludesFile=/dev/null", "-C", str(repo), "rev-parse", "--verify", "-q", ref],
                                           capture_output=True).returncode == 0), None)
         if default is None:
             raise ValueError("no main or master branch")
 
         baseline = git(repo, "rev-list", "--max-parents=0", "HEAD").splitlines()[-1]
-        branches = [name for name in git(repo, "for-each-ref", "--format=%(refname:short)", "refs/heads").splitlines()
-                    if name and name != default]
+        branches = [ref for ref in git(repo, "for-each-ref", "--format=%(refname)", "refs/heads").splitlines()
+                    if ref and ref != default]
 
         def commits_after(ref):
             ancestor = subprocess.run(["git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",

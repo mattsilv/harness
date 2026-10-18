@@ -60,15 +60,16 @@ export function delivery(cwd, pinnedBaseline) {
     }
 
     const defaultBranch = ["main", "master"].find((branch) => {
-      try { safeGit(root, "rev-parse", "--verify", "-q", branch); return true; } catch { return false; }
+      try { safeGit(root, "rev-parse", "--verify", "-q", `refs/heads/${branch}`); return true; } catch { return false; }
     });
     if (!defaultBranch) return failed("no main or master branch");
 
     const head = safeGit(root, "rev-parse", "HEAD");
     if (!isAncestor(root, baseline, head)) return failed("baseline is not an ancestor of HEAD");
-    const defaultTip = safeGit(root, "rev-parse", defaultBranch);
-    const branches = safeGit(root, "for-each-ref", "--format=%(refname:short)", "refs/heads")
-      .split("\n").filter((branch) => branch && branch !== defaultBranch);
+    const defaultRef = `refs/heads/${defaultBranch}`;
+    const defaultTip = safeGit(root, "rev-parse", defaultRef);
+    const branches = safeGit(root, "for-each-ref", "--format=%(refname)", "refs/heads")
+      .split("\n").filter((branch) => branch && branch !== defaultRef);
     const commitsAfterBaseline = (ref) => isAncestor(root, baseline, ref)
       ? Number(safeGit(root, "rev-list", "--count", `${baseline}..${ref}`))
       : 0;

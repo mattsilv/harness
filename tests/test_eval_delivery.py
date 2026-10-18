@@ -80,6 +80,14 @@ class DeliveryChecks(unittest.TestCase):
         self.assertTrue(result["default_untouched"].startswith("fail:"))
         self.assertFalse(json.loads(self.run_candidate().stdout)["passed"])
 
+    def test_tag_named_main_does_not_stand_in_for_default_branch(self):
+        self.git("branch", "-D", "main")
+        self.git("tag", "main", self.baseline)
+        result = self.run_delivery(self.baseline)
+        self.assertEqual(result.returncode, 1)
+        self.assertTrue(all(value.startswith("fail:") for value in json.loads(result.stdout).values()))
+        self.assertFalse(json.loads(self.run_candidate().stdout)["passed"])
+
     def test_wrong_and_missing_baselines_fail_closed(self):
         wrong = "0" * 40
         result = self.run_delivery(wrong)
