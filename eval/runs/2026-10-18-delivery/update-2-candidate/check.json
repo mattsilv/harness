@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-18",
+  "task": "update",
+  "app": "update-2-candidate",
+  "harness": "7e7f3f44d16d0276641da461f15606ae6a9a0070+delivery-candidate",
+  "fixture": "98734d9",
+  "model": "gpt-6-luna",
+  "effort": "high",
+  "tokens": "unavailable",
+  "checks": {
+    "loads": "pass",
+    "keeps_saved_tasks": "pass",
+    "add": "pass",
+    "reject_blank": "pass",
+    "toggle": "pass",
+    "delete": "pass",
+    "persist_reload": "pass",
+    "filter_active": "pass",
+    "filter_completed": "pass",
+    "filter_all": "pass"
+  },
+  "passed": "10/10",
+  "delivery": {
+    "committed": "pass",
+    "on_branch": "pass",
+    "default_untouched": "pass"
+  },
+  "counts": {
+    "files": 9,
+    "source_lines": 719,
+    "comment_lines": 61,
+    "test_lines": 0
+  }
+}

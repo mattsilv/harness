@@ -1,0 +1,139 @@
+diff --git a/index.html b/index.html
+index 69be497..39a3547 100644
+--- a/index.html
++++ b/index.html
+@@ -11,13 +11,20 @@
+     <input id="text" aria-label="New task" autocomplete="off">
+     <button>Add</button>
+   </form>
++  <nav aria-label="Filter tasks">
++    <button type="button" data-filter="all" aria-pressed="true">All</button>
++    <button type="button" data-filter="active" aria-pressed="false">Active</button>
++    <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
++  </nav>
+   <ul id="list"></ul>
+   <script>
+     // Tasks persist in localStorage as [{id, text, done}].
+     const KEY = "todos";
+     let todos = JSON.parse(localStorage.getItem(KEY) || "[]");
++    let filter = "all";
+     const list = document.getElementById("list");
+     const input = document.getElementById("text");
++    const filters = [...document.querySelectorAll("[data-filter]")];
+ 
+     function save() {
+       localStorage.setItem(KEY, JSON.stringify(todos));
+@@ -25,7 +32,15 @@
+     }
+ 
+     function render() {
+-      list.replaceChildren(...todos.map((t) => {
++      const visible = todos.filter((t) => {
++        if (filter === "active") return !t.done;
++        if (filter === "completed") return t.done;
++        return true;
++      });
++      filters.forEach((button) => {
++        button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
++      });
++      list.replaceChildren(...visible.map((t) => {
+         const li = document.createElement("li");
+         const box = document.createElement("input");
+         box.type = "checkbox";
+@@ -43,6 +58,10 @@
+       }));
+     }
+ 
++    filters.forEach((button) => {
++      button.onclick = () => { filter = button.dataset.filter; render(); };
++    });
++
+     document.getElementById("add").onsubmit = (e) => {
+       e.preventDefault();
+       const text = input.value.trim();
+diff --git a/scripts/check-todo.mjs b/scripts/check-todo.mjs
+new file mode 100755
+index 0000000..49dc348
+--- /dev/null
++++ b/scripts/check-todo.mjs
+@@ -0,0 +1,80 @@
++#!/usr/bin/env node
++import assert from "node:assert/strict";
++import { readFile } from "node:fs/promises";
++import vm from "node:vm";
++
++const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
++const appScript = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
++assert.ok(appScript, "index.html must contain the app script");
++
++class Element {
++  constructor(dataset = {}) {
++    this.dataset = dataset;
++    this.children = [];
++    this.attributes = {};
++    this.value = "";
++    this.checked = false;
++  }
++
++  setAttribute(name, value) { this.attributes[name] = value; }
++  append(...children) { this.children.push(...children); }
++  replaceChildren(...children) { this.children = children; }
++}
++
++function boot(storage) {
++  const elements = {
++    add: new Element(),
++    text: new Element(),
++    list: new Element(),
++  };
++  const filters = ["all", "active", "completed"].map((filter) => new Element({ filter }));
++  const document = {
++    getElementById: (id) => elements[id],
++    querySelectorAll: (selector) => selector === "[data-filter]" ? filters : [],
++    createElement: () => new Element(),
++  };
++  const localStorage = {
++    getItem: (key) => storage.get(key) ?? null,
++    setItem: (key, value) => storage.set(key, value),
++  };
++  vm.runInNewContext(appScript, { document, localStorage });
++  return { ...elements, filters };
++}
++
++function taskTexts(list) {
++  return list.children.map((item) => item.children[2].textContent);
++}
++
++const storage = new Map([["todos", JSON.stringify([
++  { id: 1, text: "Saved active task", done: false },
++  { id: 2, text: "Saved completed task", done: true },
++])]]);
++let app = boot(storage);
++assert.deepEqual(taskTexts(app.list), ["Saved active task", "Saved completed task"]);
++
++app.filters[1].onclick();
++assert.deepEqual(taskTexts(app.list), ["Saved active task"]);
++assert.equal(app.filters[1].attributes["aria-pressed"], "true");
++assert.equal(JSON.parse(storage.get("todos")).length, 2, "filtering must not change saved tasks");
++
++app.text.value = "New task";
++app.add.onsubmit({ preventDefault() {} });
++assert.deepEqual(taskTexts(app.list), ["Saved active task", "New task"]);
++app.list.children[1].children[0].checked = true;
++app.list.children[1].children[0].onchange();
++assert.deepEqual(taskTexts(app.list), ["Saved active task"]);
++app.filters[2].onclick();
++assert.deepEqual(taskTexts(app.list), ["Saved completed task", "New task"]);
++
++app.filters[0].onclick();
++const savedCompletedTask = app.list.children.find((item) => item.children[2].textContent === "Saved completed task");
++savedCompletedTask.children[4].onclick();
++assert.deepEqual(taskTexts(app.list), ["Saved active task", "New task"]);
++
++app = boot(storage);
++assert.deepEqual(taskTexts(app.list), ["Saved active task", "New task"]);
++assert.deepEqual(JSON.parse(storage.get("todos")).map(({ text, done }) => ({ text, done })), [
++  { text: "Saved active task", done: false },
++  { text: "New task", done: true },
++]);
++console.log("Passed: filters, add, toggle, delete, and reload persistence");

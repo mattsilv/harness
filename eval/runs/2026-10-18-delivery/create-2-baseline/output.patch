@@ -1,0 +1,183 @@
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..d95ec13
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,86 @@
++(function (root, factory) {
++  const api = factory();
++  if (typeof module === 'object' && module.exports) module.exports = api;
++  if (root) root.Todo = api;
++  if (root && root.document) root.document.addEventListener('DOMContentLoaded', () => api.mount(root.document, root.localStorage));
++})(typeof globalThis === 'object' ? globalThis : this, function () {
++  const STORAGE_KEY = 'todo.tasks';
++
++  function loadTasks(storage) {
++    try {
++      const tasks = JSON.parse(storage.getItem(STORAGE_KEY) || '[]');
++      return Array.isArray(tasks) ? tasks.filter(task => task && typeof task.id === 'string' && typeof task.text === 'string' && typeof task.completed === 'boolean') : [];
++    } catch {
++      return [];
++    }
++  }
++
++  function saveTasks(storage, tasks) {
++    storage.setItem(STORAGE_KEY, JSON.stringify(tasks));
++  }
++
++  function addTask(storage, text, id = globalThis.crypto.randomUUID()) {
++    const cleanText = text.trim();
++    if (!cleanText) return null;
++    const task = { id, text: cleanText, completed: false };
++    saveTasks(storage, [...loadTasks(storage), task]);
++    return task;
++  }
++
++  function setCompleted(storage, id, completed) {
++    const tasks = loadTasks(storage).map(task => task.id === id ? { ...task, completed: Boolean(completed) } : task);
++    saveTasks(storage, tasks);
++    return tasks;
++  }
++
++  function deleteTask(storage, id) {
++    const tasks = loadTasks(storage).filter(task => task.id !== id);
++    saveTasks(storage, tasks);
++    return tasks;
++  }
++
++  function mount(document, storage) {
++    const form = document.querySelector('#task-form');
++    const input = document.querySelector('#task-input');
++    const list = document.querySelector('#tasks');
++    const empty = document.querySelector('#empty');
++    let tasks = loadTasks(storage);
++
++    function render() {
++      list.replaceChildren();
++      empty.hidden = tasks.length > 0;
++      for (const task of tasks) {
++        const item = document.createElement('li');
++        item.className = task.completed ? 'completed' : '';
++        const checkbox = document.createElement('input');
++        checkbox.type = 'checkbox';
++        checkbox.checked = task.completed;
++        checkbox.setAttribute('aria-label', `Mark ${task.text} ${task.completed ? 'incomplete' : 'complete'}`);
++        checkbox.addEventListener('change', () => { tasks = setCompleted(storage, task.id, checkbox.checked); render(); });
++        const label = document.createElement('span');
++        label.textContent = task.text;
++        const remove = document.createElement('button');
++        remove.type = 'button';
++        remove.className = 'delete';
++        remove.textContent = 'Delete';
++        remove.setAttribute('aria-label', `Delete ${task.text}`);
++        remove.addEventListener('click', () => { tasks = deleteTask(storage, task.id); render(); });
++        item.append(checkbox, label, remove);
++        list.append(item);
++      }
++    }
++
++    form.addEventListener('submit', event => {
++      event.preventDefault();
++      const task = addTask(storage, input.value);
++      if (!task) { input.focus(); return; }
++      tasks = [...tasks, task];
++      input.value = '';
++      render();
++      input.focus();
++    });
++    render();
++  }
++
++  return { STORAGE_KEY, loadTasks, addTask, setCompleted, deleteTask, mount };
++});
+diff --git a/app.test.js b/app.test.js
+new file mode 100644
+index 0000000..f8f5552
+--- /dev/null
++++ b/app.test.js
+@@ -0,0 +1,39 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { addTask, loadTasks, setCompleted, deleteTask } = require('./app.js');
++
++function memoryStorage() {
++  const values = new Map();
++  return {
++    getItem: key => values.get(key) ?? null,
++    setItem: (key, value) => values.set(key, String(value))
++  };
++}
++
++test('rejects blank tasks and adds trimmed nonblank tasks as incomplete', () => {
++  const storage = memoryStorage();
++  assert.equal(addTask(storage, '  \n ', 'a'), null);
++  assert.deepEqual(addTask(storage, '  Buy milk  ', 'a'), { id: 'a', text: 'Buy milk', completed: false });
++  assert.deepEqual(loadTasks(storage), [{ id: 'a', text: 'Buy milk', completed: false }]);
++});
++
++test('marks a task complete and incomplete', () => {
++  const storage = memoryStorage();
++  addTask(storage, 'Read', 'a');
++  assert.equal(setCompleted(storage, 'a', true)[0].completed, true);
++  assert.equal(setCompleted(storage, 'a', false)[0].completed, false);
++});
++
++test('deletes a task', () => {
++  const storage = memoryStorage();
++  addTask(storage, 'Keep', 'a');
++  addTask(storage, 'Remove', 'b');
++  assert.deepEqual(deleteTask(storage, 'b'), [{ id: 'a', text: 'Keep', completed: false }]);
++});
++
++test('preserves tasks when loaded again from the same storage', () => {
++  const storage = memoryStorage();
++  addTask(storage, 'Persist me', 'a');
++  setCompleted(storage, 'a', true);
++  assert.deepEqual(loadTasks(storage), [{ id: 'a', text: 'Persist me', completed: true }]);
++});
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..608364e
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,40 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <meta name="theme-color" content="#f4f6f8">
++  <title>To-do</title>
++  <style>
++    :root { color-scheme: light; font: 16px/1.5 system-ui, sans-serif; color: #182230; background: #f4f6f8; }
++    * { box-sizing: border-box; }
++    body { margin: 0; padding: 3rem 1rem; }
++    main { width: min(100%, 34rem); margin: 0 auto; padding: 2rem; background: white; border: 1px solid #d9e0e8; border-radius: 1rem; box-shadow: 0 0.5rem 2rem #1822300d; }
++    h1 { margin: 0 0 1.25rem; font-size: 1.75rem; }
++    form { display: flex; gap: 0.5rem; }
++    input { flex: 1; min-width: 0; padding: 0.7rem 0.8rem; border: 1px solid #aab6c4; border-radius: 0.5rem; font: inherit; }
++    button { padding: 0.65rem 0.9rem; border: 0; border-radius: 0.5rem; background: #2457c5; color: white; font: inherit; cursor: pointer; }
++    button:focus-visible, input:focus-visible { outline: 3px solid #92b4ff; outline-offset: 2px; }
++    ul { display: grid; gap: 0.65rem; padding: 0; margin: 1.5rem 0 0; list-style: none; }
++    li { display: flex; align-items: center; gap: 0.65rem; padding: 0.65rem; border: 1px solid #e0e5eb; border-radius: 0.5rem; }
++    li span { flex: 1; overflow-wrap: anywhere; }
++    li.completed span { color: #647184; text-decoration: line-through; }
++    .delete { background: #eef1f5; color: #263447; }
++    #empty { margin: 1.5rem 0 0; color: #647184; }
++    @media (max-width: 30rem) { body { padding: 1rem 0.65rem; } main { padding: 1.25rem; } }
++  </style>
++</head>
++<body>
++  <main>
++    <h1>To-do</h1>
++    <form id="task-form">
++      <label for="task-input" hidden>New task</label>
++      <input id="task-input" name="task" type="text" placeholder="Add a task" required>
++      <button type="submit">Add</button>
++    </form>
++    <p id="empty">No tasks yet.</p>
++    <ul id="tasks" aria-label="Tasks"></ul>
++  </main>
++  <script src="app.js" defer></script>
++</body>
++</html>

@@ -1,6 +1,6 @@
 # Harness evaluation (maintainer-only)
 
-A cheap smoke test that compares harness revisions on the same two tasks, tracked in
+A cheap smoke test that compares harness revisions on the same three tasks, tracked in
 [issue #13](https://github.com/mattsilv/harness/issues/13). Nothing here ships to
 projects: the `harness` CLI copies only `template/`. Past runs are in [eval/runs/](eval/runs/).
 
@@ -34,11 +34,13 @@ projects: the `harness` CLI copies only `template/`. Past runs are in [eval/runs
    revision's own two runs. `eval/run.sh claude|opencode create|update <run-dir> [model]`
    does steps 1–3 for one run and saves its usage, final report, check record, and
    screenshot beside `<run-dir>`; start runs one after another.
+   **Delivery:** start from the same fresh fixture as update and use the delivery
+   prompt. Pass the initial commit with `--baseline <SHA>` when scoring it.
 3. **Check and count** the result (needs Node 22+ and a local Chrome or Chromium; no
    packages):
 
    ```bash
-   node eval/check.mjs --task create|update <app-dir> [--url URL] \
+   node eval/check.mjs --task create|update|delivery <app-dir> [--baseline SHA] [--url URL] \
      [--model M] [--effort E] [--tokens N] [--harness REV] [--out eval/results.jsonl] \
      [--shot shot.png]
    ```
@@ -138,3 +140,6 @@ Record the diff, failure evidence, result, decision, and limits in the existing 
 log. A candidate that adds cost without a demonstrated gain stays out of `template/`.
 The deterministic tests exercise known-good delivery and intentional failures; these
 are evaluator validation, not substitutes for model runs.
+
+The first [delivery-helper comparison](eval/runs/2026-10-18-delivery/README.md)
+rejected template adoption: both variants passed all six runs, with no demonstrated gain.

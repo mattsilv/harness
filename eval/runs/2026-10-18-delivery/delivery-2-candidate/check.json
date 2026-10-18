@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-18",
+  "task": "delivery",
+  "app": "delivery-2-candidate",
+  "harness": "7e7f3f44d16d0276641da461f15606ae6a9a0070+delivery-candidate",
+  "fixture": "98734d9",
+  "model": "gpt-6-luna",
+  "effort": "high",
+  "tokens": "unavailable",
+  "checks": {
+    "loads": "pass",
+    "title_my_tasks": "pass",
+    "add": "pass",
+    "reject_blank": "pass",
+    "toggle": "pass",
+    "delete": "pass",
+    "persist_reload": "pass"
+  },
+  "passed": "7/7",
+  "delivery": {
+    "committed": "pass",
+    "on_branch": "pass",
+    "default_untouched": "pass"
+  },
+  "counts": {
+    "files": 8,
+    "source_lines": 630,
+    "comment_lines": 60,
+    "test_lines": 0
+  }
+}

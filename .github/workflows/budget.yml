@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: template scripts pass their fixture tests
+      - name: scripts and evaluator pass their fixture tests
+        env:
+          EVAL_REQUIRE_BROWSER: "1"
         run: python3 -m unittest discover tests
   rule-ids:
     runs-on: ubuntu-latest
