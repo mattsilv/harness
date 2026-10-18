@@ -143,3 +143,10 @@ are evaluator validation, not substitutes for model runs.
 
 The first [delivery-helper comparison](eval/runs/2026-10-18-delivery/README.md)
 rejected template adoption: both variants passed all six runs, with no demonstrated gain.
+
+Browser cleanup owns a separate POSIX process group and stops its helpers before
+removing the temporary profile. This prevents the `ENOTEMPTY` race seen in
+[post-merge CI](https://github.com/mattsilv/harness/issues/65). Browser-test failures
+include evaluator stderr; CI also records Node and Chrome versions. For a local
+regression check, run `python3 -m unittest discover -s tests -p 'test_eval_browser*.py'`
+with permission to bind the evaluator's loopback server.

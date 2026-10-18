@@ -96,13 +96,23 @@ async function launch() {
   const profile = mkdtempSync(join(tmpdir(), "harness-eval-"));
   const proc = spawn(findChrome(), ["--headless=new", "--remote-debugging-port=0",
     `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check", "about:blank"],
-  { stdio: ["ignore", "ignore", "pipe"] });
+  { stdio: ["ignore", "ignore", "pipe"], detached: true });
   const kill = async () => {
-    if (proc.exitCode === null && proc.signalCode === null) {
-      const exited = new Promise((ok) => proc.once("exit", ok));
-      proc.kill();
-      await exited;
-    }
+    // Own the POSIX process group: Chrome helpers can outlive the browser leader
+    // and keep writing its profile even after the leader's exit event.
+    const exited = proc.exitCode === null && proc.signalCode === null
+      ? new Promise((ok) => proc.once("exit", ok)) : Promise.resolve();
+    const signalGroup = (signal) => {
+      try { process.kill(-proc.pid, signal); }
+      catch (error) { if (error.code !== "ESRCH") throw error; }
+    };
+    signalGroup("SIGTERM");
+    let timer;
+    try {
+      await Promise.race([exited, new Promise((ok) => { timer = setTimeout(ok, 1000); })]);
+    } finally { clearTimeout(timer); }
+    signalGroup("SIGKILL");
+    await exited;
     rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
   };
   try {
