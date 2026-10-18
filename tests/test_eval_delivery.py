@@ -28,8 +28,9 @@ class DeliveryChecks(unittest.TestCase):
         self.git("commit", "-m", "baseline")
         self.baseline = self.git("rev-parse", "HEAD")
         self.git("switch", "-c", "feat/title")
-        (self.repo / "index.html").write_text("<!doctype html><h1>My tasks</h1>\n")
-        self.git("commit", "-am", "rename title")
+        (self.repo / "delivery.txt").write_text("feature branch work\n")
+        self.git("add", "delivery.txt")
+        self.git("commit", "-m", "record feature work")
 
     def git(self, *args):
         return subprocess.run(["git", "-C", str(self.repo), *args], check=True,
@@ -45,7 +46,13 @@ class DeliveryChecks(unittest.TestCase):
         return subprocess.run([sys.executable, str(CANDIDATE), str(repo or self.repo)],
                               capture_output=True, text=True, timeout=10)
 
-    def test_clean_feature_branch_and_title_pass(self):
+    def run_unpinned_delivery(self, repo):
+        module = DELIVERY.as_uri()
+        code = f'import {{ delivery }} from "{module}"; console.log(JSON.stringify(delivery(process.argv[1])))'
+        return subprocess.run(["node", "--input-type=module", "-e", code, str(repo)],
+                              capture_output=True, text=True, timeout=10)
+
+    def test_clean_feature_branch_delivery_passes(self):
         result = self.run_delivery(self.baseline)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual({"committed": "pass", "on_branch": "pass", "default_untouched": "pass"},
@@ -86,16 +93,24 @@ class DeliveryChecks(unittest.TestCase):
         self.assertEqual(missing.returncode, 2)
         self.assertIn("usage:", missing.stderr)
 
-    def test_candidate_does_not_follow_symlinked_title_file(self):
+    def test_legacy_unpinned_non_repository_remains_unverified(self):
+        empty = Path(self.temp.name) / "not-a-repo"
+        empty.mkdir()
+        result = json.loads(self.run_unpinned_delivery(empty).stdout)
+        self.assertEqual({"committed": "unverified", "on_branch": "unverified",
+                          "default_untouched": "unverified"}, result)
+
+    def test_candidate_does_not_read_app_files_or_reveal_task_answer(self):
         outside = Path(self.temp.name) / "outside.html"
         outside.write_text("<!doctype html><h1>My tasks</h1>\n")
         (self.repo / "index.html").unlink()
         (self.repo / "index.html").symlink_to(outside)
         self.git("add", "index.html")
-        self.git("commit", "-m", "replace title with symlink")
+        self.git("commit", "-m", "replace app file with symlink")
         result = json.loads(self.run_candidate().stdout)
-        self.assertFalse(result["passed"])
-        self.assertFalse(result["checks"]["title_my_tasks"])
+        self.assertTrue(result["passed"])
+        self.assertEqual({"clean_worktree", "committed_feature_branch", "main_unchanged"},
+                         set(result["checks"]))
 
 
 if __name__ == "__main__":

@@ -17,6 +17,12 @@ const failed = (reason) => ({
   on_branch: `fail: ${reason}`,
   default_untouched: `fail: ${reason}`,
 });
+const unverified = () => ({
+  committed: "unverified",
+  on_branch: "unverified",
+  default_untouched: "unverified",
+});
+const repoFailure = (reason, pinned) => pinned === undefined || pinned === null ? unverified() : failed(reason);
 
 function isAncestor(cwd, ancestor, ref) {
   try {
@@ -33,12 +39,12 @@ function isAncestor(cwd, ancestor, ref) {
 export function delivery(cwd, pinnedBaseline) {
   try {
     const root = resolve(cwd);
-    if (!existsSync(root) || lstatSync(root).isSymbolicLink()) return failed("repo path is missing or uses a symlink");
+    if (!existsSync(root) || lstatSync(root).isSymbolicLink()) return repoFailure("repo path is missing or uses a symlink", pinnedBaseline);
     if (!existsSync(join(root, ".git")) || lstatSync(join(root, ".git")).isSymbolicLink()) {
-      return failed("repository metadata is missing or uses a symlink");
+      return repoFailure("repository metadata is missing or uses a symlink", pinnedBaseline);
     }
     if (realpathSync(safeGit(root, "rev-parse", "--show-toplevel")) !== realpathSync(root) || !safeGit(root, "rev-parse", "HEAD")) {
-      return failed("path is not the git repository root");
+      return repoFailure("path is not the git repository root", pinnedBaseline);
     }
 
     let baseline = pinnedBaseline;
@@ -77,7 +83,7 @@ export function delivery(cwd, pinnedBaseline) {
       default_untouched: defaultTip === baseline ? "pass" : `fail: ${defaultBranch} moved past baseline`,
     };
   } catch {
-    return failed("could not inspect repository safely");
+    return repoFailure("could not inspect repository safely", pinnedBaseline);
   }
 }
 
