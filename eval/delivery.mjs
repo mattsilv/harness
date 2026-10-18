@@ -40,7 +40,7 @@ export function delivery(cwd, pinnedBaseline) {
   try {
     const root = resolve(cwd);
     if (!existsSync(root) || lstatSync(root).isSymbolicLink()) return repoFailure("repo path is missing or uses a symlink", pinnedBaseline);
-    if (!existsSync(join(root, ".git")) || lstatSync(join(root, ".git")).isSymbolicLink()) {
+    if (!existsSync(join(root, ".git")) || !lstatSync(join(root, ".git")).isDirectory()) {
       return repoFailure("repository metadata is missing or uses a symlink", pinnedBaseline);
     }
     if (realpathSync(safeGit(root, "rev-parse", "--show-toplevel")) !== realpathSync(root) || !safeGit(root, "rev-parse", "HEAD")) {

@@ -42,7 +42,7 @@ if (args.url) {
 const SOURCE_EXT = new Set([".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".html", ".css",
   ".scss", ".vue", ".svelte", ".py", ".sh"]);
 const SKIP_DIRS = new Set(["node_modules", "dist", "build", "out", "coverage", ".git",
-  ".harness", "playwright-report", "vendor", ".venv", "__pycache__", ".next", ".svelte-kit"]);
+  ".harness", ".tmp", "playwright-report", "vendor", ".venv", "__pycache__", ".next", ".svelte-kit"]);
 const SKIP_FILES = /(^|\/)(AGENTS\.md|CLAUDE\.md|PROJECT_CONFIG\.md|docs\/MAINTENANCE\.md|docs\/languages\/.*)$|\.min\.(js|css)$/;
 const TEST_PATH = /(^|\/)(tests?|__tests__|e2e)\/|\.(test|spec)\.[^/]+$/;
 const HASH_COMMENTS = new Set([".py", ".sh"]);
@@ -332,7 +332,7 @@ function serve(root) {
   const rootReal = realpathSync(root);
   const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" };
   const server = createServer((req, res) => {
-    res.setHeader("content-security-policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'");
+    res.setHeader("content-security-policy", "sandbox allow-scripts allow-same-origin allow-forms; default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'");
     try {
       const pathname = decodeURIComponent(new URL(req.url, "http://x").pathname);
       const parts = pathname.split("/").filter(Boolean);
