@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 // Harness evaluation: run fixed to-do checks against an app and count its source.
-// Usage: node eval/check.mjs --task create|update <app-dir> [--url URL] [--model M]
-//        [--effort E] [--tokens N] [--harness REV] [--out results.jsonl] [--shot FILE.png]
+// Usage: node eval/check.mjs --task create|update|delivery <app-dir> [--baseline SHA]
+//        [--url URL] [--model M] [--effort E] [--tokens N] [--harness REV]
+//        [--out results.jsonl] [--shot FILE.png]
 // Needs Node 22+ (built-in WebSocket) and a local Chrome or Chromium; no packages.
 // Exits 0 only when every check passes. See EVAL.md.
 
 import { spawn, execFileSync } from "node:child_process";
 import { createServer } from "node:http";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, appendFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, appendFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { delivery } from "./delivery.mjs";
 
-const USAGE = "usage: node eval/check.mjs --task create|update <app-dir> [--url URL] [--model M] [--effort E] [--tokens N] [--harness REV] [--out FILE] [--shot FILE.png]";
+const USAGE = "usage: node eval/check.mjs --task create|update|delivery <app-dir> [--baseline SHA] [--url URL] [--model M] [--effort E] [--tokens N] [--harness REV] [--out FILE] [--shot FILE.png]";
 const args = { model: "unverified", effort: "unverified", tokens: "unavailable" };
 const rest = process.argv.slice(2);
 while (rest.length) {
@@ -20,11 +22,20 @@ while (rest.length) {
   if (a.startsWith("--")) args[a.slice(2)] = rest.shift();
   else args.dir = a;
 }
-if (!["create", "update"].includes(args.task) || !args.dir || !existsSync(args.dir)) {
+if (!["create", "update", "delivery"].includes(args.task) || !args.dir || !existsSync(args.dir) || (args.task === "delivery" && !args.baseline)) {
   console.error(USAGE);
   process.exit(2);
 }
 const dir = resolve(args.dir);
+if (args.url) {
+  let target;
+  try { target = new URL(args.url); } catch {}
+  if (!target || !["http:", "https:"].includes(target.protocol) ||
+      !["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) || target.username || target.password) {
+    console.error("--url must use a loopback HTTP origin");
+    process.exit(2);
+  }
+}
 
 // ---- Counting: authored source only, whole-line comments, deterministic ----
 
@@ -41,7 +52,9 @@ function listFiles(root) {
   (function walk(d) {
     for (const name of readdirSync(d).sort()) {
       const p = join(d, name);
-      if (statSync(p).isDirectory()) { if (!SKIP_DIRS.has(name)) walk(p); }
+      const info = lstatSync(p);
+      if (info.isSymbolicLink()) continue;
+      if (info.isDirectory()) { if (!SKIP_DIRS.has(name)) walk(p); }
       else out.push(relative(root, p).split("\\").join("/"));
     }
   })(root);
@@ -115,8 +128,13 @@ async function connect(proc, kill) {
   await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = () => fail(new Error("DevTools connection failed")); });
   let id = 0;
   const pending = new Map();
+  const listeners = new Map();
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
+    if (msg.method) {
+      for (const listener of listeners.get(msg.method) || []) listener(msg.params || {});
+      return;
+    }
     const p = pending.get(msg.id);
     if (!p) return;
     pending.delete(msg.id);
@@ -129,8 +147,13 @@ async function connect(proc, kill) {
   const { targetId } = await raw("Target.createTarget", { url: "about:blank" });
   const { sessionId } = await raw("Target.attachToTarget", { targetId, flatten: true });
   const send = (method, params) => raw(method, params, sessionId);
+  const on = (method, listener) => {
+    const set = listeners.get(method) || new Set();
+    set.add(listener);
+    listeners.set(method, set);
+  };
   const close = async () => { ws.close(); await kill(); };
-  return { send, close };
+  return { send, on, close };
 }
 
 // Page-side helpers, found by role and accessible name so any framework's markup works.
@@ -158,6 +181,7 @@ const HELPERS = `(() => {
   };
   return window.__ev = {
     hasInput: () => !!input(),
+    hasHeading: (text) => all("h1").some((el) => el.textContent.trim() === text),
     focus: () => { const i = input(); i.focus(); i.select && i.select(); return !!i; },
     clickAdd: () => { const b = all("button").find((b) => /^(\\+|add|save|create|submit)/i.test(name(b))); b && b.click(); return !!b; },
     rows: () => all('input[type=checkbox], [role=checkbox]').length,
@@ -188,8 +212,18 @@ const HELPERS = `(() => {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function run(url, task) {
-  const { send, close } = await launch();
+  const { send, on, close } = await launch();
   const results = {};
+  const allowedOrigin = new URL(url).origin;
+  on("Fetch.requestPaused", ({ requestId, request }) => {
+    let origin = "";
+    try { origin = new URL(request.url).origin; } catch {}
+    const method = origin === allowedOrigin ? "Fetch.continueRequest" : "Fetch.failRequest";
+    const params = method === "Fetch.continueRequest"
+      ? { requestId }
+      : { requestId, errorReason: "BlockedByClient" };
+    void send(method, params).catch(() => {});
+  });
   const ev = async (expr) => {
     const r = await send("Runtime.evaluate", { expression: `(window.__ev || ${HELPERS}).${expr}`, returnByValue: true, awaitPromise: true });
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description?.split("\n")[0] || "page error");
@@ -225,6 +259,7 @@ async function run(url, task) {
   };
 
   try {
+    await send("Fetch.enable", { patterns: [{ urlPattern: "*", requestStage: "Request" }] });
     await send("Page.enable");
     await check("loads", async () => { await load(); return true; });
     if (task === "update") {
@@ -236,6 +271,9 @@ async function run(url, task) {
         return await ev(`shown("Saved open")`) && await ev(`shown("Saved done")`) &&
           !(await ev(`done("Saved open")`)) && await ev(`done("Saved done")`);
       });
+    }
+    if (task === "delivery") {
+      await check("title_my_tasks", async () => ev(`hasHeading("My tasks")`));
     }
     await check("add", async () => { await add("Buy milk"); return ev(`shown("Buy milk")`); });
     await check("reject_blank", async () => {
@@ -290,14 +328,36 @@ async function run(url, task) {
 }
 
 function serve(root) {
+  if (lstatSync(root).isSymbolicLink()) throw new Error("app root must not use a symlink");
+  const rootReal = realpathSync(root);
   const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" };
   const server = createServer((req, res) => {
-    let p = join(root, decodeURIComponent(new URL(req.url, "http://x").pathname));
-    const rel = relative(root, p);
-    if (rel.startsWith("..") || isAbsolute(rel)) { res.writeHead(403).end(); return; }
-    if (existsSync(p) && statSync(p).isDirectory()) p = join(p, "index.html");
-    if (!existsSync(p)) { res.writeHead(404).end(); return; }
-    res.writeHead(200, { "content-type": types[extname(p)] || "application/octet-stream" }).end(readFileSync(p));
+    res.setHeader("content-security-policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'");
+    try {
+      const pathname = decodeURIComponent(new URL(req.url, "http://x").pathname);
+      const parts = pathname.split("/").filter(Boolean);
+      if (parts.some((part) => part === ".git" || part === ".harness")) { res.writeHead(403).end(); return; }
+      let p = resolve(rootReal, `.${pathname}`);
+      const rel = relative(rootReal, p);
+      if (rel.startsWith("..") || isAbsolute(rel)) { res.writeHead(403).end(); return; }
+      if (!existsSync(p)) { res.writeHead(404).end(); return; }
+      p = realpathSync(p);
+      let realRel = relative(rootReal, p);
+      if (realRel.startsWith("..") || isAbsolute(realRel) || realRel.split(/[\\/]/).some((part) => part === ".git" || part === ".harness")) {
+        res.writeHead(403).end(); return;
+      }
+      if (statSync(p).isDirectory()) {
+        p = realpathSync(join(p, "index.html"));
+        realRel = relative(rootReal, p);
+        if (realRel.startsWith("..") || isAbsolute(realRel) || realRel.split(/[\\/]/).some((part) => part === ".git" || part === ".harness")) {
+          res.writeHead(403).end(); return;
+        }
+      }
+      if (!statSync(p).isFile()) { res.writeHead(404).end(); return; }
+      res.writeHead(200, { "content-type": types[extname(p)] || "application/octet-stream" }).end(readFileSync(p));
+    } catch {
+      res.writeHead(400).end();
+    }
   });
   return new Promise((ok) => server.listen(0, "127.0.0.1", () => ok(server)));
 }
@@ -308,27 +368,6 @@ function gitRev(cwd, ...paths) {
     const dirty = execFileSync("git", ["-C", cwd, "status", "--porcelain", "--", ...paths], { encoding: "utf8" }).trim();
     return rev ? rev + (dirty ? "+dirty" : "") : "uncommitted";
   } catch { return "unknown"; }
-}
-
-// Delivery: work committed on a branch, default branch left alone. A run repo starts with one
-// baseline commit on its default branch (EVAL.md); reported apart from the score and exit code.
-function delivery(cwd) {
-  const git = (...a) => execFileSync("git", ["-C", cwd, ...a], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-  // Only a run repo's own root counts, not an app inside some other checkout.
-  try { if (realpathSync(git("rev-parse", "--show-toplevel")) !== realpathSync(cwd) || !git("rev-parse", "HEAD")) throw 0; } catch { return { committed: "unverified", on_branch: "unverified", default_untouched: "unverified" }; }
-  const base = git("rev-list", "--max-parents=0", "HEAD").split("\n").pop();
-  const def = ["main", "master"].find((b) => { try { return git("rev-parse", "--verify", "-q", b); } catch { return false; } });
-  // Judge where the commits live, not which branch happens to be checked out.
-  const ahead = (ref) => Number(git("rev-list", "--count", `${base}..${ref}`));
-  const others = git("for-each-ref", "--format=%(refname:short)", "refs/heads").split("\n").filter((b) => b && b !== def);
-  const work = Math.max(ahead("HEAD"), ...others.map(ahead));
-  const dirty = git("status", "--porcelain").split("\n").filter(Boolean).length;
-  const onBranch = others.some((b) => ahead(b) > 0);
-  return {
-    committed: work && !dirty ? "pass" : `fail: ${work} commits after baseline, ${dirty} uncommitted paths`,
-    on_branch: onBranch ? "pass" : `fail: no commits on a branch other than ${def || "the default"}`,
-    default_untouched: !def ? "fail: no main or master branch" : git("rev-parse", def) === base ? "pass" : `fail: ${def} moved past baseline`,
-  };
 }
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -358,10 +397,11 @@ const record = {
   tokens: args.tokens,
   checks,
   passed: `${passed}/${Object.keys(checks).length}`,
-  delivery: delivery(dir),
+  delivery: delivery(dir, args.baseline),
   counts: count(dir),
 };
 for (const [k, v] of Object.entries({ ...checks, ...record.delivery })) console.error(`${v === "pass" ? "PASS" : v === "unverified" ? "----" : "FAIL"}  ${k}${v === "pass" ? "" : `  (${v})`}`);
 console.log(JSON.stringify(record));
 if (args.out) appendFileSync(args.out, JSON.stringify(record) + "\n");
-process.exit(passed === Object.keys(checks).length ? 0 : 1);
+const deliveryPassed = Object.values(record.delivery).every((value) => value === "pass");
+process.exit(passed === Object.keys(checks).length && (args.task !== "delivery" || deliveryPassed) ? 0 : 1);
