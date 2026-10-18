@@ -26,6 +26,10 @@ if (!["create", "update", "delivery"].includes(args.task) || !args.dir || !exist
   console.error(USAGE);
   process.exit(2);
 }
+if (process.platform === "win32") {
+  console.error("the evaluator requires POSIX browser process groups (macOS or Linux)");
+  process.exit(2);
+}
 const dir = resolve(args.dir);
 if (args.url) {
   let target;
@@ -97,14 +101,26 @@ async function launch() {
   const proc = spawn(findChrome(), ["--headless=new", "--remote-debugging-port=0",
     `--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check", "about:blank"],
   { stdio: ["ignore", "ignore", "pipe"], detached: true });
-  const kill = async () => {
+  let cleanup;
+  const kill = () => cleanup ||= (async () => {
     // Own the POSIX process group: Chrome helpers can outlive the browser leader
     // and keep writing its profile even after the leader's exit event.
     const exited = proc.exitCode === null && proc.signalCode === null
       ? new Promise((ok) => proc.once("exit", ok)) : Promise.resolve();
     const signalGroup = (signal) => {
       try { process.kill(-proc.pid, signal); }
-      catch (error) { if (error.code !== "ESRCH") throw error; }
+      catch (error) {
+        if (error.code === "ESRCH") return;
+        // macOS can report EPERM for an orphan group containing only zombies.
+        // Ignore it only after proving that no member can still write files.
+        if (signal === "SIGKILL" && error.code === "EPERM") {
+          const rows = execFileSync("ps", ["-axo", "pgid=,stat="], { encoding: "utf8" })
+            .trim().split("\n").map((line) => line.match(/^\s*(\d+)\s+(\S+)\s*$/));
+          if (rows.every(Boolean) && rows.filter((row) => Number(row[1]) === proc.pid)
+            .every((row) => row[2].startsWith("Z"))) return;
+        }
+        throw error;
+      }
     };
     signalGroup("SIGTERM");
     let timer;
@@ -113,8 +129,21 @@ async function launch() {
     } finally { clearTimeout(timer); }
     signalGroup("SIGKILL");
     await exited;
-    rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
-  };
+    try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); }
+    finally {
+      process.removeListener("SIGTERM", onTerm);
+      process.removeListener("SIGINT", onInt);
+    }
+  })();
+  const interrupted = (code) => { void kill().then(() => process.exit(code), (error) => {
+    console.error(error); process.exit(1);
+  }); };
+  const onTerm = () => interrupted(143);
+  const onInt = () => interrupted(130);
+  // The comparison runner sends TERM before its bounded KILL escalation. Clean
+  // our separate Chrome group while that grace period is still available.
+  process.once("SIGTERM", onTerm);
+  process.once("SIGINT", onInt);
   try {
     return await connect(proc, kill);
   } catch (e) {

@@ -14,6 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 @unittest.skipUnless(os.name == 'posix', 'Chrome process groups require POSIX')
 class BrowserProcessTests(unittest.TestCase):
     def test_failed_browser_leader_cannot_leave_a_profile_writer(self):
+        self.check_cleanup(interrupt=False)
+
+    def test_interrupted_evaluator_stops_its_detached_browser_group(self):
+        self.check_cleanup(interrupt=True)
+
+    def check_cleanup(self, *, interrupt):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
             (root / 'index.html').write_text('<h1>Fixture</h1>')
@@ -25,14 +31,30 @@ class BrowserProcessTests(unittest.TestCase):
             shim.write_text(f'#!{sys.executable}\nimport pathlib,subprocess,sys\n'
                             f'p=subprocess.Popen([sys.executable,"-c",{child!r}], '
                             'stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n'
-                            f'pathlib.Path({str(pidfile)!r}).write_text(str(p.pid))\n')
+                            f'pathlib.Path({str(pidfile)!r}).write_text(str(p.pid))\n'
+                            + ('import time; time.sleep(20)\n' if interrupt else ''))
             shim.chmod(0o755)
             try:
-                result = subprocess.run(['node', str(ROOT / 'eval/check.mjs'), '--task', 'create', str(root)],
+                proc = subprocess.Popen(['node', str(ROOT / 'eval/check.mjs'), '--task', 'create', str(root)],
                                         env={**os.environ, 'CHROME_PATH': str(shim), 'TMPDIR': str(root)},
-                                        capture_output=True, text=True, timeout=10)
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn('Chrome exited', result.stderr)
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                try:
+                    if interrupt:
+                        deadline = time.monotonic() + 5
+                        while not pidfile.exists() and time.monotonic() < deadline:
+                            time.sleep(0.01)
+                        self.assertTrue(pidfile.exists(), 'fake Chrome did not start')
+                        proc.terminate()
+                    stdout, stderr = proc.communicate(timeout=5)
+                    self.assertNotEqual(proc.returncode, 0)
+                    if interrupt:
+                        self.assertEqual(proc.returncode, 143, stderr)
+                    else:
+                        self.assertIn('Chrome exited', stderr)
+                finally:
+                    if proc.poll() is None:
+                        proc.kill()
+                        proc.communicate()
                 time.sleep(1)
                 self.assertFalse(marker.exists(), 'Chrome child continued after evaluator cleanup')
                 self.assertEqual(list(root.glob('harness-eval-*')), [])

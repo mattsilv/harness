@@ -150,3 +150,7 @@ removing the temporary profile. This prevents the `ENOTEMPTY` race seen in
 include evaluator stderr; CI also records Node and Chrome versions. For a local
 regression check, run `python3 -m unittest discover -s tests -p 'test_eval_browser*.py'`
 with permission to bind the evaluator's loopback server.
+The evaluator also handles TERM/INT to stop its separate browser group when the
+comparison times out. A macOS zombie-only group can reject the final KILL with
+`EPERM`; cleanup accepts this only after inspecting process states and confirming
+that the group has no live member. A live-process permission error still fails.
