@@ -33,9 +33,12 @@ class BrowserEvaluatorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
             (root / 'index.html').write_text(html)
-            return subprocess.run(['node', str(ROOT / 'eval/check.mjs'), '--task', 'create', str(root)],
+            result = subprocess.run(['node', str(ROOT / 'eval/check.mjs'), '--task', 'create', str(root)],
                                   capture_output=True, text=True, timeout=60,
                                   env={**os.environ, 'CHROME_PATH': CHROME})
+            self.assertTrue(result.stdout.strip(),
+                            f'evaluator exited {result.returncode} without JSON:\n{result.stderr}')
+            return result
 
     def test_task_text_cannot_turn_a_toggle_into_a_delete_control(self):
         # Real button toggles are supported by the evaluator. A task containing the

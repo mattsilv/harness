@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: report evaluator runtimes
+        run: |
+          node --version
+          google-chrome --version
       - name: scripts and evaluator pass their fixture tests
         env:
           EVAL_REQUIRE_BROWSER: "1"
