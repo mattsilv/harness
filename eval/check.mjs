@@ -161,19 +161,20 @@ const HELPERS = `(() => {
   const vis = (el) => el && (el.checkVisibility ? el.checkVisibility() : el.offsetParent !== null);
   const name = (el) => (el.getAttribute("aria-label") || el.title || el.textContent || el.value || "").trim();
   const all = (sel, root = document) => [...root.querySelectorAll(sel)].filter(vis);
+  const taskControls = 'input[type=checkbox], [role=checkbox], button[aria-pressed]';
   const input = () => all('input:not([type]), input[type=text], input[type=search], textarea')[0];
   const labels = (text) => all("body *").filter((el) =>
     el.textContent.trim() === text && ![...el.children].some((c) => c.textContent.trim() === text));
   const toggleEl = (r) => r.querySelector('input[type=checkbox], [role=checkbox]') ||
     [...r.querySelectorAll("button")].find((b) => /complete|done|toggle|check|mark/i.test(name(b)));
-  const delEl = (r) => [...r.querySelectorAll("button, [role=button]")].find((b) => /delete|remove|^(×|✕|x)$/i.test(name(b)));
+  const delEl = (r) => [...r.querySelectorAll("button, [role=button]")].find((b) => /^(?:delete|remove)\\b|^(?:×|✕|x)$/i.test(name(b)));
   // The nearest ancestor of the task's text that holds the control find() looks for, so a
   // <label> wrapping only the checkbox and text doesn't hide a sibling delete button. It stops
   // once it spans more than one task, so it never borrows another task's control.
   const row = (text, find = (r) => r.querySelector('input[type=checkbox], [role=checkbox], button')) => {
     for (let el of labels(text)) {
       for (; el && el !== document.body; el = el.parentElement) {
-        if (el.querySelectorAll('input[type=checkbox], [role=checkbox]').length > 1) break;
+        if (el.querySelectorAll(taskControls).length > 1) break;
         if (find(el)) return el;
       }
     }
@@ -184,7 +185,7 @@ const HELPERS = `(() => {
     hasHeading: (text) => all("h1").some((el) => el.textContent.trim() === text),
     focus: () => { const i = input(); i.focus(); i.select && i.select(); return !!i; },
     clickAdd: () => { const b = all("button").find((b) => /^(\\+|add|save|create|submit)/i.test(name(b))); b && b.click(); return !!b; },
-    rows: () => all('input[type=checkbox], [role=checkbox]').length,
+    rows: () => all(taskControls).length,
     shown: (t) => !!row(t),
     done: (t) => {
       const r = row(t, toggleEl), el = toggleEl(r);
