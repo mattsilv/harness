@@ -1,5 +1,5 @@
 """Fixture tests for the harness CLI's always-loaded context warning."""
-import contextlib, io, json, os, subprocess, tempfile, unittest
+import contextlib, datetime, io, json, os, subprocess, tempfile, unittest
 from unittest import mock
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -71,6 +71,49 @@ class CiGateCache(unittest.TestCase):
         outs, calls = self.run_gate([[{"type": "required_status_checks"}]], 2)
         self.assertEqual(["", ""], outs)
         self.assertEqual(1, len(calls))
+
+
+class MaintenanceStatus(unittest.TestCase):
+    def run_checks(self, bodies):
+        """Run report_maintenance once per issue body, all inside the cache window; return (outputs, gh calls)."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / "PROJECT_CONFIG.md").write_text("- **Maintenance tracking issue:** acme/app#1\n")
+        (root / "docs").mkdir()
+        (root / "docs" / "MAINTENANCE.md").write_text(
+            "## Daily: last completed 1 or more days ago\n\n- a\n")
+        old = os.getcwd()
+        os.chdir(root)
+        self.addCleanup(os.chdir, old)
+        replies = iter(json.dumps({"number": 1, "labels": [], "body": b}) for b in bodies)
+        calls = []
+
+        def fake_run(cmd, **kw):
+            if cmd[0] == "gh":
+                calls.append(cmd)
+                return subprocess.CompletedProcess(cmd, 0, next(replies), "")
+            return subprocess.CompletedProcess(cmd, 0, "2020-01-01\n", "")
+
+        outs = []
+        with mock.patch.object(harness, "CACHE", root / "cache"), \
+                mock.patch.object(harness.subprocess, "run", fake_run):
+            for _ in bodies:
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    harness.report_maintenance()
+                outs.append(out.getvalue())
+        return outs, calls
+
+    def test_status_edit_shows_immediately(self):
+        today = datetime.date.today().isoformat()
+        outs, calls = self.run_checks([
+            "- **Daily last completed:** 2020-01-01 00:00 UTC",
+            f"- **Daily last completed:** {today} 00:00 UTC",
+        ])
+        self.assertIn("daily maintenance due", outs[0])
+        self.assertEqual("", outs[1])
+        self.assertEqual(2, len(calls), "the status edit must be read, not served from cache")
 
 
 class AuditSignals(unittest.TestCase):
