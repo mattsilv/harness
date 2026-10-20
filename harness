@@ -150,12 +150,12 @@ def report_local():
               f"for them before other work and record the answers: {', '.join(labels)}.")
 
 
-def gh_cached(name, args, keep=None):
-    """JSON from `gh`, cached per repo for CHECK_CACHE_SECONDS; None on failure.
+def gh_cached(name, args, keep=None, ttl=CHECK_CACHE_SECONDS):
+    """JSON from `gh`, cached per repo for `ttl` seconds (0 = no cache); None on failure.
     With `keep`, only answers it accepts are cached or served from cache."""
     key = hashlib.sha1(str(Path.cwd().resolve()).encode()).hexdigest()[:12]
     cache = CACHE / f"{name}-{key}.json"
-    if cache.exists() and time.time() - cache.stat().st_mtime < CHECK_CACHE_SECONDS:
+    if ttl and cache.exists() and time.time() - cache.stat().st_mtime < ttl:
         data = json.loads(cache.read_text())
         if keep is None or keep(data):
             return data
@@ -163,7 +163,7 @@ def gh_cached(name, args, keep=None):
     if r.returncode:
         return None
     data = json.loads(r.stdout)
-    if keep is None or keep(data):
+    if (keep is None or keep(data)) and ttl:
         write(cache, r.stdout)
     return data
 
@@ -194,13 +194,13 @@ def default_branch():
 
 
 def maintenance_issue():
-    """Tracking issue's labels and body via gh, cached per repo."""
+    """Tracking issue's labels and body via gh, never cached: an audit's status edit must show now."""
     m = re.search(r"Maintenance tracking issue:\*\*\s*(?:[\w.-]+/[\w.-]+)?#(\d+)",
                   read(Path(CONFIG_FILE)) or "")
     if not m:
         return None
     return gh_cached("maintenance", ["issue", "view", m.group(1), "--json",
-                                     "number,body,labels"])
+                                     "number,body,labels"], ttl=0)
 
 
 def report_maintenance():
