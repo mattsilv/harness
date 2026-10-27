@@ -11,9 +11,10 @@ Defaults and identifiers only; never store secret values here. Every value is a 
   - **Screenshots:** `committed` (default) or `local` (gitignore `docs/ui/screenshots/`; commit the manifest and sitemap; no `--check`).
   - **Viewports:** Initially desktop 1440 × 900 and mobile 390 × 844; record the chosen sizes in `docs/ui/templates.json` when enabling.
 - **Model tiers:** The default procedure for which model does what; rules name tiers, never models.
-  - **T1, planning model:** OpenAI Astra or Anthropic Fable, medium effort. Does any planning, architecture, and hard decisions, always as a subagent of the session.
-  - **T2, primary model:** OpenAI Sol or Anthropic Opus, medium effort. Runs the session and does the coding and merging.
-  - **T3, subagent model:** OpenAI Luna or Anthropic Sonnet, high effort. Every implementation task gets at least one T3 subagent for testing and one for research, and a T3 subagent reviews each PR before it merges.
+  - **T1, planning model:** Astra in Codex or Fable in Claude Code, medium effort. Does any planning, architecture, and hard decisions, always as a subagent of the session.
+  - **T2, primary model:** GPT-6.1 Sol in Codex or Opus in Claude Code, medium effort. Runs the session and does the coding and merging.
+  - **T3, subagent model:** Luna in Codex or Sonnet in Claude Code, high effort, for research and testing. Every implementation task gets at least one T3 subagent for testing and one for research, and a T3 subagent reviews each PR before it merges.
+    - **PR review:** Terra, extra high effort, in Codex; Sonnet, high effort, in Claude Code.
   - **Effort levels:** Starting points; their meaning shifts between model generations.
   - **One model available:** Use it for every tier.
 - **Committed sprint:** The open GitHub milestone with the nearest due date.
