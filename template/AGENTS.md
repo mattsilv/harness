@@ -74,11 +74,11 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Carried over from the predecessor harness. Incident not recorded.
     source: predecessor
     review: keep, confidence medium (claude-fable-5-1, 2026-09-26): predecessor; eval shows review subagents found real bugs (claude-create1), though under the rule -->
-  - After two review/fix cycles with failing checks or a high-severity finding, stop and report the blocker.
+  - After two review/fix cycles, stop if checks still fail or high-severity findings remain open; report blockers.
     <!-- process-3
-    why: Carried over from the predecessor harness, to stop fix loops. Incident not recorded.
-    source: predecessor
-    review: keep, confidence medium (claude-fable-5-1, 2026-09-26): predecessor; a stop condition on fix loops is an operator cost boundary; self-report -->
+    why: In one task, two cycles ended with checks still failing, then an authorized cycle fixed them. The stop must track unresolved work.
+    source: incident, 2026-10
+    review: keep, confidence medium (reviewed against task record, 2026-10-27): preserves the stop for unresolved failures and findings; clarifies its end-state condition -->
   - Keep task context in its issue so a handoff is a short prompt naming it.
     <!-- process-4
     why: Long self-contained primers were slow to write and read, and their context was lost once pasted. Keeping it in the issue makes the handoff trivial and the context durable. Fresh sessions still avoid stale context.
