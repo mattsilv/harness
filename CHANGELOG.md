@@ -3,7 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
-- **40** · 2026-10-27 · PR pending · Refresh runtime-specific planning and coding defaults and configure PR review separately from research and testing. Action: run `harness apply`.
+- **40** · 2026-10-27 · #69 · Refresh runtime-specific planning and coding defaults and configure PR review separately from research and testing. Action: run `harness apply`.
 - **38** · 2026-10-14 · #61 · New rule delivery-14 and on-demand `docs/CI.md`: CI jobs write test data and scratch files to ephemeral per-job storage, runner concurrency comes from measured throughput, and capacity is added only after a measurement recorded in PROJECT_CONFIG; new **CI runners** setting (hosted by default). Word budget raised 1190 to 1235 (+47 for delivery-14, the minimum). Action: run `harness apply`, link `docs/CI.md` from `docs/README.md`, and record **CI runners** in PROJECT_CONFIG.md.
 - **39** · 2026-10-27 · #68 · Clarify process-3: stop after two review/fix cycles only when checks still fail or high-severity findings remain open. Action: run `harness apply`.
 - **37** · 2026-10-13 · #60 · `scripts/context-watch.py` imports one module per line (ruff E401). No action needed; `harness apply` to pick it up.
