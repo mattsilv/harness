@@ -19,8 +19,9 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Merge policies: `auto` merges without asking | An agent under `auto` still asked the operator before each merge. | incident, 2026-09 |
 | Merge policies: `auto` turns on auto-merge when the PR opens | A subagent waited in a CI poller to merge by hand, stopped, and left a green PR unmerged overnight. | incident, 2026-09 |
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
-| Model tiers: planning model as a subagent of the primary session | Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review. | operator |
+| Model tiers: planning model as a subagent of the primary session | Operator's tiering assigns planning and hard decisions to a separate model while the primary model codes and runs the session. | operator |
 | Model tiers: at least one T3 subagent each for testing and research per implementation task, and a T3 PR review | Operator's choice: keeps testing and research off the T2 session's context and cost. | operator |
+| Model tiers: runtime-specific defaults and a separate PR-review default | Model recommendations evolve by role and runtime; changing the review model must not change research and testing defaults. | operator, 2026-10 |
 | Frontend review: off by default, independent T2 visual review when enabled | Projects opt into a stronger visual pass without changing the T3 code review or adding always-loaded UI rules; capture runner, command, and initial viewports stay project defaults. | operator, 2026-10 |
 | Secrets: operator enters a value through the vendor's native interactive prompt | A value pasted into chat, a command argument, or an agent-run shell reaches the model's context, logs, or shell history; the vendor's no-value prompt keeps it in the operator's terminal. | operator |
 | Secrets: Doppler structure, prefix in shared projects | Follows Doppler's one-project-per-app guidance; when apps share a project, generic names collide. | vendor docs, operator |
