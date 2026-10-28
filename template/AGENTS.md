@@ -224,6 +224,10 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
   <!-- processes-1
   why: Agents across many sessions left a shared browser-automation daemon running for 10 days with its idle timeout disabled: 14 named browsers, some idle 45+ hours, ~140 headless browser processes, one browser with 71 tabs. Load average reached 10-12 and parallel E2E runs slowed to a crawl. Every task can start a process, so the rule is every-task.
   source: incident, 2026-09 -->
+  - Show the operator a page by printing its URL; never `open <url>` or launch a browser from a shell.
+    <!-- processes-2
+    why: Agents ran `open http://127.0.0.1:<port>/` from Bash to show a dev page. On macOS 26.6 with Chrome 156 that spawned a second Chrome process from the terminal coalition, which aborted in HIServices _RegisterApplication 35 ms after launch and showed the operator a "Google Chrome quit unexpectedly" dialog on every call, while the page opened anyway in the running browser.
+    source: incident, 2026-10 -->
 - **Migrations:** Before adding one, list the other agent sessions on this machine (the runtime's session list, and `git worktree list` for their branches) and ask each whether its work touches the same tables or migration sequence; if one doesn't answer, have a T3 subagent compare that branch's migrations and schema with the default branch. Pause applying the migration while a conflict exists, and record the pause in the task's issue.
   <!-- migrations-1
   why: Two parallel branches both created the same migration number, and a table rebuild on one failed after another branch changed a child table. Worktrees on one machine are the normal case (#33).

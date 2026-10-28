@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **41** · 2026-10-28 · #70 · New rule processes-2: to show the operator a page, print its URL; never `open <url>` or launch a browser binary from a shell (a second Chrome spawned from the terminal aborts on macOS and shows a crash dialog). Word budget raised 1235 to 1255 (+20). Action: run `harness apply`.
 - **40** · 2026-10-27 · #69 · Refresh runtime-specific planning and coding defaults and configure PR review separately from research and testing. Action: run `harness apply`.
 - **38** · 2026-10-14 · #61 · New rule delivery-14 and on-demand `docs/CI.md`: CI jobs write test data and scratch files to ephemeral per-job storage, runner concurrency comes from measured throughput, and capacity is added only after a measurement recorded in PROJECT_CONFIG; new **CI runners** setting (hosted by default). Word budget raised 1190 to 1235 (+47 for delivery-14, the minimum). Action: run `harness apply`, link `docs/CI.md` from `docs/README.md`, and record **CI runners** in PROJECT_CONFIG.md.
 - **39** · 2026-10-27 · #68 · Clarify process-3: stop after two review/fix cycles only when checks still fail or high-severity findings remain open. Action: run `harness apply`.
