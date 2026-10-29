@@ -2,7 +2,7 @@
 
 Audit state lives in the maintenance tracking issue named in PROJECT_CONFIG.md, not in this file: open findings, and for each list below its last attempted and last completed dates (e.g. **Weekly last completed:** 2026-01-31).
 
-At session start, check that issue. A list is due when its heading's interval has passed since it last completed, or, if it never completed, since the harness was installed (the first commit of .harness/). Claim a due list (assign yourself or add an audit-in-progress label), run it after the current task, delegating the checks to T3 subagents (PROJECT_CONFIG.md) and reviewing their findings yourself, and surface overdue or blocked work in one line. Retry incomplete audits next session. Record findings, actions, blockers, and UTC timestamps in the tracking issue; update "last attempted" every run and "last completed" only when every check in that list finishes. Release the claim when done.
+At session start, check that issue. A list is due when its heading's interval has passed since it last completed, or, if it never completed, since the harness was installed (the first commit of .harness/). Surface due or blocked lists in one line; execute a list only when it is within the authorized task. Before execution, claim it (assign yourself or add an audit-in-progress label), delegate checks when useful, and review their findings. Retry incomplete audits next session. Record findings, actions, blockers, and UTC timestamps in the tracking issue; update "last attempted" every run and "last completed" only when every check in that list finishes. Release the claim when done.
 
 ## Weekly: last completed 7 or more days ago
 

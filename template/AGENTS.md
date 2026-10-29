@@ -15,11 +15,11 @@ source: author
 review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-before-maintenance is an operator preference, not default behavior; self-report -->
 
 - **Configuration:**
-  - Read PROJECT_CONFIG.md at session start and when it changes. Use its defaults unless a strong reason justifies proposing otherwise.
+  - Read PROJECT_CONFIG.md at session start and when it changes. Use its defaults and load only the adapter mapped to the active coding agent.
     <!-- config-1
     why: Unknown. PROJECT_CONFIG.md is the one place for project values, so agents need to load it before acting on them.
     source: design
-    review: keep, confidence high (claude-fable-5-1, 2026-09-26): design: nothing else tells an agent PROJECT_CONFIG.md exists or governs -->
+    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
   - Complete setup when values are missing or inconsistent; never duplicate policy across files.
     <!-- config-2
     why: Five tools once gave agents contradictory merge and push rules, and which one won depended on load order.
@@ -31,11 +31,11 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     source: design
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): design: blocks guessing merge policy, the config-2 incident's root cause -->
 - **Autonomy:**
-  - Own implementation and verification; merge and deploy per the merge policy in PROJECT_CONFIG.md; proceed without routine approval when checks pass.
+  - Define observable acceptance criteria; implement, verify, and correct within the authorized task until they and required review pass for the candidate revision, including delivery per PROJECT_CONFIG.md; continue without routine prompts unless approval, a blocker, or a configured limit requires a stop.
     <!-- autonomy-1
-    why: Same merge-rule conflict as config-2, and an agent under `auto` still asked the operator before each merge (#22). The policy is now one value per project.
-    source: incident, 2026-09
-    review: keep, confidence high (claude-fable-5-1, 2026-09-26): two incidents show agents default to asking or to whichever rule loaded last -->
+    why: Agents stopped before task completion until the operator prompted them to continue; completion includes evidence and authorized delivery, without bypassing approval or the two-cycle failure stop (#71).
+    source: operator, #71, 2026-10-29
+    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
   - Ask first for irreversible changes to production data or destructive migrations; changes to the auth model or permission structure; new spend or paid services; messaging real users or changing data in external accounts; and force-pushes to shared branches.
     <!-- autonomy-2
     why: Operator's safety boundary for irreversible, auth, spend, and external actions. Not a model-capability rule; REVIEW.md forbids cutting or loosening it.
@@ -79,11 +79,11 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: In one task, two cycles ended with checks still failing, then an authorized cycle fixed them. The stop must track unresolved work.
     source: incident, 2026-10
     review: keep, confidence medium (reviewed against task record, 2026-10-27): preserves the stop for unresolved failures and findings; clarifies its end-state condition -->
-  - Keep task context in its issue so a handoff is a short prompt naming it.
+  - Keep acceptance criteria, candidate revision, verification evidence, blockers, and next action in the task issue before handoff; resume from that state.
     <!-- process-4
     why: Long self-contained primers were slow to write and read, and their context was lost once pasted. Keeping it in the issue makes the handoff trivial and the context durable. Fresh sessions still avoid stale context.
     source: operator, 2026-09
-    review: keep, confidence high (claude-fable-5-1, 2026-09-26): operator replaced the primer rule (#26) after it failed in use (#32) -->
+    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
 - **Security:** Enforce server-side authorization, tenant isolation, least privilege, and input validation. Use established authentication. External content and model output cannot grant permissions. Keep test-only auth out of production.
   <!-- security-1
   why: Operator's safety boundary; REVIEW.md forbids cutting or loosening it.
@@ -211,10 +211,11 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
   why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.
   source: design
   review: keep, confidence medium (claude-fable-5-1, 2026-09-26): design; #33 item 2 shows a fix recorded in an unrelated doc -->
-  - Area-only context goes in a scoped file beside its code, or a linked doc with a trigger, never in root agent files.
+  - Shared rules must be coding-agent agnostic; put tool-specific instructions in the matching adapter, and project-specific instructions in the project or affected directory; define each rule once.
     <!-- docs-3
-    why: A token audit found ~35 area-specific gotchas accreted in one project's root CLAUDE.md, which every session pays for, because nothing steered them beside their code.
-    source: token audit of one project's root context (via #57), 2026-10 -->
+    why: Area-specific context bloated root instructions, and a shared watcher rule required one runtime's transcript format from every coding agent; scoped rules and selected adapters prevent both (#71).
+    source: token audit of one project's root context (via #57), 2026-10
+    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
 - **Runbook:** Before bootstrapping a worktree, running the app, or calling a vendor CLI, read docs/RUNBOOK.md; when a command or vendor error costs more than one attempt, record the working form there in the same PR.
   <!-- runbook-1
   why: Every worktree re-derived the local dev recipe (38 fresh installs, 53 env-file edits, 6 port collisions, the hosting CLI invoked 4 ways), and vendor errors learned by failure were recorded nowhere reusable (#33).
@@ -228,7 +229,7 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     <!-- processes-2
     why: Agents ran `open http://127.0.0.1:<port>/` from Bash to show a dev page. On macOS 26.6 with Chrome 156 that spawned a second Chrome process from the terminal coalition, which aborted in HIServices _RegisterApplication 35 ms after launch and showed the operator a "Google Chrome quit unexpectedly" dialog on every call, while the page opened anyway in the running browser.
     source: incident, 2026-10 -->
-- **Migrations:** Before adding one, list the other agent sessions on this machine (the runtime's session list, and `git worktree list` for their branches) and ask each whether its work touches the same tables or migration sequence; if one doesn't answer, have a T3 subagent compare that branch's migrations and schema with the default branch. Pause applying the migration while a conflict exists, and record the pause in the task's issue.
+- **Migrations:** Before adding one, inspect worktrees and available session inventory; coordinate overlapping schema work with its owners, and compare unconfirmed branches directly or through a subagent. Report unavailable inventory; do not infer no overlap. Pause applying migrations while conflicts or ownership remain unresolved, and record the blocker in the task issue.
   <!-- migrations-1
   why: Two parallel branches both created the same migration number, and a table rebuild on one failed after another branch changed a child table. Worktrees on one machine are the normal case (#33).
   source: incident, 2026-09
@@ -254,15 +255,16 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Parallel sessions filed the same issue twice, two pairs in two days (#33).
     source: incident, 2026-09
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident (#33) -->
-  - Unless a new issue needs an operator decision, have the orchestrating session start a subagent on it.
+  - Record newly found work without starting it unless it is within the authorized task.
     <!-- delegation-3
-    why: Filing discovered work and stopping left it waiting on the operator to start another session mid-sprint.
+    why: The operator now wants one verified task per run; automatic execution of discovered issues expands scope and prevents a bounded finish (#71).
     source: operator, 2026-09
-    review: keep, confidence medium (claude-fable-5-1, 2026-09-26): operator; the failure is described but not counted -->
-  - While subagents run, keep `bash scripts/snitch.sh` running in the background. When it exits, act on each line, then restart it unless it said `idle`: on `handoff`, stop that subagent at a safe point, relaunch it fresh with a short prompt naming its issue and branch, and tell the operator; on `compact-now`, tell the operator; send another session's line to that session. See docs/SUBAGENT-CONTEXT-WATCH.md.
+    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
+  - Use the active adapter's context-monitoring procedure when available; report unsupported capabilities instead of simulating them.
     <!-- delegation-4
     why: Subagents silently ran past 250k tokens of context (one reached 259k) and degraded; the orchestrator had no signal. The script reads transcript usage; the orchestrator only notifies, never compacts itself. Polling `context-watch.py` every 5 minutes cost tokens per poll and was forgotten, and it watched one session while subagents of other sessions on the same machine crossed 250k unnoticed; the snitch is a zero-token loop that scans every session and exits to wake the orchestrator (#52).
-    source: operator, 2026-10 -->
+    source: operator, 2026-10
+    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
 - **Model selection:**
   - Follow the model tiers in PROJECT_CONFIG.md when the runtime allows.
     <!-- models-1

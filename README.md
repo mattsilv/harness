@@ -26,12 +26,14 @@ flowchart LR
 |---|---|---|
 | [`template/AGENTS.md`](template/AGENTS.md) | The rules. Loaded in full every session. | yes |
 | [`template/PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md) | Per-project defaults; values marked "Set during setup" must be answered. | yes |
+| [`template/docs/runtime-adapters/`](template/docs/runtime-adapters/) | Tool-specific instructions; load only the adapter mapped to the active coding agent in project config. | yes |
+| [`template/docs/SECRETS.md`](template/docs/SECRETS.md) | Secret-entry and provider procedures, loaded only for secrets work. | yes |
 | [`template/docs/MAINTENANCE.md`](template/docs/MAINTENANCE.md) | The recurring maintenance audit. | yes |
 | [`template/docs/RUNBOOK.md`](template/docs/RUNBOOK.md) | Skeleton for the project's working commands and known vendor errors, read on demand. | yes |
 | [`template/docs/FRONTEND.md`](template/docs/FRONTEND.md) | Optional visual sitemap, committed screenshots, and pre-ship review, enabled in project config. | yes |
 | [`template/docs/CI.md`](template/docs/CI.md) | Checklist for CI workflows, runner storage, and runner capacity when many agents merge in parallel, read on demand. | yes |
 | [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
-| [`template/scripts/`](template/scripts/) | `branch-check.sh` (conflict with the remote default branch?), `pr-wait.sh` (wait for a PR to merge, stop on a conflict or failure), `overlap-check.sh` (files another open PR or worktree also changes), `context-watch.py` (flag subagents near their context limit), and `snitch.sh` (background loop over `context-watch.py` that exits to wake the orchestrator), linked from the runbook or AGENTS.md. | yes |
+| [`template/scripts/`](template/scripts/) | `branch-check.sh` (conflict with the remote default branch?), `pr-wait.sh` (wait for a PR to merge, stop on a conflict or failure), `overlap-check.sh` (files another open PR or worktree also changes), `context-watch.py` (flag subagents near their context limit), and `snitch.sh` (background loop over `context-watch.py` that exits to wake the orchestrator), linked from the runbook or active runtime adapter. | yes |
 | [`template/docs/SUBAGENT-CONTEXT-WATCH.md`](template/docs/SUBAGENT-CONTEXT-WATCH.md) | How the snitch works and how to act on each alert line, read on demand. | yes |
 | [`template/scripts/ui-capture.mjs`](template/scripts/ui-capture.mjs) | Batch capture CLI and freshness check for the optional frontend workflow. | yes |
 | [`VERSION`](VERSION), [`CHANGELOG.md`](CHANGELOG.md) | Harness version (one integer, bumped per template change) and one line per version. | no |
@@ -58,22 +60,15 @@ flowchart LR
 What one task looks like under the defaults. Each project names its models and effort per tier in
 [`PROJECT_CONFIG.md`](template/PROJECT_CONFIG.md); rules refer to tiers (T1–T3), never to models.
 
-1. **Session starts on T2**, the primary model. It reads `PROJECT_CONFIG.md` and picks up the committed sprint.
-2. **Plan (T1, if needed).** Ambiguous, broad, or risky work goes to a T1 planning subagent; bounded low-risk work skips this.
-3. **Research (T3).** At least one T3 subagent researches the code, docs, or live contracts the task touches.
-4. **Code (T2).** The session implements on a branch in its own worktree.
-5. **Test (T3).** At least one T3 subagent tests the change.
-6. **PR review (T3).** The session opens a PR and a T3 subagent reviews it, sized to risk; the session fixes what it finds.
-7. **Deliver (T2).** Merge per the project's merge policy once review and checks pass.
-8. **Follow-ups.** Newly found work becomes an issue; unless it needs an operator decision, the session starts a subagent on it.
-9. **Hand off.** Context lives in the issue, so a handoff is a short prompt naming it, and the next phase starts in a fresh context.
+1. **Load context.** Read project configuration and only the active coding agent's adapter.
+2. **Define completion.** Record observable acceptance criteria for the authorized task.
+3. **Implement and verify.** Plan and delegate when risk or isolation warrants it. Correct failures without routine continuation prompts; stop at the existing approval, blocker, and failure limits.
+4. **Review and deliver.** Obtain independent review and follow the project's merge policy. A passing result must refer to the candidate revision being delivered.
+5. **Stop or hand off.** Finish one verified task. Preserve criteria, revision, evidence, blockers, and next action before handoff. Record unrelated discoveries without starting them.
 
-```mermaid
-flowchart LR
-  T2["T2 · primary model<br>the session: coding, merging"] -->|asks for a plan| T1["T1 · planning model subagent<br>plans, architecture, hard decisions"]
-  T2 -->|delegates| T3["T3 · subagent model<br>research, testing, PR review"]
-  T2 -->|end of phase| H["prompt naming the issue<br>fresh session"]
-```
+The shared harness describes required outcomes. An adapter contains only procedures
+specific to its coding agent. Product requirements and commands stay with the project.
+A prompt cannot restart an exited process; this release adds no executable supervisor.
 
 ## How agents load it (why it's split this way)
 
@@ -86,6 +81,10 @@ flowchart LR
 - **Rule of thumb:** every-task rules go in `AGENTS.md`; rules that apply only when a
   trigger fires go in a linked file. Add your own language by dropping in
   `docs/languages/<language>.md`. The `harness` CLI leaves files it doesn't own alone.
+
+Runtime adapters use plain links, not unconditional imports. All adapter files can
+ship to a project, but only the configured match is read. Codex and OpenCode need no
+adapter until they need a tool-specific procedure. Keep shared policy out of adapters.
 
 ## Adopt it
 

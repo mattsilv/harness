@@ -24,7 +24,7 @@ How to wait for checks and confirm the merge and deploy in this runtime and host
 
 ## Subagents and review
 
-How to launch a T3 subagent and a PR review in this runtime. `scripts/context-watch.py` reads Claude Code transcripts (session from `$CLAUDE_CODE_SESSION_ID` or an id argument; `CONTEXT_WARN`/`CONTEXT_HANDOFF` override 200k/250k); run `bash scripts/snitch.sh` in the background instead of polling it ([SUBAGENT-CONTEXT-WATCH.md](SUBAGENT-CONTEXT-WATCH.md)). It treats a subagent as running if its transcript changed in the last 2 minutes and does not end on a finished assistant turn; it exits 3 when nothing is running.
+Record the project's review commands here. Runtime-specific launch and context-monitoring procedures belong in the adapter mapped in PROJECT_CONFIG.md; load only the active runtime's adapter.
 
 ## Known vendor errors
 

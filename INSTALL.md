@@ -13,7 +13,7 @@ existing repos; nothing is overwritten.
    harness version from `.harness/base/<path>` into it by hand. Keep project-specific
    content; remove anything the harness duplicates. Where they contradict, don't
    choose: list the conflicts for the operator.
-5. **Claude Code:** make sure `CLAUDE.md` contains an `@AGENTS.md` line.
+5. **Runtime routing:** confirm the adapter mapping in `PROJECT_CONFIG.md` matches the coding agents in use. Load only the active match. For Claude Code, keep `CLAUDE.md` importing `@AGENTS.md`; do not import every adapter.
 6. **Configure.** Ask the operator for every `PROJECT_CONFIG.md` value marked "Set during
    setup", and for any default that doesn't match this repo (stack, secrets project).
    Record the answers. Don't guess. `auto` merge only takes effect once the default
@@ -34,3 +34,11 @@ existing repos; nothing is overwritten.
 10. **Session hook (once per machine).** If `harness check` doesn't already run at
     session start, tell the operator the README's "Session start" line. Don't edit
     global settings unasked.
+
+## Upgrade procedure moves
+
+When `harness apply` moves procedures out of PROJECT_CONFIG.md, preserve project edits.
+Move local secret-entry or provider procedures into docs/SECRETS.md before resolving
+configuration conflicts; retain the configured provider, location, and procedure link.
+Keep CLAUDE.md custom instructions and its existing shared-rule import. Index new
+docs and adapters in the project docs index. Do not replace a conflicted file wholesale.
