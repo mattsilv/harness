@@ -45,20 +45,18 @@ class Snitch(unittest.TestCase):
 
     def test_alerts_once_per_status_and_again_on_escalation(self):
         self.agent.write_text(turn(210_000))
-        first = self.run_loop()
-        self.assertEqual(first.returncode, 0, first.stderr)
-        self.assertRegex(first.stdout, r"^SNITCH \d\d:\d\d\n")
-        self.assertEqual(alerts(first), f"self  {SID}  -Users-x-repo  abc  210010  warn  big task")
-        self.assertEqual(alerts(self.run_loop()), "")  # same warn: deduped
+        self.assertEqual(alerts(self.run_loop()), "")  # warn needs no action: it never wakes
         self.agent.write_text(turn(260_000))
-        third = alerts(self.run_loop())
-        self.assertIn("abc  260010  handoff", third)
-        self.assertNotIn("warn", third)
+        second = self.run_loop()
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertRegex(second.stdout, r"^SNITCH \d\d:\d\d\n")
+        self.assertEqual(alerts(second), f"self  {SID}  -Users-x-repo  abc  260010  handoff  big task")
+        self.assertEqual(alerts(self.run_loop()), "")  # same handoff: deduped
 
-    def test_other_session_label_and_quiet_below_warn(self):
+    def test_other_session_label_and_quiet_below_handoff(self):
         self.agent.write_text(turn(50_000))
         self.assertEqual(alerts(self.run_loop(CLAUDE_CODE_SESSION_ID="someone-else")), "")
-        self.agent.write_text(turn(210_000))
+        self.agent.write_text(turn(260_000))
         self.assertIn(f"other  {SID}", alerts(self.run_loop(CLAUDE_CODE_SESSION_ID="someone-else")))
 
     def test_session_with_a_live_snitch_is_left_to_it(self):

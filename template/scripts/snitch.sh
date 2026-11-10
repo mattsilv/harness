@@ -18,7 +18,7 @@
 #   SNITCH_IDLE_SECS    exit after this long with no active subagents anywhere (7200)
 #   SNITCH_SEEN         append-only log of delivered keys (${TMPDIR:-/tmp}/snitch-$USER/seen); the atomic
 #                       claims ("key-<key with spaces as _>") and heartbeats live beside it.
-#                       Keys: "<session> <agent> <status>", "<session> session compact-now|compact-clear"
+#                       Keys: "<session> <agent> handoff", "<session> session compact-now|compact-clear"
 #                       (the last one wins), "<session> - error <cksum>"
 #   CLAUDE_PROJECTS_DIR transcripts root (${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects, as in context-watch.py)
 #   CONTEXT_RUNNING_SECS defaults to SNITCH_ACTIVE_MINS*60, so a subagent counts as running for as long
@@ -95,7 +95,8 @@ scan() {
       [ -n "$line" ] || continue
       read -r agent _ status _ <<<"$line"
       case "$status" in
-        warn|handoff) key="$sid $agent $status" ;;
+        warn) continue ;;   # no action is due until handoff, so it must not wake the orchestrator
+        handoff) key="$sid $agent $status" ;;
         compact-now) compact=1; key="$sid session compact-now" ;;
         # Anything else (context-watch: errors, tracebacks, a missing python3) must not go unseen.
         *) key="$sid - error $(printf '%s' "$line" | cksum | cut -d' ' -f1)" ;;

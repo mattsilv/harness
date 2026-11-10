@@ -103,7 +103,7 @@ A bash loop that runs `context-watch.py` for every session with active subagents
 
 ## scripts/overlap-check.sh
 
-Lists the files this branch, or the given paths, share with other open PRs and local worktrees, so parallel sessions agree on an order before they conflict. It always exits 0, because an overlap needs a conversation, not a failure. It came from a project where 12 PRs in 7 days conflicted after parallel edits to the same files. (incident, 2026-10)
+Lists the files this branch, or the given paths, share with other open PRs and local worktrees, so parallel sessions agree on an order before they conflict. It exits 0 on overlap, because an overlap needs a conversation, not a failure, and 2 when the fetch or `gh` failed: sandboxed runs printed "ok" with both sources unread. It came from a project where 12 PRs in 7 days conflicted after parallel edits to the same files. (incident, 2026-10)
 
 ## docs/languages/typescript.md
 

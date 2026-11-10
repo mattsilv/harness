@@ -2,12 +2,14 @@
 # Lists files this branch (or the paths given as arguments) touches that another open PR or
 # another local worktree is also changing, so sessions coordinate before they conflict.
 # Run before the first edit (with the paths you plan to touch) and again before opening a PR.
-# Read-only; always exits 0 (overlap is a prompt to message the other session, not an error).
+# Read-only; exits 0 on overlap (a prompt to message the other session, not an error) and 2 when
+# the fetch or gh failed, so a sandboxed run never reads as a clean result.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 main=$(git symbolic-ref -q --short refs/remotes/origin/HEAD || true); main=${main#origin/}
 main=${main:-main}
-git fetch -q origin "$main" || echo "warn: fetch failed; comparing against the last fetched $main" >&2
+unverified=""
+git fetch -q origin "$main" || unverified="git fetch failed"
 up=origin/$main
 me=$(git branch --show-current)
 
@@ -36,7 +38,7 @@ if prs=$(gh pr list --state open --limit 50 --json number,headRefName,files \
     tr ',' '\n' <<<"$files" | report "open PR #$num ($br):" && found=1
   done <<<"$prs"
 else
-  echo "warn: gh unavailable; skipped open PRs" >&2
+  unverified="${unverified:+$unverified; }gh failed, open PRs not checked"
 fi
 
 wt=""
@@ -55,6 +57,9 @@ done < <(git worktree list --porcelain)
 
 if [ "$found" = 1 ]; then
   echo "overlap: message the owning sessions before editing these: agree who goes first; the other merges $main once that PR lands"
-else
+elif [ -z "$unverified" ]; then
   echo "ok: no other open PR or worktree touches these files"
+fi
+if [ -n "$unverified" ]; then
+  echo "UNVERIFIED: $unverified. Rerun with network and git write access."; exit 2
 fi
