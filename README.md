@@ -33,8 +33,7 @@ flowchart LR
 | [`template/docs/FRONTEND.md`](template/docs/FRONTEND.md) | Optional visual sitemap, committed screenshots, and pre-ship review, enabled in project config. | yes |
 | [`template/docs/CI.md`](template/docs/CI.md) | Checklist for CI workflows, runner storage, and runner capacity when many agents merge in parallel, read on demand. | yes |
 | [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
-| [`template/scripts/`](template/scripts/) | `pr-wait.sh` (wait for a PR to merge and its base-branch runs to finish, stop on a conflict or failure), `overlap-check.sh` (files another open PR or worktree also changes), `context-watch.py` (flag subagents near their context limit), and `snitch.sh` (background loop over `context-watch.py` that exits to wake the orchestrator), linked from the runbook or active runtime adapter. | yes |
-| [`template/docs/SUBAGENT-CONTEXT-WATCH.md`](template/docs/SUBAGENT-CONTEXT-WATCH.md) | How the snitch works and how to act on each alert line, read on demand. | yes |
+| [`template/scripts/`](template/scripts/) | `pr-wait.sh` (wait for a PR to merge and its base-branch runs to finish, stop on a conflict or failure) and `overlap-check.sh` (files another open PR or worktree also changes), linked from the runbook. | yes |
 | [`template/scripts/ui-capture.mjs`](template/scripts/ui-capture.mjs) | Batch capture CLI and freshness check for the optional frontend workflow. | yes |
 | [`VERSION`](VERSION), [`CHANGELOG.md`](CHANGELOG.md) | Harness version (one integer, bumped per template change) and one line per version. | no |
 | [`INSTALL.md`](INSTALL.md) | Steps an agent follows to install the harness into a repo. | no |
