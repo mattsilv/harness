@@ -244,7 +244,7 @@ def report_unindexed(created):
     index = read(Path("docs/README.md"))
     for p in created:
         if index is not None and p.startswith("docs/") and Path(p).name not in index:
-            print(f"link {p} from docs/README.md")
+            print(f"harness: action needed: add a link to {p} in docs/README.md")
 
 
 def cmd_check():
@@ -267,7 +267,9 @@ def cmd_check():
             print(f"harness: harness changed ({versions()}; see CHANGELOG.md in "
                   f"the harness repo): {', '.join(files)}. Run "
                   "`harness diff`, summarize the changes for the operator, and "
-                  "run `harness apply` only after they approve.")
+                  "run `harness apply` only after they approve. Their approval is the "
+                  "review: commit the result on a branch, open a PR, and merge per the "
+                  "project's merge policy without a further independent review.")
     report_local()
     report_ci_gate()
     report_maintenance()
