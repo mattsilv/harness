@@ -5,6 +5,7 @@ Read before changing CI runners, workflows, or test storage (AGENTS.md, Delivery
 ## Workflows
 
 - Scope jobs by path so docs-only changes skip build and test, but keep every required check reporting: a workflow skipped at its trigger never reports and blocks the merge. Filter inside the workflow (job conditions, a final gate job) instead.
+- Gate automatic deployment on static checks, build, migrations, and critical integration/E2E tests.
 - One runner lane per job: each job owns one slot, with its own workspace, ports, and databases, and shares nothing writable with other jobs.
 
 ## Storage
