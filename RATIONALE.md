@@ -17,7 +17,7 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Rule | Why | Source |
 |---|---|---|
 | Merge policies: `auto` merges without asking | An agent under `auto` still asked the operator before each merge. | incident, 2026-09 |
-| Merge policies: `auto` turns on auto-merge when the PR opens | A subagent waited in a CI poller to merge by hand, stopped, and left a green PR unmerged overnight. | incident, 2026-09 |
+| Merge policies: `auto` turns on auto-merge once required review passes | A subagent waited in a CI poller to merge by hand, stopped, and left a green PR unmerged overnight. "The moment the PR opens" raced the independent review: agents toggled auto-merge off and on, and one PR merged before its review (2026-11). | incident, 2026-09 |
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Model tiers: defaults for delegated planning | Model selection must not force a separate planning task for bounded work. | operator, #71 |
 | Model tiers: delegation by risk and isolation | Mandatory research/testing agents conflicted with the shared rule to delegate only when useful; independent review remains required. | operator, #71 |

@@ -28,6 +28,8 @@ while :; do
     CLOSED/*) echo "PR closed without merging"; exit 1 ;;
     */DIRTY) echo "PR conflicts with $base; CI will not run and auto-merge will wait forever."
              echo "Run scripts/branch-check.sh, rebase onto origin/$base, push."; exit 1 ;;
+    */BEHIND) echo "PR refused as not up to date with $base: the ruleset's up-to-date requirement drifted on."
+              echo "Turn that requirement off (harness INSTALL.md step 6) instead of updating the branch."; exit 1 ;;
   esac
   if [ "$failed" != 0 ]; then echo "A check failed: gh pr checks $pr"; exit 1; fi
   sleep 30

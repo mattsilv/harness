@@ -31,25 +31,28 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     source: design
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): design: blocks guessing merge policy, the config-2 incident's root cause -->
 - **Autonomy:**
-  - Define observable acceptance criteria; implement, verify, and correct within the authorized task until they and required review pass for the candidate revision, including delivery per PROJECT_CONFIG.md; continue without routine prompts unless approval, a blocker, or a configured limit requires a stop.
+  - Define observable acceptance criteria; implement, verify, and correct within the authorized task until they and required review pass, including delivery per PROJECT_CONFIG.md. Act on your own recommendation and report it; stop only for an approval below, a blocker, or a configured limit.
     <!-- autonomy-1
     why: Agents stopped before task completion until the operator prompted them to continue; completion includes evidence and authorized delivery, without bypassing approval or the two-cycle failure stop (#71).
     source: operator, #71, 2026-10-29
-    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
+    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29)
+    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): transcripts show agents asking "want me to build it?" after the operator stated the need and listing decisions they already had a recommendation for (3 projects) -->
   - Ask first for irreversible changes to production data or destructive migrations; changes to the auth model or permission structure; new spend or paid services; messaging real users or changing data in external accounts; and force-pushes to shared branches.
     <!-- autonomy-2
     why: Operator's safety boundary for irreversible, auth, spend, and external actions. Not a model-capability rule; REVIEW.md forbids cutting or loosening it.
     source: operator
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): operator safety boundary; REVIEW.md don't-cut list -->
-  - Report results and unverified risks accurately, ending every task report with the PR and its merge state, whether it deployed, and a link plus one line on what the operator should check.
+  - Report results and unverified risks accurately. When a task changed anything, wait for the deploy, then lead the final report with done or not done and end it with the PR's merge state, whether it deployed, and a link plus one line on what the operator should check.
     <!-- autonomy-3
     why: The operator had to ask for status in most sessions of one project ("are we done here" in 5, "is ci done", "did that deploy?", "link me to what I'm checking") (#33).
     source: incident, 2026-09
-    review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident with counts across sessions (#33) -->
+    review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident with counts across sessions (#33)
+    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): agents reported "deploy unchecked" and stopped, so "are we done" recurred (about 7 times in one project, 4 of 12 sessions in another); the ritual was also appended to answers that changed nothing -->
   - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: short active sentences, one point each, "must" or "can" instead of "should" or "may", and one name for each thing.
     <!-- autonomy-4
     why: The operator reads and answers this text, and users follow instructions step by step, so both must be fast to scan and unambiguous. Models default to long, hedged prose; "should" and "may" hide whether a step is required. Borrows the controlled-English rules of ASD-STE100, not its word list, which costs words and flags normal technical terms.
-    source: operator, 2026-10 -->
+    source: operator, 2026-10
+    review: keep, confidence low (claude-fable-5-2, 2026-11-10): no transcript evidence either way; self-report -->
 - **Implementation:**
   - Share business logic and authorization across all interfaces (web, API, MCP, chat, jobs); keep interfaces thin.
     <!-- impl-2
@@ -74,11 +77,12 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Carried over from the predecessor harness. Incident not recorded.
     source: predecessor
     review: keep, confidence medium (claude-fable-5-1, 2026-09-26): predecessor; eval shows review subagents found real bugs (claude-create1), though under the rule -->
-  - After two review/fix cycles, stop if checks still fail or high-severity findings remain open; report blockers.
+  - Stop and report after two review/fix cycles that leave high-severity findings open or checks failing for a cause you can't name.
     <!-- process-3
     why: In one task, two cycles ended with checks still failing, then an authorized cycle fixed them. The stop must track unresolved work.
     source: incident, 2026-10
-    review: keep, confidence medium (reviewed against task record, 2026-10-27): preserves the stop for unresolved failures and findings; clarifies its end-state condition -->
+    review: keep, confidence medium (reviewed against task record, 2026-10-27): preserves the stop for unresolved failures and findings; clarifies its end-state condition
+    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): the stop fired on mechanical CI failures (a test stub, an unregenerated file) 3 times and the operator overrode it each time -->
   - Keep acceptance criteria, candidate revision, verification evidence, blockers, and next action in the task issue before handoff; resume from that state.
     <!-- process-4
     why: Long self-contained primers were slow to write and read, and their context was lost once pasted. Keeping it in the issue makes the handoff trivial and the context durable. Fresh sessions still avoid stale context.
@@ -145,27 +149,22 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 4 of 4 stored eval runs, 2 of them on the default branch, citing "commit only when asked" (#13, #20).
     source: eval, 2026-09
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): eval evidence; corrected the count to the 4 stored runs -->
-  - Encode repeatable checks in repo commands and CI.
-    <!-- delivery-3
-    why: Unknown.
-    source: author
-    review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; repo hygiene agents don't do unprompted, but no failure recorded; self-report -->
-  - Scope CI to what changed: docs-only changes can skip build and test jobs via path filters, but still pass every required check.
-    <!-- delivery-4
-    why: Full build and test runs on docs-only changes cost time for no signal. A path-skipped required workflow blocks the merge, so required checks must still report.
-    source: operator
-    review: keep, confidence medium (claude-fable-5-1, 2026-09-26): operator; the path-filter vs required-check trap is a real mechanism agents miss; self-report -->
   - Gate automatic deployment on static checks, build, migrations, and critical integration/E2E tests.
     <!-- delivery-5
     why: Unknown.
     source: author
     review: cut, confidence low (claude-fable-5-1, 2026-09-26): Unknown; overlaps delivery-1 (never bypass checks) and delivery-3; self-report
     decision: keep (operator, 2026-09-26): delivery-1 covers PR checks, this gates the deploy pipeline itself -->
-  - Re-check live contracts before shipping integration changes. Keep a recovery path; verify deploys with safe synthetic data.
+  - Keep a recovery path; verify deploys with safe synthetic data.
     <!-- delivery-6
     why: Unknown.
     source: author
-    review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; synthetic-data verification sits near the autonomy-2 boundary, the rest is generic; self-report -->
+    review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; synthetic-data verification sits near the autonomy-2 boundary, the rest is generic; self-report
+    review: rewrite, confidence low (claude-fable-5-2, 2026-11-10): dropped the live-contract clause, which the monthly maintenance list repeats -->
+  - Before a first deploy or creating a named resource in a shared account, confirm the name is unused.
+    <!-- delivery-15
+    why: A new project's first deploy reused a name already live in the account it shared with another project and replaced that project's production app; six uploads landed before a peer session flagged the outage.
+    source: incident, 2026-11 -->
   - Isolate each parallel writer in its own git worktree and branch.
     <!-- delivery-7
     why: A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests.
@@ -181,11 +180,6 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: With "require branches to be up to date" on, every merge invalidated every other open PR's check, so parallel agents queued behind each other for reruns. Overlapping files alone don't call for a rebase: the default-branch rerun gates the deploy and catches the rare semantic clash.
     source: incident, 2026-09
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident; pairs with INSTALL step 6 -->
-  - A PR refused as not up to date means the ruleset drifted: fix it (INSTALL.md step 6).
-    <!-- delivery-10
-    why: The up-to-date requirement drifted back on after delivery-9, and agents updated their branches instead of fixing the setting (#36).
-    source: incident, 2026-09
-    review: keep, confidence medium (claude-fable-5-1, 2026-09-26): incident (#36); narrow trigger, but agents rebased twice before finding the setting -->
   - After merging, remove the worktree and branch.
     <!-- delivery-11
     why: Unknown.
@@ -197,15 +191,17 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     source: operator, 2026-09
     review: move, confidence medium (claude-fable-5-1, 2026-09-26): operator, no incident; a long procedure that fits the runbook's finish-a-PR section behind a one-line trigger
     decision: keep (operator, 2026-09-26): added in v23, too new to judge -->
-  - Before the first edit and again before opening a PR, run `scripts/overlap-check.sh` with the paths you plan to touch; on a hit, agree with the owning agent who lands first.
+  - Before opening a PR, run `scripts/overlap-check.sh`; on a hit in another session's work, agree with its owner who lands first.
     <!-- delivery-13
     why: In one project 12 PRs in 7 days conflicted with the default branch because parallel sessions edited the same files (one route file in 7 of them, the docs index in 6), and nothing surfaced it before the merge. The script lists files that other open PRs and local worktrees also change.
-    source: incident, 2026-10 -->
-  - CI jobs write test data and scratch files to ephemeral per-job storage, never to shared durable disk. Set runner concurrency from measured job throughput, not queue length; add capacity only after a measurement, and record it in PROJECT_CONFIG.md. Before changing CI runners or storage, read docs/CI.md.
+    source: incident, 2026-10
+    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): about 200 runs across 5 projects found about 3 real cross-session hits; most hits were the session's own PRs and worktrees, so one run and "another session's work" -->
+  - Before changing CI workflows, runners, or test storage, read docs/CI.md.
     <!-- delivery-14
     why: A project ran 8 self-hosted runner slots on one host. Its test suite created databases with write-ahead logging and full durability, so concurrent jobs queued on the shared disk's filesystem journal and a 20 s suite took 337 s; adding slots made it worse. Test workspaces on tmpfs and slots sized from measured throughput fixed it.
     source: incident, 2026-10
-    review: keep, confidence medium (claude-sonnet-5-5, 2026-10-14): one measured incident (20 s to 337 s); the cause is invisible in a single job's output and the obvious response to a slow queue is more slots; self-report on whether a model errs unaided -->
+    review: keep, confidence medium (claude-sonnet-5-5, 2026-10-14): one measured incident (20 s to 337 s); the cause is invisible in a single job's output and the obvious response to a slow queue is more slots; self-report on whether a model errs unaided
+    review: move, confidence medium (claude-fable-5-2, 2026-11-10): docs/CI.md already states the storage and capacity rules, and the path-filter rule that was delivery-4; only the trigger stays here -->
 - **Documentation:** docs/ is a wiki: small, single-topic Markdown pages, cross-linked, indexed by docs/README.md, which links every page. Link an existing page instead of repeating it; update it, or add one and link it from the index, as part of the change or before closing a sprint.
   <!-- docs-1
   why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.
@@ -224,16 +220,19 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
 - **Processes:** Stop every process you start (servers, test runners, watchers, browsers and their pages or sessions) before the task ends, and report any left running; give persistent automation daemons an idle timeout.
   <!-- processes-1
   why: Agents across many sessions left a shared browser-automation daemon running for 10 days with its idle timeout disabled: 14 named browsers, some idle 45+ hours, ~140 headless browser processes, one browser with 71 tabs. Load average reached 10-12 and parallel E2E runs slowed to a crawl. Every task can start a process, so the rule is every-task.
-  source: incident, 2026-09 -->
-  - Show the operator a page by printing its URL; never `open <url>` or launch a browser from a shell.
+  source: incident, 2026-09
+  review: keep, confidence high (claude-fable-5-2, 2026-11-10): incident; transcripts still show orphaned watchers (3 left for a closed PR in one session) -->
+  - Show the operator a page by printing its URL; unless asked, never `open <url>` or launch a browser from a shell.
     <!-- processes-2
     why: Agents ran `open http://127.0.0.1:<port>/` from Bash to show a dev page. On macOS 26.6 with Chrome 156 that spawned a second Chrome process from the terminal coalition, which aborted in HIServices _RegisterApplication 35 ms after launch and showed the operator a "Google Chrome quit unexpectedly" dialog on every call, while the page opened anyway in the running browser.
-    source: incident, 2026-10 -->
-- **Migrations:** Before adding one, inspect worktrees and available session inventory; coordinate overlapping schema work with its owners, and compare unconfirmed branches directly or through a subagent. Report unavailable inventory; do not infer no overlap. Pause applying migrations while conflicts or ownership remain unresolved, and record the blocker in the task issue.
+    source: incident, 2026-10
+    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): the operator asked agents to open a page 6 times in 3 sessions, and the rule forbade it -->
+- **Migrations:** Before adding one, check other worktrees and sessions for overlapping schema work and coordinate with its owners; if you can't see them, say so instead of assuming none. Apply no migration while a conflict is unresolved.
   <!-- migrations-1
   why: Two parallel branches both created the same migration number, and a table rebuild on one failed after another branch changed a child table. Worktrees on one machine are the normal case (#33).
   source: incident, 2026-09
-  review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident (#33); the trigger has to live here even though it fires rarely -->
+  review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident (#33); the trigger has to live here even though it fires rarely
+  review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): same rule in fewer words; no transcript evidence against it -->
 - **Languages:** Before editing code in a language, read docs/languages/<language>.md if it exists.
   <!-- languages-1
   why: Keeps language rules out of every session's context.
@@ -250,21 +249,12 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     why: Carried over from the predecessor harness. Incident not recorded.
     source: predecessor
     review: keep, confidence medium (claude-fable-5-1, 2026-09-26): predecessor; the README procedure and tiers assume it; eval runs delegated under it; self-report -->
-  - Stay on the committed sprint: search open issues, then file newly found work as new issues.
+  - File newly found work as an issue, after searching open ones; start it only if it is within the authorized task.
     <!-- delegation-2
     why: Parallel sessions filed the same issue twice, two pairs in two days (#33).
     source: incident, 2026-09
-    review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident (#33) -->
-  - Record newly found work without starting it unless it is within the authorized task.
-    <!-- delegation-3
-    why: The operator now wants one verified task per run; automatic execution of discovered issues expands scope and prevents a bounded finish (#71).
-    source: operator, 2026-09
-    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
-  - Use the active adapter's context-monitoring procedure when available; report unsupported capabilities instead of simulating them.
-    <!-- delegation-4
-    why: Subagents silently ran past 250k tokens of context (one reached 259k) and degraded; the orchestrator had no signal. The script reads transcript usage; the orchestrator only notifies, never compacts itself. Polling `context-watch.py` every 5 minutes cost tokens per poll and was forgotten, and it watched one session while subagents of other sessions on the same machine crossed 250k unnoticed; the snitch is a zero-token loop that scans every session and exits to wake the orchestrator (#52).
-    source: operator, 2026-10
-    review: rewrite, operator-approved portability and single-task completion (#71, 2026-10-29) -->
+    review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident (#33)
+    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): merged with delegation-3, which said the second half (operator, #71: one verified task per run; automatic execution of discovered issues expands scope) -->
 - **Model selection:**
   - Follow the model tiers in PROJECT_CONFIG.md when the runtime allows.
     <!-- models-1
