@@ -219,9 +219,10 @@ def report_maintenance():
     installed = re.match(r"\d{4}-\d{2}-\d{2}", log)  # first commit of .harness/
     for name, days in lists:
         # "Last completed:" is the pre-v19 single-audit field; it still counts for any list.
-        last = (re.search(rf"{name} last completed:\**\s*(\S+)", issue["body"], re.I)
-                or re.search(r"Last completed:\**\s*(\S+)", issue["body"]))
-        date = (re.match(r"\d{4}-\d{2}-\d{2}", last.group(1)) if last else None) or installed
+        last = (re.search(rf"{name} last completed:(.*)", issue["body"], re.I)
+                or re.search(r"Last completed:(.*)", issue["body"]))
+        done = re.search(r"\d{4}-\d{2}-\d{2}", last.group(1)) if last else None
+        date = done or installed
         if date and (datetime.date.today()
                      - datetime.date.fromisoformat(date.group(0))).days < int(days):
             continue
@@ -234,8 +235,8 @@ def report_maintenance():
             except Exception:
                 pass
         print(f"harness: {name.lower()} maintenance due (last completed: "
-              f"{last.group(1) if last else 'unknown'}{extra}); follow {MAINTENANCE_FILE} "
-              f"and record results in #{issue['number']}.")
+              f"{done.group(0) if done else 'never'}{extra}). Tell the operator in one line; "
+              f"run it only when asked ({MAINTENANCE_FILE}, #{issue['number']}).")
 
 
 def report_unindexed(created):

@@ -105,13 +105,18 @@ class MaintenanceStatus(unittest.TestCase):
                 outs.append(out.getvalue())
         return outs, calls
 
+    def test_date_is_found_anywhere_on_the_field_line(self):
+        today = datetime.date.today().isoformat()
+        outs, _ = self.run_checks([f"| Daily last completed: | done by agent | {today} |"])
+        self.assertEqual("", outs[0])
+
     def test_status_edit_shows_immediately(self):
         today = datetime.date.today().isoformat()
         outs, calls = self.run_checks([
             "- **Daily last completed:** 2020-01-01 00:00 UTC",
             f"- **Daily last completed:** {today} 00:00 UTC",
         ])
-        self.assertIn("daily maintenance due", outs[0])
+        self.assertIn("daily maintenance due (last completed: 2020-01-01", outs[0])
         self.assertEqual("", outs[1])
         self.assertEqual(2, len(calls), "the status edit must be read, not served from cache")
 
