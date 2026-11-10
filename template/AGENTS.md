@@ -172,9 +172,9 @@ review: keep, confidence low (claude-fable-5-1, 2026-09-26): Unknown; speed-befo
     review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident -->
   - Every branch, including one cut in the main checkout, starts from the freshly fetched remote default branch, never a local copy.
     <!-- delivery-8
-    why: A session cut a branch from a local default branch that lacked a PR merged 12 minutes earlier; its PR conflicted on open, got no CI run, and auto-merge waited silently. `scripts/branch-check.sh` and `scripts/pr-wait.sh` catch it before and while waiting.
+    why: A session cut a branch from a local default branch that lacked a PR merged 12 minutes earlier; its PR conflicted on open, got no CI run, and auto-merge waited silently. `scripts/pr-wait.sh` stops on the conflict while waiting.
     source: incident, 2026-09
-    review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident, with scripts that depend on the rule -->
+    review: keep, confidence high (claude-fable-5-1, 2026-09-26): incident, with a script that depends on the rule -->
   - Rebase only on a conflict, which stalls a PR: it gets no CI run and auto-merge never fires. A green check merges, and the suite rerun on the default branch still gates the deploy.
     <!-- delivery-9
     why: With "require branches to be up to date" on, every merge invalidated every other open PR's check, so parallel agents queued behind each other for reruns. Overlapping files alone don't call for a rebase: the default-branch rerun gates the deploy and catches the rare semantic clash.

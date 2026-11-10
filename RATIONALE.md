@@ -50,7 +50,7 @@ Moved unchanged from startup configuration, except the real-terminal instruction
 
 ## docs/runtime-adapters/claude-code.md
 
-Routes the existing watcher only to its supported runtime, preserves background alerts and cleanup, and reports unavailable capabilities instead of pretending to monitor them (#71). The generated CLAUDE.md import remains unchanged, so existing installs receive routing through their normal AGENTS.md/config update.
+Holds no procedure now; the file stays because PROJECT_CONFIG.md maps Claude Code to it, so a future tool-specific procedure has a home without a config change in every project (#71). It carried the subagent context watcher (a background loop that flagged subagents past 250k tokens of context), removed after a transcript review: agents relaunched it dozens of times per session for alerts that needed no action (46 launches in three sessions of one project, 36 in one session of another), it died with exit 144 several times and left stray processes, it was not running in the sessions where subagents passed 300k tokens, and those subagents still finished and merged. It did something useful about twice, and worked in one runtime only. (transcript review, 2026-11)
 
 ## docs/MAINTENANCE.md
 
@@ -93,13 +93,9 @@ The on-demand checklist behind delivery-14. A project ran 8 self-hosted runner s
 |---|---|---|
 | Use the configured package manager, no ad-hoc global installs | One environment manager per project; which one is a config default (uv). | author |
 
-## scripts/context-watch.py
+## scripts/pr-wait.sh
 
-Reads the last assistant `usage` line of each running subagent transcript (modified in the last two minutes) and of the orchestrating session; context is input plus cache-read plus cache-creation tokens. It only reports, because the orchestrator, not a script, decides when to stop an agent or tell the operator. The transcript format is undocumented, so it exits non-zero rather than guess (after still reporting the other agents). It is runtime-specific to Claude Code, an accepted exception to the no-tool-names rule since projects on other runtimes can ignore it. Running means the transcript changed in the last two minutes, so a long silent tool call can read as not running; a transcript that ends on a finished assistant turn is not running however recent, because reporting a finished agent as `handoff` had the orchestrator relaunch work that was already done. It exits 3 when nothing is running so a wrapper can tell a quiet watch from no watch. The transcripts root honours `CLAUDE_CONFIG_DIR`, as the runtime does (review, #54). Subagents had run past 250k tokens of context unnoticed. (operator, 2026-10)
-
-## scripts/snitch.sh and docs/SUBAGENT-CONTEXT-WATCH.md
-
-A bash loop that runs `context-watch.py` for every session with active subagents and exits on the first new alert, so a background task notification wakes the orchestrator at zero model tokens. It replaced the rule to poll `context-watch.py` every 5 minutes, which cost tokens per poll and was forgotten; it scans every project because the polled script saw one session while other sessions' subagents on the same machine crossed 250k unnoticed. It is a separate file so `context-watch.py` keeps its single-shot contract and tests; at-most-once delivery across snitches comes from a per-key marker created with `noclobber` (atomic on every bash), since a duplicate `handoff` would have two orchestrators relaunch the same subagent and a grep-then-append on the shared log could interleave; the log is append-only because a rewrite would race another snitch's append; `compact-clear` is recorded only after a successful watch, because clearing on a watcher error or an unwatched scan re-fired `compact-now` for an orchestrator that never compacted; the idle timer counts only sessions this snitch may report, so a snitch does not live on another session's activity (review, #54); a per-session heartbeat makes a session's own snitch its sole reporter, because with N snitches sharing one file a session's alert would otherwise land at a random orchestrator and need forwarding (review, #53); `--once` records nothing so a manual check cannot consume an alert; the idle exit follows the Processes rule. The doc is on demand through the selected runtime adapter; it holds alert actions, output format, env, and dedupe shapes. (#52; incident, 2026-10)
+Waits on a PR and stops with the fix when it conflicts, a check fails, or it closes. It is the only conflict check: a separate script that reported a conflict before the PR opened was removed because no sampled main session in about 60 across 7 projects ran it; agents fetch and branch from the remote default branch inline, and a conflict that still happens surfaces here. (transcript review, 2026-11)
 
 ## scripts/overlap-check.sh
 
