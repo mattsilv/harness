@@ -85,6 +85,8 @@ The operator reported unclear, verbose, poorly spaced interfaces and requested c
 
 ## docs/CI.md
 
+The deploy-gate line under Workflows was AGENTS.md rule delivery-5 until v46 (rationale Unknown; the operator kept it on 2026-09-26 because delivery-1 covers PR checks and this gates the deploy pipeline itself). It applies only when someone writes a deploy pipeline, so it moved behind the delivery-14 trigger.
+
 The on-demand checklist behind delivery-14. A project ran 8 self-hosted runner slots on one host; its test suite created databases with write-ahead logging and full durability, so concurrent jobs serialized on the shared disk's filesystem journal and a 20 s suite took 337 s. Adding slots made it worse. The fix was ephemeral (tmpfs) workspaces for test data and slots sized from a measured 1/2/4/8 concurrency run. Dependency caches stay on durable disk because they are read-mostly and a loss only costs a rebuild. The path-filter bullet restates the delivery-4 trap (a path-skipped required workflow never reports) where CI is configured. Self-hosted runners must not run untrusted code, since they keep state between jobs and sit on the project's own network (design). (incident, 2026-10)
 
 ## docs/languages/python.md
