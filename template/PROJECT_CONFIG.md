@@ -23,6 +23,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 - **Merge policy:** Set during setup: `auto` or `on-request`. If unset, stop and ask.
 - **Merge policies:** Both commit on a branch and open a PR. `auto` means the agent merges its own PRs without asking once required checks pass, turning on the host's auto-merge as soon as required review passes, when available, never waiting on CI to merge by hand (merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`); `on-request` merges only when asked.
 - **Docs:** docs/.
+- **Required CI check:** `checks`; the status check the default branch requires before merge ([docs/CI.md](docs/CI.md)), or `none`.
 
 ## Vendors
 

@@ -40,6 +40,10 @@ APPLIED = STATE / "version"  # harness VERSION last fully applied here
 SOURCE = os.environ.get("HARNESS_SYNC_SOURCE")  # local template dir, to preview a harness branch
 CONTEXT_FILES = ("AGENTS.md", "CLAUDE.md", CONFIG_FILE)  # loaded every session
 CONTEXT_WARN_BYTES = 20_000
+WORKFLOWS = Path(".github/workflows")
+# Seeded as a unit, only when no workflow provides the required check; managed like any file after.
+SEED_FILES = (".github/workflows/checks.yml", "scripts/checks.sh")
+GITHUB_ACTIONS_APP_ID = 15368  # binds the required check to GitHub Actions, not any status poster
 
 
 def git(*args):
@@ -105,7 +109,61 @@ def write(p, text):
 
 
 def changed(upstream):
-    return [p for p, t in upstream.items() if read(BASE / p) != t]
+    skip = seeds_skipped()
+    return [p for p, t in upstream.items()
+            if read(BASE / p) != t and not (skip and p in SEED_FILES)]
+
+
+def seeds_skipped():
+    """The default CI files are offered only while no workflow provides the required check."""
+    if read(BASE / SEED_FILES[0]) is not None:
+        return False  # adopted earlier: update them like any harness file
+    name = required_check_name()
+    return (name is None or any(Path(p).exists() for p in SEED_FILES)
+            or workflow_provides(name))
+
+
+def required_check_name():
+    """The status check the default branch must require; None when the project opts out."""
+    m = re.search(r"\*\*Required CI check:\*\*\s*`([^`]+)`", read(Path(CONFIG_FILE)) or "")
+    name = m.group(1).strip() if m else "checks"
+    return None if name.lower() == "none" else name
+
+
+def workflow_check_names(text):
+    """Status-check names a workflow's jobs report: each job's `name:`, else its id."""
+    names, jobs_indent, job_indent, prop_indent = [], None, None, None
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if jobs_indent is None:
+            if re.match(r"jobs:\s*(#.*)?$", line):
+                jobs_indent = indent
+            continue
+        if indent <= jobs_indent:
+            break  # the next top-level key ends `jobs:`
+        if job_indent is None:
+            job_indent = indent
+        if indent == job_indent:
+            m = re.match(r"\s*['\"]?([\w-]+)['\"]?:\s*(#.*)?$", line)
+            names.append(m.group(1) if m else None)
+            prop_indent = None
+        elif names:
+            prop_indent = prop_indent or indent  # first line under a job sets its key level
+            m = re.match(r"\s*name:\s*['\"]?([^'\"#]+?)['\"]?\s*(#.*)?$", line)
+            if m and indent == prop_indent:
+                names[-1] = m.group(1)
+    return [n for n in names if n]
+
+
+def workflow_provides(name):
+    """A workflow that runs on pull requests has a job reporting `name`."""
+    for f in sorted(WORKFLOWS.glob("*.y*ml")):
+        text = f.read_text(errors="ignore")
+        if "pull_request" in text and name in workflow_check_names(text):
+            return True
+    return False
 
 
 def removed(upstream):
@@ -150,11 +208,15 @@ def report_local():
               f"for them before other work and record the answers: {', '.join(labels)}.")
 
 
+def cache_file(name):
+    key = hashlib.sha1(str(Path.cwd().resolve()).encode()).hexdigest()[:12]
+    return CACHE / f"{name}-{key}.json"
+
+
 def gh_cached(name, args, keep=None, ttl=CHECK_CACHE_SECONDS):
     """JSON from `gh`, cached per repo for `ttl` seconds (0 = no cache); None on failure.
     With `keep`, only answers it accepts are cached or served from cache."""
-    key = hashlib.sha1(str(Path.cwd().resolve()).encode()).hexdigest()[:12]
-    cache = CACHE / f"{name}-{key}.json"
+    cache = cache_file(name)
     if ttl and cache.exists() and time.time() - cache.stat().st_mtime < ttl:
         data = json.loads(cache.read_text())
         if keep is None or keep(data):
@@ -168,23 +230,141 @@ def gh_cached(name, args, keep=None, ttl=CHECK_CACHE_SECONDS):
     return data
 
 
-def report_ci_gate():
-    """An `auto` merge policy is only safe if the default branch requires CI checks."""
-    if not re.search(r"Merge policy:\*\*\s*`auto`", read(Path(CONFIG_FILE)) or ""):
-        return
+def gh_api(path):
+    """(HTTP status or None, parsed JSON or None, error text) for `gh api <path>`."""
     try:
-        # Only a positive answer is cached: "no required checks" is re-asked every run.
-        rules = gh_cached("branch-rules", ["api", "repos/{owner}/{repo}/rules/branches/"
-                                           + default_branch()],
-                          keep=lambda rs: any(r["type"] == "required_status_checks" for r in rs))
-    except Exception:
-        rules = None
-    if rules is None:
-        print("harness: merge policy is `auto` but required CI checks on the default "
-              "branch could not be verified; treat merges as `on-request` until they are.")
-    elif not any(r["type"] == "required_status_checks" for r in rules):
-        print("harness: merge policy is `auto` but the default branch requires no CI "
-              "checks; treat merges as `on-request` and ask the operator to require CI.")
+        r = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=15)
+    except FileNotFoundError:
+        return None, None, "gh is not installed"
+    if r.returncode == 0:
+        return 200, json.loads(r.stdout or "null"), ""
+    err = r.stderr.strip()
+    m = re.search(r"\(HTTP (\d{3})\)", err)
+    if not m and "git remote" not in err and (r.returncode == 4 or "gh auth login" in err):
+        return None, None, "gh is not authenticated (run `gh auth login`)"
+    return (int(m.group(1)) if m else None), None, err.removeprefix("gh: ")
+
+
+def plan_blocked(status, err):
+    return status == 403 and ("upgrade" in err.lower() or "public" in err.lower())
+
+
+def branch_requirement(name, branch):
+    """Whether `branch` requires the status check `name`, via rulesets or classic protection.
+
+    Returns (state, info): state is ok, missing, plan, unverified, or no-remote.
+    """
+    info = {"rulesets": [], "classic": None, "other": []}
+    status, rules, err = gh_api(f"repos/{{owner}}/{{repo}}/rules/branches/{branch}")
+    if status is None and "git remote" in err:
+        return "no-remote", {"error": err}
+    if status is None:
+        return "unverified", {"error": err}
+    plan = plan_blocked(status, err)
+    for rule in (rules or []) if status == 200 else []:
+        if rule.get("type") == "required_status_checks":
+            contexts = [c.get("context") for c in
+                        rule.get("parameters", {}).get("required_status_checks", [])]
+            if name in contexts:
+                return "ok", info
+            info["rulesets"].append(rule.get("ruleset_id"))
+            info["other"] += contexts
+    status, protection, err = gh_api(f"repos/{{owner}}/{{repo}}/branches/{branch}/protection")
+    if status == 200:
+        checks = (protection or {}).get("required_status_checks") or {}
+        contexts = set(checks.get("contexts") or []) | {
+            c.get("context") for c in checks.get("checks") or []}
+        if name in contexts:
+            return "ok", info
+        info["classic"] = checks  # {} when protected without required checks
+        info["other"] += sorted(contexts)
+    elif status == 404 and "not protected" in err.lower():
+        pass
+    elif plan or plan_blocked(status, err):
+        return "plan", info
+    elif not info["rulesets"]:
+        return "unverified", {"error": err or "unknown error"}
+    return "missing", info
+
+
+def protection_command(name, branch, classic):
+    """The exact `gh api` command that makes `branch` require `name`."""
+    check = {"context": name, "app_id": GITHUB_ACTIONS_APP_ID}
+    base = f"repos/{{owner}}/{{repo}}/branches/{branch}/protection"
+    if classic:  # protection with required checks exists: add ours, keep the rest
+        kept = classic.get("checks") or [{"context": c} for c in classic.get("contexts", [])]
+        body = {"strict": classic.get("strict", False),
+                "checks": [{"context": c["context"], "app_id": c.get("app_id") or -1}
+                           for c in kept] + [check]}  # -1: any source, as before
+        return f"echo '{json.dumps(body)}' | gh api -X PATCH {base}/required_status_checks --input -"
+    body = {"required_status_checks": {"strict": False, "contexts": [], "checks": [check]},
+            "enforce_admins": False, "required_pull_request_reviews": None,
+            "restrictions": None, "allow_force_pushes": False, "allow_deletions": False}
+    return f"echo '{json.dumps(body)}' | gh api -X PUT {base} --input -"
+
+
+def report_ci_gate():
+    """The default branch must require a CI check that a workflow here provides (docs/CI.md)."""
+    auto = re.search(r"Merge policy:\*\*\s*`auto`", read(Path(CONFIG_FILE)) or "")
+    name = required_check_name()
+    on_request = (" Merge policy is `auto`: treat merges as `on-request` until this is fixed."
+                  if auto else "")
+    if name is None:
+        if auto:
+            print("harness: Required CI check is `none`, so merges skip CI." + on_request)
+        return
+    branch = default_branch()
+    notes = []
+    if not workflow_provides(name):
+        add = (f"rename the job in the existing workflow that runs CI to `{name}`"
+               if seeds_skipped() else
+               f"with the operator's approval, `harness apply {' '.join(SEED_FILES)}` adds "
+               "the default; then add stack steps (docs/CI.md)")
+        notes.append(f"no workflow in {WORKFLOWS} runs on pull requests with a job reporting "
+                     f"the required check `{name}`. Fix: {add}.")
+    cache = cache_file("required-check")
+    fresh = cache.exists() and time.time() - cache.stat().st_mtime < CHECK_CACHE_SECONDS
+    try:
+        cached = fresh and json.loads(cache.read_text()) == [name, branch]
+    except ValueError:
+        cached = False
+    if cached:
+        state, info = "ok", {}
+    else:
+        try:
+            state, info = branch_requirement(name, branch)
+        except Exception as e:
+            state, info = "unverified", {"error": str(e)}
+        if state == "ok":
+            write(cache, json.dumps([name, branch]))
+    if state == "no-remote" and not auto:
+        state = "ok"  # no GitHub repo to protect; only `auto` depends on it
+    if state in ("unverified", "no-remote"):
+        notes.append(f"could not verify that `{branch}` requires the CI check `{name}`: "
+                     f"{info['error']}.")
+    elif state == "plan":
+        notes.append(f"`{branch}` cannot require the CI check `{name}`: this private repo's "
+                     "GitHub plan has no branch protection or rulesets, so CI does not block "
+                     "merges. Tell the operator: upgrade the plan, make the repo public, or "
+                     "record **Required CI check:** `none` in PROJECT_CONFIG.md.")
+    elif state == "missing":
+        also = f" (it requires {', '.join(f'`{c}`' for c in info['other'])})" if info["other"] else ""
+        if info["rulesets"] and not info["classic"]:
+            fix = (f"add `{name}` (integration GitHub Actions, id {GITHUB_ACTIONS_APP_ID}) to the "
+                   f"required status checks of ruleset {', '.join(map(str, info['rulesets']))}: "
+                   f"`gh api repos/{{owner}}/{{repo}}/rulesets/<id>` shows it, Settings > Rules "
+                   "edits it.")
+        else:
+            fix = f"run:\n  {protection_command(name, branch, info['classic'])}"
+            if info["classic"] == {}:  # protected, but without required checks: PUT replaces it
+                fix = ("carry the branch's current protection settings into this command "
+                       "first, since it replaces them, then " + fix)
+        notes.append(f"`{branch}` does not require the CI check `{name}`{also}, so merges "
+                     f"can skip CI. With the operator's approval (a permission change), {fix}")
+    for note in notes:
+        print(f"harness: {note}")
+    if notes and auto:
+        print("harness:" + on_request)
 
 
 def default_branch():
@@ -335,7 +515,10 @@ def cmd_apply(only):
 def cmd_init():
     upstream = fetch()
     created = []
+    skip = seeds_skipped()
     for p, text in upstream.items():
+        if skip and p in SEED_FILES:
+            continue  # the project already has a workflow providing the required check
         local = read(Path(p))
         if local is None:
             write(Path(p), text)

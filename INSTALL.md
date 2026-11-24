@@ -16,20 +16,20 @@ existing repos; nothing is overwritten.
 5. **Runtime routing:** confirm the adapter mapping in `PROJECT_CONFIG.md` matches the coding agents in use. Load only the active match. For Claude Code, keep `CLAUDE.md` importing `@AGENTS.md`; do not import every adapter.
 6. **Configure.** Ask the operator for every `PROJECT_CONFIG.md` value marked "Set during
    setup", and for any default that doesn't match this repo (stack, secrets project).
-   Record the answers. Don't guess. `auto` merge only takes effect once the default
-   branch requires a CI status check. If the repo has no CI or no such rule, say so and
-   offer to add a CI workflow and a ruleset requiring it (a permission change: ask
-   first), or record `on-request`.
-   The ruleset should require the check but not that branches be up to date: that
-   setting makes every merge re-run every open PR's check, and CI runs again on the
-   default branch after each merge anyway. Also enable the repo setting "Allow
-   auto-merge", which `auto` needs to merge green PRs without anyone waiting.
+   Record the answers. Don't guess. If init added `.github/workflows/checks.yml`, add the
+   stack's steps per `docs/CI.md`. `harness check` then reports whether the default branch
+   requires the check and prints the command; ask the operator before running it (a
+   permission change). `auto` merge only takes effect once it does; otherwise record
+   `on-request`. Don't require branches to be up to date: that setting makes every
+   merge re-run every open PR's check, and CI runs again on the default branch after each
+   merge anyway. Also enable the repo setting "Allow auto-merge", which `auto` needs to
+   merge green PRs without anyone waiting.
 7. **Languages.** If the repo uses a language with no `docs/languages/<language>.md`,
    tell the operator. Don't write one unasked.
 8. **Ship.** Commit only what init created or you changed (`AGENTS.md`, `CLAUDE.md`,
-   `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/RUNBOOK.md`, `docs/FRONTEND.md`, `docs/CI.md`, `docs/runtime-adapters/`, `docs/languages/`, `scripts/`, `.harness/`), not
+   `PROJECT_CONFIG.md`, `docs/MAINTENANCE.md`, `docs/RUNBOOK.md`, `docs/FRONTEND.md`, `docs/CI.md`, `docs/runtime-adapters/`, `docs/languages/`, `scripts/`, `.github/workflows/checks.yml` if created, `.harness/`), not
    unrelated files already in `docs/`, and open a PR. Merge per the merge policy just recorded.
-9. **Verify.** `harness check` prints nothing. If `docs/README.md` exists, it links the
+9. **Verify.** After the PR merges and the operator has approved requiring the check, `harness check` prints nothing. If `docs/README.md` exists, it links the
    pages init created (init names any it doesn't).
 10. **Session hook (once per machine).** If `harness check` doesn't already run at
     session start, tell the operator the README's "Session start" line. Don't edit
