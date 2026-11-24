@@ -31,9 +31,10 @@ flowchart LR
 | [`template/docs/MAINTENANCE.md`](template/docs/MAINTENANCE.md) | The recurring maintenance audit. | yes |
 | [`template/docs/RUNBOOK.md`](template/docs/RUNBOOK.md) | Skeleton for the project's working commands and known vendor errors, read on demand. | yes |
 | [`template/docs/FRONTEND.md`](template/docs/FRONTEND.md) | Optional visual sitemap, committed screenshots, and pre-ship review, enabled in project config. | yes |
-| [`template/docs/CI.md`](template/docs/CI.md) | Checklist for CI workflows, runner storage, and runner capacity when many agents merge in parallel, read on demand. | yes |
+| [`template/docs/CI.md`](template/docs/CI.md) | The required merge check, and a checklist for CI workflows, runner storage, and runner capacity when many agents merge in parallel, read on demand. | yes |
 | [`template/docs/languages/*.md`](template/docs/languages/) | Language-specific rules, read on demand. | yes |
 | [`template/scripts/`](template/scripts/) | `pr-wait.sh` (wait for a PR to merge and its base-branch runs to finish, stop on a conflict or failure) and `overlap-check.sh` (files another open PR or worktree also changes), linked from the runbook. | yes |
+| [`template/.github/workflows/checks.yml`](template/.github/workflows/checks.yml), [`template/scripts/checks.sh`](template/scripts/checks.sh) | Default required `checks` job: secret scan, Markdown links, stack lint and tests. Added only when no workflow provides the check. | when absent |
 | [`template/scripts/ui-capture.mjs`](template/scripts/ui-capture.mjs) | Batch capture CLI and freshness check for the optional frontend workflow. | yes |
 | [`VERSION`](VERSION), [`CHANGELOG.md`](CHANGELOG.md) | Harness version (one integer, bumped per template change) and one line per version. | no |
 | [`INSTALL.md`](INSTALL.md) | Steps an agent follows to install the harness into a repo. | no |
@@ -117,8 +118,10 @@ harness audit [n]     # operator-only: how often harness behaviors fired in rece
 - **Maintenance:** `check` reads the tracking issue named in `PROJECT_CONFIG.md` (via
   `gh`, cached 1h) and nags when a weekly or monthly list in `docs/MAINTENANCE.md` is due, with the
   open-issue count on the weekly one.
-- **CI gate:** with merge policy `auto`, `check` confirms the default branch requires
-  status checks and warns to treat merges as `on-request` until it does.
+- **CI gate:** `check` confirms a workflow provides the Required CI check and the default
+  branch requires it (classic protection or a ruleset, via `gh`), printing the fix when not;
+  under `auto` it also says to treat merges as `on-request`. `init` and `apply` add the default
+  workflow only when no workflow provides the check ([`template/docs/CI.md`](template/docs/CI.md)).
 - **Session start:** run `harness check` from a Claude Code `SessionStart` hook
   (e.g. `git rev-parse --git-dir >/dev/null 2>&1 && harness check || true`), or
   tell other agents to run it in their global `AGENTS.md`.

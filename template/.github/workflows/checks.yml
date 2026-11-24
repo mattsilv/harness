@@ -1,0 +1,31 @@
+# The required merge check (docs/CI.md). Branch protection requires the job name "checks";
+# keep it, and keep the workflow free of trigger path filters so it always reports.
+# Seeded by the harness only when no workflow provides that job; the project owns it after.
+name: checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Secret scan (gitleaks, full history)
+        env:
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
+          ./gitleaks git --no-banner --redact --exit-code 1 .
+      # Stack toolchain setup goes here (per PROJECT_CONFIG.md Stack), pinned by commit SHA.
+      - name: Project checks (docs links, then stack lint and tests)
+        run: bash scripts/checks.sh

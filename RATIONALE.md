@@ -19,6 +19,7 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Merge policies: `auto` merges without asking | An agent under `auto` still asked the operator before each merge. | incident, 2026-09 |
 | Merge policies: `auto` turns on auto-merge once required review passes | A subagent waited in a CI poller to merge by hand, stopped, and left a green PR unmerged overnight. "The moment the PR opens" raced the independent review: agents toggled auto-merge off and on, and one PR merged before its review (2026-11). | incident, 2026-09 |
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
+| Required CI check: one named check, default `checks`, `none` opts out | `harness check` must know which check to look for; a project on `auto` had no CI and was told only to "require CI", with no workflow or command. `none` lets plan-limited private repos stop the notice. | operator, 2026-11 |
 | Model tiers: defaults for delegated planning | Model selection must not force a separate planning task for bounded work. | operator, #71 |
 | Model tiers: delegation by risk and isolation | Mandatory research/testing agents conflicted with the shared rule to delegate only when useful; independent review remains required. | operator, #71 |
 | Model tiers: runtime-specific defaults and a separate PR-review default | Model recommendations evolve by role and runtime; changing the review model must not change research and testing defaults. | operator, 2026-10 |
@@ -88,6 +89,10 @@ The operator reported unclear, verbose, poorly spaced interfaces and requested c
 The deploy-gate line under Workflows was AGENTS.md rule delivery-5 until v46 (rationale Unknown; the operator kept it on 2026-09-26 because delivery-1 covers PR checks and this gates the deploy pipeline itself). It applies only when someone writes a deploy pipeline, so it moved behind the delivery-14 trigger.
 
 The on-demand checklist behind delivery-14. A project ran 8 self-hosted runner slots on one host; its test suite created databases with write-ahead logging and full durability, so concurrent jobs serialized on the shared disk's filesystem journal and a 20 s suite took 337 s. Adding slots made it worse. The fix was ephemeral (tmpfs) workspaces for test data and slots sized from a measured 1/2/4/8 concurrency run. Dependency caches stay on durable disk because they are read-mostly and a loss only costs a rebuild. The path-filter bullet restates the delivery-4 trap (a path-skipped required workflow never reports) where CI is configured. Self-hosted runners must not run untrusted code, since they keep state between jobs and sit on the project's own network (design). (incident, 2026-10)
+
+## .github/workflows/checks.yml and scripts/checks.sh
+
+The default required check, so every enrolled repo gets one without designing it (operator, 2026-11, after a repo on `auto` had none). One always-reporting job keeps the protection rule to a single name. Gitleaks over full history with redacted output catches secrets committed on any branch without printing them; pinned action SHAs and tool versions keep the check from changing under the project. The Markdown link check gives docs-only repos a meaningful check, and the stack steps fail with the fix when a toolchain is missing instead of passing silently. Seeded only when no workflow provides the check, since overwriting or duplicating a project's CI would break it.
 
 ## docs/languages/python.md
 

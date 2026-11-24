@@ -17,7 +17,7 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
   model's judgment for the details, and leave project specifics to each project.
 - **Budget:** CI caps `template/AGENTS.md` by word count (`.github/workflows/budget.yml`).
   Raise the cap only deliberately, with the reason in the PR.
-- **Parsed strings:** the `harness` CLI reads "Set during setup", `**Merge policy:**`,
+- **Parsed strings:** the `harness` CLI reads "Set during setup", `**Merge policy:**`, `**Required CI check:**`,
   `**Maintenance tracking issue:**`, the "## <List>: ... <N> or more days ago" headings in
   `template/docs/MAINTENANCE.md`, and "<List> last completed:" in the tracking issue. Change them only together with the `harness` CLI.
 - **Preview:** from a project that uses the harness, run
