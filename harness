@@ -119,7 +119,8 @@ def seeds_skipped():
     if read(BASE / SEED_FILES[0]) is not None:
         return False  # adopted earlier: update them like any harness file
     name = required_check_name()
-    return name is None or Path(SEED_FILES[0]).exists() or workflow_provides(name)
+    return (name is None or any(Path(p).exists() for p in SEED_FILES)
+            or workflow_provides(name))
 
 
 def required_check_name():
@@ -157,8 +158,12 @@ def workflow_check_names(text):
 
 
 def workflow_provides(name):
-    return any(name in workflow_check_names(f.read_text(errors="ignore"))
-               for f in sorted(WORKFLOWS.glob("*.y*ml")))
+    """A workflow that runs on pull requests has a job reporting `name`."""
+    for f in sorted(WORKFLOWS.glob("*.y*ml")):
+        text = f.read_text(errors="ignore")
+        if "pull_request" in text and name in workflow_check_names(text):
+            return True
+    return False
 
 
 def removed(upstream):
@@ -271,7 +276,7 @@ def branch_requirement(name, branch):
             c.get("context") for c in checks.get("checks") or []}
         if name in contexts:
             return "ok", info
-        info["classic"] = checks if checks.get("checks") or checks.get("contexts") else {}
+        info["classic"] = checks  # {} when protected without required checks
         info["other"] += sorted(contexts)
     elif status == 404 and "not protected" in err.lower():
         pass
@@ -289,10 +294,10 @@ def protection_command(name, branch, classic):
     if classic:  # protection with required checks exists: add ours, keep the rest
         kept = classic.get("checks") or [{"context": c} for c in classic.get("contexts", [])]
         body = {"strict": classic.get("strict", False),
-                "checks": [{k: v for k, v in c.items() if k in ("context", "app_id") and v}
-                           for c in kept] + [check]}
+                "checks": [{"context": c["context"], "app_id": c.get("app_id") or -1}
+                           for c in kept] + [check]}  # -1: any source, as before
         return f"echo '{json.dumps(body)}' | gh api -X PATCH {base}/required_status_checks --input -"
-    body = {"required_status_checks": {"strict": False, "checks": [check]},
+    body = {"required_status_checks": {"strict": False, "contexts": [], "checks": [check]},
             "enforce_admins": False, "required_pull_request_reviews": None,
             "restrictions": None, "allow_force_pushes": False, "allow_deletions": False}
     return f"echo '{json.dumps(body)}' | gh api -X PUT {base} --input -"
@@ -311,13 +316,19 @@ def report_ci_gate():
     branch = default_branch()
     notes = []
     if not workflow_provides(name):
-        notes.append(f"no workflow in {WORKFLOWS} has a job reporting the required check "
-                     f"`{name}`. Add one: with the operator's approval, `harness apply "
-                     f"{' '.join(SEED_FILES)}` adds the default, or rename the job that "
-                     "runs CI; then add stack steps (docs/CI.md).")
+        add = (f"rename the job in the existing workflow that runs CI to `{name}`"
+               if seeds_skipped() else
+               f"with the operator's approval, `harness apply {' '.join(SEED_FILES)}` adds "
+               "the default; then add stack steps (docs/CI.md)")
+        notes.append(f"no workflow in {WORKFLOWS} runs on pull requests with a job reporting "
+                     f"the required check `{name}`. Fix: {add}.")
     cache = cache_file("required-check")
     fresh = cache.exists() and time.time() - cache.stat().st_mtime < CHECK_CACHE_SECONDS
-    if fresh and json.loads(cache.read_text()) == [name, branch]:
+    try:
+        cached = fresh and json.loads(cache.read_text()) == [name, branch]
+    except ValueError:
+        cached = False
+    if cached:
         state, info = "ok", {}
     else:
         try:

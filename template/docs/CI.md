@@ -30,6 +30,6 @@ Read before changing CI runners, workflows, or test storage (AGENTS.md, Delivery
 
 - The default branch requires one status check, named by **Required CI check** in PROJECT_CONFIG.md (default `checks`), before any merge. `harness check` reports when no workflow provides it or the branch does not require it, and prints the fix.
 - The harness adds `.github/workflows/checks.yml` and `scripts/checks.sh` only when no workflow provides the check. The project owns them after: put its lint and test commands for the PROJECT_CONFIG.md Stack in `scripts/checks.sh` and the pinned toolchain setup in the workflow. Docs-only repos keep the default secret scan and Markdown link check.
-- Keep the job name and an always-reporting trigger; pin actions by commit SHA and tools by version.
+- Keep the job name; pin actions by commit SHA and tools by version and checksum. A rotated secret in old history goes in `.gitleaksignore` by fingerprint, never by disabling the scan.
 - Require the check through classic branch protection or a ruleset, bound to GitHub Actions (app id 15368), without requiring branches to be up to date; block force pushes and deletion. Changing protection is a permission change: ask first.
 - A private repo on a plan without branch protection cannot require it; record **Required CI check:** `none` and merge `on-request`.

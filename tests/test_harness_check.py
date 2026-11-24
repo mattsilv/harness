@@ -33,7 +33,7 @@ class ContextSizeWarning(unittest.TestCase):
         self.assertEqual("", out)
 
 
-WORKFLOW = "jobs:\n  checks:\n    runs-on: ubuntu-latest\n"
+WORKFLOW = "on: [pull_request]\njobs:\n  checks:\n    runs-on: ubuntu-latest\n"
 NOT_PROTECTED = (1, "", "gh: Branch not protected (HTTP 404)")
 NO_RULES = (0, "[]", "")
 
@@ -110,7 +110,7 @@ class RequiredCiCheck(unittest.TestCase):
             {"required_status_checks": {"strict": True, "contexts": ["build"],
                                         "checks": [{"context": "build", "app_id": None}]}})})
         cmd = next(l for l in out.splitlines() if "gh api -X PATCH" in l)
-        self.assertEqual({"strict": True, "checks": [{"context": "build"},
+        self.assertEqual({"strict": True, "checks": [{"context": "build", "app_id": -1},
                                                      {"context": "checks", "app_id": 15368}]},
                          json.loads(cmd.split("'")[1]))
         self.assertIn("(it requires `build`)", out)
@@ -145,7 +145,7 @@ class RequiredCiCheck(unittest.TestCase):
         out, _ = self.run_gate({"rules/branches/main": ok([{
             "type": "required_status_checks", "ruleset_id": 7,
             "parameters": {"required_status_checks": [{"context": "checks"}]}}])}, workflow=None)
-        self.assertIn("no workflow in .github/workflows has a job reporting", out)
+        self.assertIn("no workflow in .github/workflows runs on pull requests", out)
         self.assertIn("harness apply .github/workflows/checks.yml scripts/checks.sh", out)
 
     def test_on_request_still_checks_without_the_auto_note(self):
@@ -179,6 +179,27 @@ class RequiredCiCheck(unittest.TestCase):
         self.assertIn("does not require", outs[0])
         self.assertEqual(["", ""], outs[1:])
         self.assertEqual(3, len(calls), "failure re-asked, then the pass served from cache")
+
+
+    def test_push_only_workflow_does_not_count(self):
+        out, _ = self.run_gate({"rules/branches/main": NO_RULES, "/protection": NOT_PROTECTED},
+                               workflow="on: push\njobs:\n  checks:\n    runs-on: x\n")
+        self.assertIn("runs on pull requests", out)
+
+    def test_protected_without_checks_uses_put_with_a_warning(self):
+        out, _ = self.run_gate({"rules/branches/main": NO_RULES, "/protection": ok(
+            {"enforce_admins": {"enabled": False}})})
+        self.assertIn("carry the branch's current protection settings", out)
+        self.assertIn("gh api -X PUT", out)
+
+    def test_corrupt_cache_is_ignored(self):
+        cache = Path(tempfile.mkdtemp()) / "c.json"
+        self.addCleanup(cache.unlink, missing_ok=True)
+        cache.write_text("{not json")
+        with mock.patch.object(harness, "cache_file", lambda n: cache):
+            out, _ = self.run_gate({"rules/branches/main": NO_RULES,
+                                    "/protection": NOT_PROTECTED})
+        self.assertIn("does not require", out)
 
 
 class WorkflowCheckNames(unittest.TestCase):
@@ -236,11 +257,17 @@ class SeededCiFiles(unittest.TestCase):
         self.assertEqual([], changed)
 
     def test_existing_workflow_is_left_alone(self):
-        own = "jobs:\n  lint:\n    name: checks\n    runs-on: x\n"
+        own = "on: pull_request\njobs:\n  lint:\n    name: checks\n    runs-on: x\n"
         repo, changed = self.init_in({".github/workflows/ci.yml": own})
         self.assertFalse((repo / ".github/workflows/checks.yml").exists())
         self.assertFalse((repo / "scripts/checks.sh").exists())
         self.assertEqual([], changed, "skipped seeds must not show as harness changes")
+
+    def test_existing_checks_sh_skips_both_seeds(self):
+        repo, changed = self.init_in({"scripts/checks.sh": "mine\n"})
+        self.assertFalse((repo / ".github/workflows/checks.yml").exists())
+        self.assertEqual("mine\n", (repo / "scripts/checks.sh").read_text())
+        self.assertEqual([], changed)
 
     def test_existing_checks_yml_is_never_overwritten(self):
         own = "jobs:\n  build:\n    runs-on: x\n"
