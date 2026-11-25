@@ -19,6 +19,7 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Merge policies: `auto` merges without asking | An agent under `auto` still asked the operator before each merge. | incident, 2026-09 |
 | Merge policies: `auto` turns on auto-merge once required review passes | A subagent waited in a CI poller to merge by hand, stopped, and left a green PR unmerged overnight. "The moment the PR opens" raced the independent review: agents toggled auto-merge off and on, and one PR merged before its review (2026-11). | incident, 2026-09 |
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
+| Merge policies: explained in docs/CI.md, not here | The explainer sat beside each project's recorded setup lines and changed in many versions, so 5 of about 9 sampled `harness apply` runs hit merge conflicts there. | transcript review, 2026-11 |
 | Required CI check: one named check, default `checks`, `none` opts out | `harness check` must know which check to look for; a project on `auto` had no CI and was told only to "require CI", with no workflow or command. `none` lets plan-limited private repos stop the notice. | operator, 2026-11 |
 | Model tiers: defaults for delegated planning | Model selection must not force a separate planning task for bounded work. | operator, #71 |
 | Model tiers: runtime-specific defaults and a separate PR-review default | Model recommendations evolve by role and runtime; changing the review model must not change research and testing defaults. | operator, 2026-10 |
@@ -102,7 +103,7 @@ The default required check, so every enrolled repo gets one without designing it
 
 ## scripts/pr-wait.sh
 
-Waits on a PR and stops with the fix when it conflicts, a check fails, or it closes. It is the only conflict check: a separate script that reported a conflict before the PR opened was removed because no sampled main session in about 60 across 7 projects ran it; agents fetch and branch from the remote default branch inline, and a conflict that still happens surfaces here. (transcript review, 2026-11)
+Waits on a PR and stops with the fix when it conflicts, a check fails, or it closes. It is the only conflict check: a separate script that reported a conflict before the PR opened was removed because no sampled main session in about 60 across 7 projects ran it; agents fetch and branch from the remote default branch inline, and a conflict that still happens surfaces here. (transcript review, 2026-11) It also stops when a clean PR has auto-merge off on two polls, since nothing would merge it: agents otherwise looped until the tool timeout, and 5% of `--auto` calls failed right after a push (transcript review, 2026-11).
 
 ## scripts/overlap-check.sh
 

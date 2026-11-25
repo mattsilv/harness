@@ -26,6 +26,10 @@ Read before changing CI runners, workflows, or test storage (AGENTS.md, Delivery
 - Never run untrusted code (forks, unreviewed branches) on a self-hosted runner.
 - Capacity beyond the recorded default can be new spend: ask first (AGENTS.md, Autonomy).
 
+## Merge policies
+
+- Both commit on a branch and open a PR. `auto` means the agent merges its own PRs without asking once required checks pass, turning on the host's auto-merge as soon as required review passes, when available, never waiting on CI to merge by hand (merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`); `on-request` merges only when asked.
+
 ## Required check
 
 - The default branch requires one status check, named by **Required CI check** in PROJECT_CONFIG.md (default `checks`), before any merge. `harness check` reports when no workflow provides it or the branch does not require it, and prints the fix.
