@@ -2,12 +2,12 @@
 
 Audit state lives in the maintenance tracking issue named in PROJECT_CONFIG.md, not in this file: open findings, and for each list below its last attempted and last completed dates (e.g. **Weekly last completed:** 2026-01-31).
 
-At session start, check that issue. A list is due when its heading's interval has passed since it last completed, or, if it never completed, since the harness was installed (the first commit of .harness/). Surface due or blocked lists in one line; execute a list only when it is within the authorized task. Before execution, claim it (assign yourself or add an audit-in-progress label), delegate checks when useful, and review their findings. Retry incomplete audits next session. Record findings, actions, blockers, and UTC timestamps in the tracking issue; update "last attempted" every run and "last completed" only when every check in that list finishes. Release the claim when done.
+`harness check` reports each due list; tell the operator in one line and run a list only within the authorized task. To run one: claim it (assign yourself or add an audit-in-progress label), record findings, actions, blockers, and UTC timestamps in the issue, set "last attempted" every run and "last completed" only when every item finishes, then release the claim.
 
 ## Weekly: last completed 7 or more days ago
 
 - Triage every open issue so none lingers: close ones already done or superseded, linking the evidence; put ones that should wait on hold with the reason; assign the rest to a sprint. Ask the operator about any you can't decide. Report the open-issue count and what changed.
-- Kaizen: delegate to a T2 subagent an investigation of the codebase and CI/CD for the smallest change with the most outsized gain in speed to ship (CI time, flaky or redundant steps, slow tests, merge friction), then plan and implement it in its own PR, citing the before/after timing.
+- Kaizen: have a primary-tier (T2 model) subagent find the one smallest change with the largest gain in speed to ship (CI time, flaky or redundant steps, slow tests, merge friction) and open it as its own PR with before/after timing; if nothing is worth a PR, record that and the item is done. Query CI history in aggregate (about 200 runs at most) and stop if `gh api rate_limit` shows under 1000 remaining.
 
 ## Monthly: last completed 30 or more days ago
 

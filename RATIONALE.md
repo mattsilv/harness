@@ -21,7 +21,6 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |
 | Required CI check: one named check, default `checks`, `none` opts out | `harness check` must know which check to look for; a project on `auto` had no CI and was told only to "require CI", with no workflow or command. `none` lets plan-limited private repos stop the notice. | operator, 2026-11 |
 | Model tiers: defaults for delegated planning | Model selection must not force a separate planning task for bounded work. | operator, #71 |
-| Model tiers: delegation by risk and isolation | Mandatory research/testing agents conflicted with the shared rule to delegate only when useful; independent review remains required. | operator, #71 |
 | Model tiers: runtime-specific defaults and a separate PR-review default | Model recommendations evolve by role and runtime; changing the review model must not change research and testing defaults. | operator, 2026-10 |
 | Frontend review: off by default, independent T2 visual review when enabled | Projects opt into a stronger visual pass without changing the T3 code review or adding always-loaded UI rules; capture runner, command, and initial viewports stay project defaults. | operator, 2026-10 |
 | Runtime adapters: load only the active match | A shared context watcher instruction required one runtime's transcript format from other runtimes. Keep procedural knowledge out of unrelated prompts. | operator, #71 |
@@ -51,7 +50,7 @@ Moved unchanged from startup configuration, except the real-terminal instruction
 
 ## docs/runtime-adapters/claude-code.md
 
-Holds no procedure now; the file stays because PROJECT_CONFIG.md maps Claude Code to it, so a future tool-specific procedure has a home without a config change in every project (#71). It carried the subagent context watcher (a background loop that flagged subagents past 250k tokens of context), removed after a transcript review: agents relaunched it dozens of times per session for alerts that needed no action (46 launches in three sessions of one project, 36 in one session of another), it died with exit 144 several times and left stray processes, it was not running in the sessions where subagents passed 300k tokens, and those subagents still finished and merged. It did something useful about twice, and worked in one runtime only. (transcript review, 2026-11)
+Holds one procedure: run `pr-wait.sh` in the background, because foreground waits hit the 10-minute Bash cap and agents' `timeout` wrappers failed on macOS (transcript review, 2026-11). The file stays because PROJECT_CONFIG.md maps Claude Code to it, so a future tool-specific procedure has a home without a config change in every project (#71). It carried the subagent context watcher (a background loop that flagged subagents past 250k tokens of context), removed after a transcript review: agents relaunched it dozens of times per session for alerts that needed no action (46 launches in three sessions of one project, 36 in one session of another), it died with exit 144 several times and left stray processes, it was not running in the sessions where subagents passed 300k tokens, and those subagents still finished and merged. It did something useful about twice, and worked in one runtime only. (transcript review, 2026-11)
 
 ## docs/MAINTENANCE.md
 
@@ -59,12 +58,12 @@ A monthly audit, so docs, branches, and live contracts don't rot between
 feature work. The interval is a default; monthly replaces an earlier weekly
 default, which was more cadence than a small project needs (operator preference).
 
-Due lists are reported but run only within the authorized task; this prevents maintenance from extending a completed feature task (#71). A weekly list holds only issue triage, delegated when useful, which closes done or
+Due lists are reported but run only within the authorized task; this prevents maintenance from extending a completed feature task (#71). A weekly list holds issue triage, delegated when useful, which closes done or
 superseded issues, puts others on hold, and assigns the rest to a sprint, and
 reports the open-issue count (`harness check` shows it when the list is due).
 Parallel agents open issues faster than a monthly review of 30-day-old ones
 clears them; the goal is that none lingers unplanned (operator, 2026-09).
-The weekly kaizen item ships one small, measured speed-to-ship improvement per week, because compounding cuts to CI and merge time pay back on every later PR; a T2 subagent keeps it cheap (operator, 2026-11).
+The weekly kaizen item ships one small, measured speed-to-ship improvement per week, because compounding cuts to CI and merge time pay back on every later PR; the no-op exit keeps a quiet week from blocking completion, and the rate-limit cap follows analysis subagents exhausting a project's GitHub API quota for about 20 minutes (operator, 2026-11).
 
 The docs check reviews pages changed since the last completed audit (via git log)
 and pares them down, dedupes, or merges them so they don't drift; it also confirms

@@ -36,11 +36,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: Operator's safety boundary for irreversible, auth, spend, and external actions. Not a model-capability rule; REVIEW.md forbids cutting or loosening it.
     source: operator
     review: keep, confidence high (claude-fable-5-2, 2026-11-10): operator safety boundary; REVIEW.md don't-cut list; agents asked before irreversible actions in the reviewed sessions; transcripts -->
-  - Report results and unverified risks accurately. When a task changed anything, wait for the deploy, then lead the final report with done or not done and end it with the PR's merge state, whether it deployed, and a link plus one line on what the operator should check.
+  - Report results and unverified risks accurately. When a task changed anything, wait for CI and the deploy before ending the turn; start the final report with `Done` or `Not done: <what remains>`, and end it with the merge state, deploy state, and a link plus one line on what to check.
     <!-- autonomy-3
     why: The operator had to ask for status in most sessions of one project ("are we done here" in 5, "is ci done", "did that deploy?", "link me to what I'm checking") (#33).
     source: incident, 2026-09
-    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): agents reported "deploy unchecked" and stopped, so "are we done" recurred (about 7 times in one project, 4 of 12 sessions in another); the ritual was also appended to answers that changed nothing -->
+    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): agents reported "deploy unchecked" and stopped, so "are we done" recurred (about 7 times in one project, 4 of 12 sessions in another); the ritual was also appended to answers that changed nothing; reworded 2026-11-24 after a transcript review found 6 more status asks in 3 weeks, mostly after turns that ended on a pending CI or data step -->
   - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: short active sentences, one point each, "must" or "can" instead of "should" or "may", and one name for each thing.
     <!-- autonomy-4
     why: The operator reads and answers this text, and users follow instructions step by step, so both must be fast to scan and unambiguous. Models default to long, hedged prose; "should" and "may" hide whether a step is required. Borrows the controlled-English rules of ASD-STE100, not its word list, which costs words and flags normal technical terms.
@@ -211,11 +211,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
   why: Keeps language rules out of every session's context.
   source: design
   review: keep, confidence high (claude-fable-5-2, 2026-11-10): design: the on-demand link mechanism; design -->
-- **Maintenance:** Follow docs/MAINTENANCE.md.
+- **Maintenance:** Before maintenance, read docs/MAINTENANCE.md.
   <!-- maintenance-1
   why: The audit lived only in MAINTENANCE.md, which agents rarely opened, so `harness check` now nags when it's overdue.
   source: incident, 2026-09
-  review: keep, confidence high (claude-fable-5-2, 2026-11-10): design: the link `harness check` nags about; design -->
+  review: keep, confidence high (claude-fable-5-2, 2026-11-10): design: the link `harness check` nags about; design; 2026-11-24: given a load trigger, since `harness check` already computes due lists -->
 - **Delegation:**
   - Delegate bounded work when isolation or parallelism outweighs coordination cost; require concise, evidence-backed results.
     <!-- delegation-1

@@ -19,7 +19,7 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
   Raise the cap only deliberately, with the reason in the PR.
 - **Parsed strings:** the `harness` CLI reads "Set during setup", `**Merge policy:**`, `**Required CI check:**`,
   `**Maintenance tracking issue:**`, the "## <List>: ... <N> or more days ago" headings in
-  `template/docs/MAINTENANCE.md`, and "<List> last completed:" in the tracking issue. Change them only together with the `harness` CLI.
+  `template/docs/MAINTENANCE.md`, "<List> last completed:" in the tracking issue, and a tracking-issue label containing "audit". Change them only together with the `harness` CLI.
 - **Preview:** from a project that uses the harness, run
   `HARNESS_SYNC_SOURCE=<this checkout>/template harness diff`.
 - **harness CLI:** standard-library Python only. Before merging a change, test `init`
@@ -27,8 +27,7 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
 - **Public:** no PII, hostnames, secrets, or project specifics anywhere in this repo.
 - **Delivery:** branch and PR; squash-merge when CI passes. Merging publishes to every
   project on its next `check`, and each project still approves `apply`.
-- **Model review:** when a new frontier model ships, or quarterly, follow `REVIEW.md`.
-- **Weekly model check:** a T3 (Haiku-tier) subagent researches the current top Claude, OpenAI, and Gemini models with sources; if they differ from the tiers in `template/PROJECT_CONFIG.md`, propose the change to the operator before editing.
+- **Models:** when asked, or 7 or more days after the date here (last run 2026-11-24), a Haiku-class subagent lists the current top Claude, OpenAI, and Gemini models with sources; propose any tier change in `template/PROJECT_CONFIG.md` to the operator before editing, and update the date. A new model generation, or a quarter since the last `REVIEW.md` log row, also triggers `REVIEW.md`; a point release does not.
 - **Maintenance (monthly, or when touching these files):** README's file table matches
   the tree; every rule in `template/` has a rationale; no rule is duplicated
   across template files; shared instructions contain no runtime-specific procedures, adapter and provider
