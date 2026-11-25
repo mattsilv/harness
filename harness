@@ -106,6 +106,8 @@ def read(p):
 def write(p, text):
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(text)
+    if p.parts[:1] != (".harness",) and text.startswith("#!"):
+        p.chmod(0o755)
 
 
 def changed(upstream):
@@ -324,10 +326,12 @@ def report_ci_gate():
                      f"the required check `{name}`. Fix: {add}.")
     cache = cache_file("required-check")
     fresh = cache.exists() and time.time() - cache.stat().st_mtime < CHECK_CACHE_SECONDS
+    cache_key = [name, branch, bool(auto)]
     try:
-        cached = fresh and json.loads(cache.read_text()) == [name, branch]
+        cached = fresh and json.loads(cache.read_text()) == cache_key
     except ValueError:
         cached = False
+    auto_merge_off = False
     if cached:
         state, info = "ok", {}
     else:
@@ -335,8 +339,18 @@ def report_ci_gate():
             state, info = branch_requirement(name, branch)
         except Exception as e:
             state, info = "unverified", {"error": str(e)}
-        if state == "ok":
-            write(cache, json.dumps([name, branch]))
+        auto_merge_checked = not auto
+        if auto and state not in ("unverified", "no-remote"):
+            try:
+                r_status, repo_info, _ = gh_api("repos/{owner}/{repo}")
+                if r_status == 200 and isinstance(repo_info, dict):
+                    auto_merge_checked = True
+                    if repo_info.get("allow_auto_merge") is False:
+                        auto_merge_off = True
+            except Exception:
+                pass
+        if state == "ok" and auto_merge_checked and not auto_merge_off:
+            write(cache, json.dumps(cache_key))
     if state == "no-remote" and not auto:
         state = "ok"  # no GitHub repo to protect; only `auto` depends on it
     if state in ("unverified", "no-remote"):
@@ -361,6 +375,10 @@ def report_ci_gate():
                        "first, since it replaces them, then " + fix)
         notes.append(f"`{branch}` does not require the CI check `{name}`{also}, so merges "
                      f"can skip CI. With the operator's approval (a permission change), {fix}")
+    if auto_merge_off:
+        notes.append("Merge policy is `auto`, but GitHub auto-merge is off on this repo. "
+                     "With the operator's approval, run: "
+                     "`gh api -X PATCH repos/{owner}/{repo} -f allow_auto_merge=true`.")
     for note in notes:
         print(f"harness: {note}")
     if notes and auto:
@@ -538,11 +556,16 @@ def cmd_init():
         write(BASE / p, text)
     write(APPLIED, upstream_version() + "\n")
     claude = Path("CLAUDE.md")
+    imports = ("@AGENTS.md", "@docs/runtime-adapters/claude-code.md")
     if not claude.exists():
-        write(claude, "@AGENTS.md\n")
-        print("created CLAUDE.md (imports AGENTS.md for Claude Code)")
-    elif "@AGENTS.md" not in claude.read_text():
-        print("CLAUDE.md exists: add an `@AGENTS.md` line so Claude Code loads the rules.")
+        write(claude, "\n".join(imports) + "\n")
+        print("created CLAUDE.md (imports AGENTS.md and the Claude Code adapter)")
+    else:
+        text = claude.read_text()
+        missing = [line for line in imports if line not in text]
+        if missing:
+            lines = " and ".join(f"`{line}`" for line in missing)
+            print(f"CLAUDE.md exists: add {lines} so Claude Code loads the rules and its adapter.")
     report_unindexed(created)
     report_local()
 

@@ -13,7 +13,7 @@ existing repos; nothing is overwritten.
    harness version from `.harness/base/<path>` into it by hand. Keep project-specific
    content; remove anything the harness duplicates. Where they contradict, don't
    choose: list the conflicts for the operator.
-5. **Runtime routing:** confirm the adapter mapping in `PROJECT_CONFIG.md` matches the coding agents in use. Load only the active match. For Claude Code, keep `CLAUDE.md` importing `@AGENTS.md`; do not import every adapter.
+5. **Runtime routing:** confirm the adapter mapping in `PROJECT_CONFIG.md` matches the coding agents in use. Load only the active match. For Claude Code, keep `CLAUDE.md` importing `@AGENTS.md` and `@docs/runtime-adapters/claude-code.md`; do not import other runtimes' adapters.
 6. **Configure.** Ask the operator for every `PROJECT_CONFIG.md` value marked "Set during
    setup", and for any default that doesn't match this repo (stack, secrets project).
    Record the answers. Don't guess. If init added `.github/workflows/checks.yml`, add the

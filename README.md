@@ -72,7 +72,7 @@ A prompt cannot restart an exited process; this release adds no executable super
 
 ## How agents load it (why it's split this way)
 
-- **Always loaded:** in a project, `AGENTS.md` (and `CLAUDE.md`, which imports it with `@AGENTS.md`)
+- **Always loaded:** in a project, `AGENTS.md` (and in Claude Code, `CLAUDE.md`, which imports `@AGENTS.md` and `@docs/runtime-adapters/claude-code.md`)
   goes into the context of every session in full. `@` imports and build steps that
   concatenate files don't save context; they only change how the rules are authored.
 - **On demand:** a plain link costs nothing until the agent opens it. `AGENTS.md`
@@ -82,9 +82,7 @@ A prompt cannot restart an exited process; this release adds no executable super
   trigger fires go in a linked file. Add your own language by dropping in
   `docs/languages/<language>.md`. The `harness` CLI leaves files it doesn't own alone.
 
-Runtime adapters use plain links, not unconditional imports. All adapter files can
-ship to a project, but only the configured match is read. Codex and OpenCode need no
-adapter until they need a tool-specific procedure. Keep shared policy out of adapters.
+Only the active runtime loads its adapter: `CLAUDE.md` is read only by Claude Code and imports `@docs/runtime-adapters/claude-code.md`, while other runtimes read `AGENTS.md` and `PROJECT_CONFIG.md` without loading it. Codex and OpenCode need no adapter until they need a tool-specific procedure. Keep shared policy out of adapters.
 
 ## Adopt it
 
@@ -99,7 +97,7 @@ ln -sf ~/gh/harness/harness ~/.local/bin/harness
 cd your-repo && harness init   # never overwrites existing files
 ```
 
-Without it: copy `template/` into your repo and add `@AGENTS.md` to `CLAUDE.md`.
+Without it: copy `template/` into your repo and add `@AGENTS.md` and `@docs/runtime-adapters/claude-code.md` to `CLAUDE.md`.
 
 ```bash
 harness init          # new or existing repo: write missing files, record baseline
