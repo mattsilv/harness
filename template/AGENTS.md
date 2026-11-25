@@ -10,19 +10,14 @@ source: operator, 2026-09
 review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidence (#32) that agents skipped the harness until told; no session in this review needed the reminder; operator evidence -->
 
 - **Configuration:**
-  - Read PROJECT_CONFIG.md at session start and when it changes. Use its defaults and load only the adapter mapped to the active coding agent.
+  - Read PROJECT_CONFIG.md at session start and when it changes. Use its defaults, including model tiers, and load only the adapter mapped to the active coding agent.
     <!-- config-1
-    why: Unknown. PROJECT_CONFIG.md is the one place for project values, so agents need to load it before acting on them.
+    why: PROJECT_CONFIG.md is the one place for project values and model tiers, so agents need to load it before acting on them.
     source: design
-    review: keep, confidence high (claude-fable-5-2, 2026-11-10): it is the load mechanism; agents read the file in every reviewed session; transcripts -->
-  - Never duplicate policy across files.
-    <!-- config-2
-    why: Five tools once gave agents contradictory merge and push rules, and which one won depended on load order.
-    source: incident, 2026-09
-    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): dropped "complete setup", which config-3 and `harness check` already say; the no-duplication half is incident-backed; incident -->
+    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): it is the load mechanism; agents read the file in every reviewed session; transcripts; 2026-11-24: absorbed models-1 so model tiers stay loaded without a separate section -->
   - Ask the operator for any value marked "set during setup" before other work.
     <!-- config-3
-    why: Guessing merge policy would bring back the conflict in config-2. `harness check` repeats the question until it's answered.
+    why: Guessing merge policy would bring back the conflicting-policy failures behind docs-3. `harness check` repeats the question until it's answered.
     source: design
     review: keep, confidence high (claude-fable-5-2, 2026-11-10): blocks guessing merge policy; enrollment ran cleanly in two new projects; transcripts -->
 - **Autonomy:**
@@ -36,11 +31,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: Operator's safety boundary for irreversible, auth, spend, and external actions. Not a model-capability rule; REVIEW.md forbids cutting or loosening it.
     source: operator
     review: keep, confidence high (claude-fable-5-2, 2026-11-10): operator safety boundary; REVIEW.md don't-cut list; agents asked before irreversible actions in the reviewed sessions; transcripts -->
-  - Report results and unverified risks accurately. When a task changed anything, wait for CI and the deploy before ending the turn; start the final report with `Done` or `Not done: <what remains>`, and end it with the merge state, deploy state, and a link plus one line on what to check.
+  - Report results and unverified risks accurately. When a task changed anything, wait for CI and the deploy before finishing; start the final report with `Done` or `Not done: <what remains>`, and end it with the merge state, deploy state, and a link plus one line on what to check.
     <!-- autonomy-3
     why: The operator had to ask for status in most sessions of one project ("are we done here" in 5, "is ci done", "did that deploy?", "link me to what I'm checking") (#33).
     source: incident, 2026-09
-    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): agents reported "deploy unchecked" and stopped, so "are we done" recurred (about 7 times in one project, 4 of 12 sessions in another); the ritual was also appended to answers that changed nothing; reworded 2026-11-24 after a transcript review found 6 more status asks in 3 weeks, mostly after turns that ended on a pending CI or data step -->
+    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): agents reported "deploy unchecked" and stopped, so "are we done" recurred (about 7 times in one project, 4 of 12 sessions in another); the ritual was also appended to answers that changed nothing; reworded 2026-11-24 after a transcript review found 6 more status asks in 3 weeks, and tightened to "before finishing" so yielding an intermediate turn for a background wakeup does not contradict it -->
   - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: short active sentences, one point each, "must" or "can" instead of "should" or "may", and one name for each thing.
     <!-- autonomy-4
     why: The operator reads and answers this text, and users follow instructions step by step, so both must be fast to scan and unambiguous. Models default to long, hedged prose; "should" and "may" hide whether a step is required. Borrows the controlled-English rules of ASD-STE100, not its word list, which costs words and flags normal technical terms.
@@ -85,11 +80,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
   why: Operator's safety boundary; REVIEW.md forbids cutting or loosening it.
   source: operator
   review: keep, confidence high (claude-fable-5-2, 2026-11-10): operator safety boundary; REVIEW.md don't-cut list; operator boundary -->
-- **Secrets:** Use the configured secrets manager with runtime injection. Never request or expose secrets in chat, tool output, logs, source, docs, or fixtures. Verify access without revealing values; scope each app's access to what it needs.
+- **Secrets:** Use the configured secrets manager with runtime injection; before entering, checking, or configuring secrets, read docs/SECRETS.md. Never request or expose secrets in chat, tool output, logs, source, docs, or fixtures. Verify access without revealing values; scope each app's access to what it needs.
   <!-- secrets-1
-  why: Operator's safety boundary; REVIEW.md forbids cutting or loosening it.
+  why: Operator's safety boundary; REVIEW.md forbids cutting or loosening it. Explicit load trigger for docs/SECRETS.md replaces the duplicate Procedure sub-bullet in PROJECT_CONFIG.md.
   source: operator
-  review: keep, confidence high (claude-fable-5-2, 2026-11-10): operator safety boundary; one browser subagent screenshotted a live token, so the rule is still needed; transcripts -->
+  review: keep, confidence high (claude-fable-5-2, 2026-11-10): operator safety boundary; one browser subagent screenshotted a live token, so the rule is still needed; transcripts; 2026-11-24: added explicit docs/SECRETS.md load trigger -->
 - **Testing:**
   - Prove critical outcomes and consequential failures at the cheapest effective layer, mostly integration, using real application code and isolated, production-compatible databases. No coverage quotas.
     <!-- testing-1
@@ -136,11 +131,6 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 4 of 4 stored eval runs, 2 of them on the default branch, citing "commit only when asked" (#13, #20).
     source: eval, 2026-09
     review: keep, confidence high (claude-fable-5-2, 2026-11-10): eval evidence; a sandbox guardian accepted commits when agents cited this standing request; transcripts -->
-  - Keep a recovery path; verify deploys with safe synthetic data.
-    <!-- delivery-6
-    why: Unknown.
-    source: author
-    review: rewrite, confidence low (claude-fable-5-2, 2026-11-10): dropped the live-contract clause, which the monthly maintenance list repeats -->
   - Before a first deploy or creating a named resource in a shared account, confirm the name is unused.
     <!-- delivery-15
     why: A new project's first deploy reused a name already live in the account it shared with another project and replaced that project's production app; six uploads landed before a peer session flagged the outage.
@@ -181,11 +171,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
   why: Docs drift and duplicate as agents add pages; a linked index lets an agent find the existing page instead of writing a new one.
   source: design
   review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): same rule in fewer words; #33 evidence stands; incident -->
-  - Put area-specific instructions in the affected directory or a linked doc, not in root agent files.
+  - State each rule once; put area-specific instructions in the affected directory or a linked doc, not root agent files.
     <!-- docs-3
-    why: Area-specific context bloated root instructions, and a shared watcher rule required one runtime's transcript format from every coding agent; scoped rules and selected adapters prevent both (#71).
-    source: token audit of one project's root context (via #57), 2026-10
-    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): kept the part a project agent acts on (area context out of root files, from the token audit); agent-agnostic wording is a rule for this repo and stays in its root AGENTS.md, and "define each rule once" repeats config-2; token audit -->
+    why: Duplicate rules across tools gave agents contradictory merge and push instructions (formerly config-2), and area-specific context bloated root instructions; scoped rules and selected adapters prevent both (#57, #71).
+    source: incident, 2026-09; token audit of one project's root context (via #57), 2026-10
+    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): kept the part a project agent acts on (area context out of root files, from the token audit); 2026-11-24: absorbed config-2 so rule non-duplication lives in one place -->
 - **Runbook:** Before bootstrapping a worktree, running the app, or calling a vendor CLI, read docs/RUNBOOK.md; when a command or vendor error costs more than one attempt, record the working form there in the same PR.
   <!-- runbook-1
   why: Every worktree re-derived the local dev recipe (38 fresh installs, 53 env-file edits, 6 port collisions, the hosting CLI invoked 4 ways), and vendor errors learned by failure were recorded nowhere reusable (#33).
@@ -227,9 +217,3 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: Parallel sessions filed the same issue twice, two pairs in two days (#33).
     source: incident, 2026-09
     review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): merged with delegation-3, which said the second half (operator, #71: one verified task per run; automatic execution of discovered issues expands scope) -->
-- **Model selection:**
-  - Follow the model tiers in PROJECT_CONFIG.md when the runtime allows.
-    <!-- models-1
-    why: Operator's tiering: the strongest model plans, a cheaper one codes and runs the session, and subagents research, test, and review.
-    source: operator
-    review: keep, confidence high (claude-fable-5-2, 2026-11-10): operator's tiering; subagents were launched on the requested models; transcripts -->

@@ -20,7 +20,7 @@ How the secrets manager feeds the hosting and database CLIs, with the one invoca
 
 ## Wait on CI and finish a PR
 
-How to wait for checks and confirm the merge and deploy in this runtime and host. On GitHub, `bash scripts/pr-wait.sh` waits until the PR merges, stopping on a conflict, a failed check, or a closed PR; wrap it in a repo command. `bash scripts/overlap-check.sh [paths]` lists files that another open PR or local worktree also changes.
+How to wait for checks and confirm the merge and deploy in this runtime and host. On GitHub, `scripts/pr-wait.sh [pr]` waits until the PR merges and post-merge runs finish, stopping on a conflict, a failed check, or a closed PR; under `auto`, pass `--squash` (`scripts/pr-wait.sh --squash [pr]`) after required review passes to enable auto-merge or merge once clean. `scripts/overlap-check.sh [paths]` lists files that another open PR or local worktree also changes.
 
 ## Subagents and review
 

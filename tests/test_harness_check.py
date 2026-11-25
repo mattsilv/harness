@@ -63,7 +63,9 @@ class RequiredCiCheck(unittest.TestCase):
             if cmd[0] != "gh":
                 return subprocess.CompletedProcess(cmd, 0, "origin/main\n", "")
             calls.append(cmd[2])
-            reply = next(v for k, v in gh.items() if cmd[2].endswith(k))
+            reply = next((v for k, v in gh.items() if cmd[2].endswith(k)), None)
+            if reply is None and cmd[2] == "repos/{owner}/{repo}":
+                reply = ok({"allow_auto_merge": True})
             if isinstance(reply, list):
                 reply = reply.pop(0)
             if isinstance(reply, Exception):
@@ -91,7 +93,8 @@ class RequiredCiCheck(unittest.TestCase):
             "type": "required_status_checks", "ruleset_id": 7,
             "parameters": {"required_status_checks": [{"context": "checks"}]}}])})
         self.assertEqual("", out)
-        self.assertEqual(1, len(calls))
+        self.assertFalse(any("/protection" in c for c in calls))
+        self.assertEqual(2, len(calls))
 
     def test_unprotected_branch_prints_the_put_command(self):
         out, _ = self.run_gate({"rules/branches/main": NO_RULES, "/protection": NOT_PROTECTED})
@@ -178,7 +181,28 @@ class RequiredCiCheck(unittest.TestCase):
                                      "/protection": NOT_PROTECTED}, runs=3)
         self.assertIn("does not require", outs[0])
         self.assertEqual(["", ""], outs[1:])
-        self.assertEqual(3, len(calls), "failure re-asked, then the pass served from cache")
+        self.assertEqual(5, len(calls), "failure re-asked, then the pass served from cache")
+
+    def test_auto_merge_off_prints_fix_and_skips_cache(self):
+        passing = ok([{"type": "required_status_checks", "ruleset_id": 7,
+                       "parameters": {"required_status_checks": [{"context": "checks"}]}}])
+        outs, calls = self.run_gate({
+            "rules/branches/main": passing,
+            "repos/{owner}/{repo}": ok({"allow_auto_merge": False}),
+        }, runs=2)
+        for out in outs:
+            self.assertIn("Merge policy is `auto`, but GitHub auto-merge is off on this repo.", out)
+            self.assertIn("gh api -X PATCH repos/{owner}/{repo} -f allow_auto_merge=true", out)
+            self.assertIn("treat merges as `on-request`", out)
+        self.assertEqual(4, len(calls), "allow_auto_merge=false must not write the ok cache")
+
+    def test_on_request_skips_auto_merge_check(self):
+        passing = ok([{"type": "required_status_checks", "ruleset_id": 7,
+                       "parameters": {"required_status_checks": [{"context": "checks"}]}}])
+        out, calls = self.run_gate({"rules/branches/main": passing},
+                                   config="- **Merge policy:** `on-request`\n")
+        self.assertEqual("", out)
+        self.assertEqual(1, len(calls))
 
 
     def test_push_only_workflow_does_not_count(self):
@@ -275,6 +299,61 @@ class SeededCiFiles(unittest.TestCase):
         self.assertEqual(own, (repo / ".github/workflows/checks.yml").read_text())
         self.assertFalse((repo / ".harness/base/.github/workflows/checks.yml").exists())
         self.assertEqual([], changed)
+
+
+class InitPermissionsAndClaudeMd(unittest.TestCase):
+    def run_init(self, existing=None):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        src = root / "harness" / "template"
+        for p, text in {
+            "AGENTS.md": "# Rules\n",
+            "scripts/pr-wait.sh": "#!/usr/bin/env bash\necho ok\n",
+        }.items():
+            (src / p).parent.mkdir(parents=True, exist_ok=True)
+            (src / p).write_text(text)
+        repo = root / "repo"
+        repo.mkdir()
+        for p, text in (existing or {}).items():
+            (repo / p).parent.mkdir(parents=True, exist_ok=True)
+            (repo / p).write_text(text)
+        old = os.getcwd()
+        os.chdir(repo)
+        self.addCleanup(os.chdir, old)
+        out = io.StringIO()
+        with mock.patch.object(harness, "SOURCE", str(src)), \
+                contextlib.redirect_stdout(out):
+            harness.cmd_init()
+        return repo, out.getvalue()
+
+    def test_shebang_scripts_get_0755_only_outside_harness_dir(self):
+        repo, _ = self.run_init()
+        self.assertEqual(0o755, (repo / "scripts/pr-wait.sh").stat().st_mode & 0o777)
+        self.assertEqual(0, (repo / ".harness/base/scripts/pr-wait.sh").stat().st_mode & 0o111)
+        self.assertEqual(0, (repo / "AGENTS.md").stat().st_mode & 0o111)
+
+    def test_init_creates_claude_md_with_adapter_import(self):
+        repo, out = self.run_init()
+        self.assertEqual(
+            "@AGENTS.md\n@docs/runtime-adapters/claude-code.md\n",
+            (repo / "CLAUDE.md").read_text(),
+        )
+        self.assertIn("created CLAUDE.md", out)
+
+    def test_init_hints_missing_claude_md_imports(self):
+        _, out_missing_adapter = self.run_init({"CLAUDE.md": "@AGENTS.md\n"})
+        self.assertIn("@docs/runtime-adapters/claude-code.md", out_missing_adapter)
+        self.assertNotIn("`@AGENTS.md`", out_missing_adapter)
+
+        _, out_missing_both = self.run_init({"CLAUDE.md": "custom notes\n"})
+        self.assertIn("`@AGENTS.md`", out_missing_both)
+        self.assertIn("`@docs/runtime-adapters/claude-code.md`", out_missing_both)
+
+        _, out_complete = self.run_init({
+            "CLAUDE.md": "@AGENTS.md\n@docs/runtime-adapters/claude-code.md\n"
+        })
+        self.assertNotIn("CLAUDE.md exists:", out_complete)
 
 
 class MaintenanceStatus(unittest.TestCase):

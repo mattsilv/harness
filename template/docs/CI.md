@@ -28,7 +28,7 @@ Read before changing CI runners, workflows, or test storage (AGENTS.md, Delivery
 
 ## Merge policies
 
-- Both commit on a branch and open a PR. `auto` means the agent merges its own PRs without asking once required checks pass, turning on the host's auto-merge as soon as required review passes, when available, never waiting on CI to merge by hand (merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`); `on-request` merges only when asked.
+- Both commit on a branch and open a PR. `auto` means the agent merges its own PRs without asking once required checks pass: as soon as required review passes, run `scripts/pr-wait.sh --squash [pr]` (enables auto-merge or merges directly when already clean, then waits for post-merge runs; merging deploys; the default branch must require CI status checks, and until it does treat the policy as `on-request`); `on-request` merges only when asked.
 
 ## Required check
 
@@ -37,3 +37,7 @@ Read before changing CI runners, workflows, or test storage (AGENTS.md, Delivery
 - Keep the job name; pin actions by commit SHA and tools by version and checksum. A rotated secret in old history goes in `.gitleaksignore` by fingerprint, never by disabling the scan.
 - Require the check through classic branch protection or a ruleset, bound to GitHub Actions (app id 15368), without requiring branches to be up to date; block force pushes and deletion. Changing protection is a permission change: ask first.
 - A private repo on a plan without branch protection cannot require it; record **Required CI check:** `none` and merge `on-request`.
+
+## Project notes
+
+Record repository-specific runner, workflow, or deploy details below this heading.

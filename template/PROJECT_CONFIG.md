@@ -29,7 +29,6 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 Record each choice once, here; adding a vendor is new spend, so ask first.
 
 - **Secrets:** Set during setup (e.g. Doppler, 1Password, a cloud secret manager, or a gitignored .env). If unset, stop and ask.
-  - **Procedure:** Before entering, checking, or configuring secrets, read [docs/SECRETS.md](docs/SECRETS.md); follow the general rules and only the configured provider's section.
 - **Secrets location:** Set during setup (project and config, vault, or file path; one per repo or client, separate app and environment configs).
 - **Hosting/deploy:** Serverless (e.g. Cloudflare) unless recorded otherwise.
 - **CI runners:** Hosted (default). Self-hosted only per [docs/CI.md](docs/CI.md); then record the values below.

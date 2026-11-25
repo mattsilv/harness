@@ -42,15 +42,26 @@ else
 fi
 
 wt=""
+now=$(date +%s)
 while IFS= read -r line; do
   case $line in
     "worktree "*) wt=${line#worktree } ;;
     "branch "*)
       br=${line#branch refs/heads/}
-      if [ "$br" = "$me" ]; then continue; fi
+      if [ "$br" = "$me" ] || [ ! -d "$wt" ]; then continue; fi
+      merging=0; dirty=""
+      if git -C "$wt" rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+        merging=1
+      else
+        dirty=$(git -C "$wt" status --porcelain 2>/dev/null | cut -c4- || true)
+      fi
+      if [ "$merging" = 0 ] && [ -z "$dirty" ]; then
+        ts=$(git -C "$wt" log -1 --format=%ct 2>/dev/null || echo 0)
+        if [ $((now - ts)) -gt 86400 ]; then continue; fi
+      fi
       # Mid-merge of main, a worktree's status lists main's files too; count only its own commits then.
       { git diff --name-only "$up"..."$br" 2>/dev/null || true
-        git -C "$wt" rev-parse -q --verify MERGE_HEAD >/dev/null || git -C "$wt" status --porcelain | cut -c4-; } \
+        [ -n "$dirty" ] && printf '%s\n' "$dirty" || true; } \
         | report "worktree $wt ($br):" && found=1 ;;
   esac
 done < <(git worktree list --porcelain)
