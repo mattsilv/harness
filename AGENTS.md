@@ -28,6 +28,7 @@ uses it; everything else is for maintaining it. These rules apply here, not in p
 - **Delivery:** branch and PR; squash-merge when CI passes. Merging publishes to every
   project on its next `check`, and each project still approves `apply`.
 - **Model review:** when a new frontier model ships, or quarterly, follow `REVIEW.md`.
+- **Weekly model check:** a T3 (Haiku-tier) subagent researches the current top Claude, OpenAI, and Gemini models with sources; if they differ from the tiers in `template/PROJECT_CONFIG.md`, propose the change to the operator before editing.
 - **Maintenance (monthly, or when touching these files):** README's file table matches
   the tree; every rule in `template/` has a rationale; no rule is duplicated
   across template files; shared instructions contain no runtime-specific procedures, adapter and provider
