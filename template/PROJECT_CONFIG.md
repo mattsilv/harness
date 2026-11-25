@@ -13,7 +13,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 - **Runtime adapters:** Claude Code: [docs/runtime-adapters/claude-code.md](docs/runtime-adapters/claude-code.md); Codex: none; OpenCode: none; other runtimes: none. Load only the matching adapter; add one only for a tool-specific procedure.
 - **Model tiers:** Model and effort defaults when delegation is useful; shared rules determine when to delegate.
   - **T1, planning model:** Astra in Codex or Fable in Claude Code, medium effort. For delegated planning, architecture, and hard decisions.
-  - **T2, primary model:** GPT-6.1 Sol in Codex or Opus in Claude Code, medium effort. Runs the session and does the coding and merging.
+  - **T2, primary model:** GPT-6.2 Sol in Codex or Opus in Claude Code, medium effort. Runs the session and does the coding and merging.
   - **T3, subagent model:** Luna in Codex or Sonnet in Claude Code, high effort, for research and testing. Use when delegation is warranted by task risk or isolation.
     - **PR review:** Terra, extra high effort, in Codex; Sonnet, high effort, in Claude Code.
   - **Effort levels:** Starting points; their meaning shifts between model generations.
