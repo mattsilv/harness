@@ -217,8 +217,8 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: Carried over from the predecessor harness. Incident not recorded.
     source: predecessor
     review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): delegation and model tiers were followed everywhere; what to delegate and keeping coupled work together are default judgment, the cost test and evidence-backed results stay; transcripts -->
-  - File newly found work as an issue, after searching open ones; start it only if it is within the authorized task.
+  - File newly found work as an issue after searching open ones; delegate objective fixes to a subagent through the normal PR flow.
     <!-- delegation-2
     why: Parallel sessions filed the same issue twice, two pairs in two days (#33).
     source: incident, 2026-09
-    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): merged with delegation-3, which said the second half (operator, #71: one verified task per run; automatic execution of discovered issues expands scope) -->
+    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): merged with delegation-3, which said the second half (operator, #71: one verified task per run; automatic execution of discovered issues expands scope); 2026-11-25: operator reversed the second half: filed-but-unfixed bugs piled up (a project filed an issue and stopped), so objective fixes now go to a subagent through the normal PR flow, which keeps the main task's scope; judgment calls stay filed -->
