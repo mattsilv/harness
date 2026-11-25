@@ -16,6 +16,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
   - **T2, primary model:** Sol in Codex or Opus in Claude Code, medium effort. Runs the session and does the coding and merging.
   - **T3, subagent model:** Luna in Codex or Sonnet in Claude Code, high effort, for research and testing.
     - **PR review:** Terra, extra high effort, in Codex; Sonnet, high effort, in Claude Code.
+      - **Review brief:** The reviewer reads the diff and the code around it, and does not rerun checks that CI runs. It reports only defects worth fixing before merge, in 250 words or fewer. A docs, copy, or config change under about 100 lines with a small blast radius gets a diff-only review. Keep the effort level: lower effort misses defects.
   - **Effort levels:** Starting points; their meaning shifts between model generations.
   - **One model available:** Use it for every tier.
 - **Committed sprint:** The open GitHub milestone with the nearest due date.
