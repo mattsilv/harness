@@ -466,7 +466,7 @@ def cmd_diff():
             old.splitlines(True), upstream[p].splitlines(True),
             f"a/{p} (last applied)", f"b/{p} (harness now)"))
     for p in removed(upstream):
-        print(f"{p}: removed from the harness; delete it by hand if no longer wanted.")
+        print(f"{p}: removed from the harness; `harness apply` deletes it if unmodified.")
     if not files:
         print("harness: up to date.")
 
@@ -504,7 +504,15 @@ def cmd_apply(only):
         write(BASE / p, upstream[p])
     if not only or not changed(upstream):
         write(APPLIED, upstream_version() + "\n")
-    if not files:
+    for p in ([] if only else removed(upstream)):
+        if read(Path(p)) in (None, read(BASE / p)):
+            Path(p).unlink(missing_ok=True)
+            (BASE / p).unlink()
+            print(f"deleted {p} (removed from harness, unmodified)")
+        else:
+            print(f"{p}: removed from the harness but edited here; keep it, or "
+                  f"`git rm -q {p} {BASE / p}`.")
+    if not files and not removed(upstream):
         print("harness: nothing to apply.")
     report_unindexed(created)
     report_local()

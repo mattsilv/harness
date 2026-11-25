@@ -4,11 +4,12 @@
 # its own (conflicts, a failed check, closed) or a post-merge run did not succeed.
 set -euo pipefail
 pr=${1:-}
+idle=0
 while :; do
   # A gh error (no PR for this branch, network) aborts here with gh's message.
-  out=$(gh pr view ${pr:+"$pr"} --json state,baseRefName,mergeStateStatus,statusCheckRollup --jq '"\(.state) \(.baseRefName) \(.mergeStateStatus) \(
+  out=$(gh pr view ${pr:+"$pr"} --json state,baseRefName,mergeStateStatus,autoMergeRequest,statusCheckRollup --jq '"\(.state) \(.baseRefName) \(.mergeStateStatus) \(.autoMergeRequest != null) \(
     [(.statusCheckRollup // [])[] | select((.conclusion // .state) | IN("FAILURE","ERROR","CANCELLED","TIMED_OUT","ACTION_REQUIRED","STARTUP_FAILURE"))] | length)"')
-  read -r state base merge failed <<<"$out"
+  read -r state base merge auto failed <<<"$out"
   case "$state/$merge" in
     MERGED/*)
       sha=$(gh pr view ${pr:+"$pr"} --json mergeCommit --jq .mergeCommit.oid)
@@ -31,6 +32,14 @@ while :; do
     */BEHIND) echo "PR refused as not up to date with $base: the ruleset's up-to-date requirement drifted on."
               echo "Turn that requirement off (harness INSTALL.md step 6) instead of updating the branch."; exit 1 ;;
   esac
+  # Nothing merges a clean PR without auto-merge; give a just-pushed PR one more poll first.
+  if [ "$state/$merge/$auto" = OPEN/CLEAN/false ]; then
+    idle=$((idle + 1))
+    if [ "$idle" -ge 2 ]; then
+      echo "PR is mergeable but auto-merge is off. Enable it (gh pr merge --auto; retry once if"
+      echo "it says not mergeable right after a push) or merge per the merge policy."; exit 1
+    fi
+  else idle=0; fi
   if [ "$failed" != 0 ]; then echo "A check failed: gh pr checks $pr"; exit 1; fi
   sleep 30
 done
