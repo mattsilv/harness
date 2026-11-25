@@ -36,11 +36,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: The operator had to ask for status in most sessions of one project ("are we done here" in 5, "is ci done", "did that deploy?", "link me to what I'm checking") (#33).
     source: incident, 2026-09
     review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): agents reported "deploy unchecked" and stopped, so "are we done" recurred (about 7 times in one project, 4 of 12 sessions in another); the ritual was also appended to answers that changed nothing; reworded 2026-11-24 after a transcript review found 6 more status asks in 3 weeks, and tightened to "before finishing" so yielding an intermediate turn for a background wakeup does not contradict it -->
-  - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: short active sentences, one point each, "must" or "can" instead of "should" or "may", and one name for each thing.
+  - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: answer first, short active sentences, each point once, "must" or "can" instead of "should" or "may", one name for each thing, and a table only to compare items on the same fields. Keep the final report within PROJECT_CONFIG.md's report length.
     <!-- autonomy-4
     why: The operator reads and answers this text, and users follow instructions step by step, so both must be fast to scan and unambiguous. Models default to long, hedged prose; "should" and "may" hide whether a step is required. Borrows the controlled-English rules of ASD-STE100, not its word list, which costs words and flags normal technical terms.
     source: operator, 2026-10
-    review: keep, confidence low (claude-fable-5-2, 2026-11-10): no transcript evidence either way; self-report -->
+    review: keep, confidence low (claude-fable-5-2, 2026-11-10): no transcript evidence either way; self-report; 2026-11-25: added answer first, each point once, the table test, and the configurable report length after a review of about 1,570 operator messages in 17 projects found reports long enough that the operator re-asked for the one thing needed, text stated twice, and tables used for prose (wide on mobile); a five-agent research pass (2026-11, mostly practitioner reports, not controlled studies) agreed that a vague "be concise" does little while a stated shape and a countable cap hold. The cap is a PROJECT_CONFIG.md value because the right length differs by project. -->
 - **Implementation:**
   - Share business logic and authorization across all interfaces (web, API, MCP, chat, jobs); keep interfaces thin.
     <!-- impl-2
@@ -54,6 +54,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     source: author
     review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): kept the design-token clause the operator asked for; the token list and the when-to-extract clause are default judgment; self-report
     decision: rewritten (operator, 2026-09-26): kept the design-token clause, dropped the list -->
+  - Deliver only what the task asks for: no unrequested features, sections, labels, disclaimers, or copy.
+    <!-- impl-4
+    why: The operator's most frequent content correction was removing things nobody asked for: extra labels, disclosures, and explanatory text on pages, and extra scope in code (about 45 corrections across 8 projects, counting "keep it simple" restated in task prompts). Models pad deliverables by default; one sentence that names the padding costs less than a style guide, which long-rule-file reports say agents half-ignore.
+    source: transcript review, 2026-11
+    review: new in v53 (claude-fable-5-2, 2026-11-25): revisit at the next review; cut if the removals stop recurring -->
 - **Process:**
   - Scale process to the blast radius if wrong, not diff size: bounded low-risk work goes straight to implement and verify; ambiguous, broad, or risky work gets a plan first.
     <!-- process-1
@@ -115,11 +120,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     source: operator, 2026-09
     review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator request (#38); cheap pointer; self-report
     decision: moved the skill name to PROJECT_CONFIG.md (operator, 2026-09-26); the rule stays. Claude Code only: Codex has no official equivalent, and naming none keeps other runtimes from hunting for it. -->
-  - Check desktop and mobile screenshots for every change to layout, styling, or page structure and fix issues before finishing; copy-only changes need none.
+  - Check desktop and mobile screenshots for alignment, spacing, clipping, and crowding on every change to layout, styling, or page structure, and fix issues before finishing; copy-only changes need none.
     <!-- ui-2
     why: Unknown for the screenshots themselves. Copy-only changes are exempt because a screenshot of changed words catches nothing a diff doesn't, and it slowed small PRs.
     source: operator, 2026-09
-    review: keep, confidence medium (claude-fable-5-2, 2026-11-10): captures found wording and layout issues in the reviewed sessions and caused no friction; transcripts -->
+    review: keep, confidence medium (claude-fable-5-2, 2026-11-10): captures found wording and layout issues in the reviewed sessions and caused no friction; transcripts; 2026-11-25: named what to look for, because the operator still sent screenshots of uneven padding, misalignment, bad crops, and crowded text in 8 projects (about 19 corrections) after agents had taken the captures -->
 - **Delivery:**
   - Work on a branch and merge via PR when checks pass. Never push directly to the default branch, which is what deploys, and never bypass required checks.
     <!-- delivery-1

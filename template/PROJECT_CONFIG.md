@@ -22,6 +22,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 - **Maintenance tracking issue:** Set during setup.
 - **Merge policy:** Set during setup: `auto` or `on-request` (see docs/CI.md, Merge policies). If unset, stop and ask.
 - **Docs:** docs/.
+- **Report length:** `150` words for a final report, unless the task asks for more; `none` for no cap.
 - **Required CI check:** `checks`; the status check the default branch requires before merge ([docs/CI.md](docs/CI.md)), or `none`.
 
 ## Vendors
