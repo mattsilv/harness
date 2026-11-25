@@ -24,6 +24,7 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 | Model tiers: defaults for delegated planning | Model selection must not force a separate planning task for bounded work. | operator, #71 |
 | Model tiers: runtime-specific defaults and a separate PR-review default | Model recommendations evolve by role and runtime; changing the review model must not change research and testing defaults. | operator, 2026-10 |
 | Frontend review: off by default, independent T2 visual review when enabled | Projects opt into a stronger visual pass without changing the T3 code review or adding always-loaded UI rules; capture runner, command, and initial viewports stay project defaults. | operator, 2026-10 |
+| Report length: `150` words by default, `none` opts out | A countable cap holds where "be concise" does not, but the right length differs by project and a hard cap can squeeze out needed content, so it is a value with an off switch and a per-task override. | transcript review, 2026-11 |
 | Runtime adapters: load only the active match | A shared context watcher instruction required one runtime's transcript format from other runtimes. Keep procedural knowledge out of unrelated prompts. | operator, #71 |
 | CI runners: hosted by default; self-hosted records labels, slots, storage, and who adds capacity | Capacity was added by queue length on one host and made the suite slower; recording the measured slot count keeps the next change honest. | incident, 2026-10 |
 
