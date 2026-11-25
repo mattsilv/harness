@@ -7,6 +7,7 @@ At session start, check that issue. A list is due when its heading's interval ha
 ## Weekly: last completed 7 or more days ago
 
 - Triage every open issue so none lingers: close ones already done or superseded, linking the evidence; put ones that should wait on hold with the reason; assign the rest to a sprint. Ask the operator about any you can't decide. Report the open-issue count and what changed.
+- Kaizen: delegate to a T2 subagent an investigation of the codebase and CI/CD for the smallest change with the most outsized gain in speed to ship (CI time, flaky or redundant steps, slow tests, merge friction), then plan and implement it in its own PR, citing the before/after timing.
 
 ## Monthly: last completed 30 or more days ago
 

@@ -64,6 +64,7 @@ superseded issues, puts others on hold, and assigns the rest to a sprint, and
 reports the open-issue count (`harness check` shows it when the list is due).
 Parallel agents open issues faster than a monthly review of 30-day-old ones
 clears them; the goal is that none lingers unplanned (operator, 2026-09).
+The weekly kaizen item ships one small, measured speed-to-ship improvement per week, because compounding cuts to CI and merge time pay back on every later PR; a T2 subagent keeps it cheap (operator, 2026-11).
 
 The docs check reviews pages changed since the last completed audit (via git log)
 and pares them down, dedupes, or merges them so they don't drift; it also confirms
