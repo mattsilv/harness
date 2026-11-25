@@ -22,7 +22,8 @@ class ComparisonTests(unittest.TestCase):
             baseline = compare.prepare(work, revision, False, 'delivery',
                 (ROOT / 'eval/fixture/index.html').read_bytes(), b'')
             self.assertEqual(len(baseline), 40)
-            self.assertEqual((work / 'CLAUDE.md').read_text(), '@AGENTS.md\n')
+            self.assertEqual((work / 'CLAUDE.md').read_text(),
+                             '@AGENTS.md\n@docs/runtime-adapters/claude-code.md\n')
             self.assertTrue((work / '.harness/version').is_file())
             self.assertFalse((work / 'eval').exists())
             self.assertFalse((work / 'EVAL.md').exists())
