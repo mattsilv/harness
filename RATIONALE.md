@@ -16,6 +16,7 @@ before projects receive the file, and CI checks every rule has a unique id, a wh
 
 | Rule | Why | Source |
 |---|---|---|
+| Harness updates: `auto` by default | Projects fell behind the harness because every update waited for the operator's approval; the operator made applying automatic and opt-out. | operator, 2026-11 |
 | Merge policies: `auto` merges without asking | An agent under `auto` still asked the operator before each merge. | incident, 2026-09 |
 | Merge policies: `auto` turns on auto-merge once required review passes | A subagent waited in a CI poller to merge by hand, stopped, and left a green PR unmerged overnight. "The moment the PR opens" raced the independent review: agents toggled auto-merge off and on, and one PR merged before its review (2026-11). | incident, 2026-09 |
 | Merge policies: `auto` only with required CI | `auto` merge without required checks would deploy unverified code. `harness check` enforces it. | design |

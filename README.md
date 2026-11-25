@@ -109,8 +109,9 @@ harness audit [n]     # operator-only: how often harness behaviors fired in rece
 
 - **Baseline:** `.harness/base/<path>` holds the harness text last applied. Commit it.
   `diff` compares harness to harness, so local additions never show as noise.
-- **Approval:** nothing updates on its own. `check` prints a notice; the agent shows
-  `diff`, summarizes, and runs `apply` after the operator says yes.
+- **Updates:** `PROJECT_CONFIG.md` **Harness updates** is `auto` by default (also when the
+  line is missing): `check` tells the agent to `apply`, PR, and merge without asking. With
+  `approve`, the agent shows `diff`, summarizes, and runs `apply` after the operator says yes.
 - **Unset values:** any `PROJECT_CONFIG.md` line still reading "Set during setup" is
   reported every session until answered.
 - **Maintenance:** `check` reads the tracking issue named in `PROJECT_CONFIG.md` (via
