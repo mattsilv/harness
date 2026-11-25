@@ -455,5 +455,25 @@ class AuditSignals(unittest.TestCase):
         self.assertEqual("/repo/sub", harness.session_cwd(Path(tmp.name)))
 
 
+class HarnessUpdatesPolicy(unittest.TestCase):
+    def policy(self, config):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        if config is not None:
+            (Path(tmp.name) / "PROJECT_CONFIG.md").write_text(config)
+        old = os.getcwd()
+        os.chdir(tmp.name)
+        self.addCleanup(os.chdir, old)
+        return harness.updates_policy()
+
+    def test_defaults_to_auto(self):
+        self.assertEqual("auto", self.policy(None))
+        self.assertEqual("auto", self.policy("- **Merge policy:** `auto`\n"))
+        self.assertEqual("auto", self.policy("- **Harness updates:** `auto`: apply...\n"))
+
+    def test_approve_opts_out(self):
+        self.assertEqual("approve", self.policy("- **Harness updates:** `approve`\n"))
+
+
 if __name__ == "__main__":
     unittest.main()

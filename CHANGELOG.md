@@ -3,6 +3,7 @@
 One line per `VERSION`, newest first: version, date, PR, what changed in `template/`.
 Projects record the version they last applied in `.harness/version`.
 
+- **58** · 2026-11-25 · #90 · Harness updates apply automatically. `PROJECT_CONFIG.md`: new **Harness updates** setting, `auto` by default (also when the line is missing): `harness check` tells the agent to apply, PR, and merge updates without asking; set `approve` to review each one. Action: none (this update applies itself under `auto`).
 - **57** · 2026-11-25 · #89 · Found issues get fixed at once. `AGENTS.md`: `delegation-2` has a parallel subagent fix and ship found work immediately, escalating only key decisions to the operator. Action: run `harness apply`.
 - **56** · 2026-11-25 · #88 · Found issues get fixed. `AGENTS.md`: `delegation-2` now has a subagent fix objective bugs found mid-task through the normal PR flow, instead of only filing them; judgment calls stay filed. 999 words. Action: run `harness apply`.
 - **55** · 2026-11-25 · #87 · Faster PR review. `PROJECT_CONFIG.md`: new **Review brief** under the PR review tier: the reviewer reads instead of rerunning CI's checks, reports only defects worth fixing before merge in 250 words or fewer, and gives small docs, copy, or config changes a diff-only review; the effort level stays (a replay benchmark showed lower effort misses defects). Action: run `harness apply`.

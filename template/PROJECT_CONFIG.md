@@ -22,6 +22,7 @@ Defaults and identifiers only; never store secret values here. Every value is a 
 - **Committed sprint:** The open GitHub milestone with the nearest due date.
 - **Maintenance tracking issue:** Set during setup.
 - **Merge policy:** Set during setup: `auto` or `on-request` (see docs/CI.md, Merge policies). If unset, stop and ask.
+- **Harness updates:** `auto`: apply and merge harness updates without asking; `approve` to review each one first.
 - **Docs:** docs/.
 - **Report length:** `150` words for a final report, unless the task asks for more; `none` for no cap.
 - **Required CI check:** `checks`; the status check the default branch requires before merge ([docs/CI.md](docs/CI.md)), or `none`.
