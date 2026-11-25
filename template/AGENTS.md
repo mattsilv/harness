@@ -21,11 +21,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     source: design
     review: keep, confidence high (claude-fable-5-2, 2026-11-10): blocks guessing merge policy; enrollment ran cleanly in two new projects; transcripts -->
 - **Autonomy:**
-  - Define observable acceptance criteria; implement, verify, and correct within the authorized task until they and required review pass, including delivery per PROJECT_CONFIG.md. Act on your own recommendation and report it; stop only for an approval below, a blocker, or a configured limit.
+  - Define observable acceptance criteria; implement, verify, and correct within the authorized task until they and required review pass, including delivery per PROJECT_CONFIG.md. Act on your own recommendation and report it; stop only for an approval below, a blocker, a configured limit, or a question whose one-line answer would greatly change the result.
     <!-- autonomy-1
-    why: Agents stopped before task completion until the operator prompted them to continue; completion includes evidence and authorized delivery, without bypassing approval or the two-cycle failure stop (#71).
+    why: Agents stopped before task completion until the operator prompted them to continue; completion includes evidence and authorized delivery, without bypassing approval or the two-cycle failure stop (#71). The question clause exists because "stop only for" otherwise forbids the one cheap question that saves a wrong build; "one-line" and "greatly" keep the bar high so asking does not become the default again.
     source: operator, #71, 2026-10-29
-    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): transcripts show agents asking "want me to build it?" after the operator stated the need and listing decisions they already had a recommendation for (3 projects) -->
+    review: rewrite, confidence medium (claude-fable-5-2, 2026-11-10): transcripts show agents asking "want me to build it?" after the operator stated the need and listing decisions they already had a recommendation for (3 projects); 2026-11-25: added the question clause at the operator's request, confidence low. Evidence is thin and points both ways, so the clause is narrow: a keyword search of about 1,570 operator messages in 17 projects found about 16 "go with your rec" replies in 7 projects (the agent waited on a choice it had already made), about 5 corrections of a wrong guess about intent, and no complaint about too many questions. Revisit at the next review; cut the clause if "go with your rec" replies rise. -->
   - Ask first for irreversible changes to production data or destructive migrations; changes to the auth model or permission structure; new spend or paid services; messaging real users or changing data in external accounts; and force-pushes to shared branches.
     <!-- autonomy-2
     why: Operator's safety boundary for irreversible, auth, spend, and external actions. Not a model-capability rule; REVIEW.md forbids cutting or loosening it.
@@ -36,11 +36,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: The operator had to ask for status in most sessions of one project ("are we done here" in 5, "is ci done", "did that deploy?", "link me to what I'm checking") (#33).
     source: incident, 2026-09
     review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): agents reported "deploy unchecked" and stopped, so "are we done" recurred (about 7 times in one project, 4 of 12 sessions in another); the ritual was also appended to answers that changed nothing; reworded 2026-11-24 after a transcript review found 6 more status asks in 3 weeks, and tightened to "before finishing" so yielding an intermediate turn for a background wakeup does not contradict it -->
-  - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: answer first, short active sentences, each point once, "must" or "can" instead of "should" or "may", one name for each thing, and a table only to compare items on the same fields. Keep the final report within PROJECT_CONFIG.md's report length.
+  - Write questions and reports for the operator, and instructions for users, in ASD-STE100 style: answer first, short active sentences, each point once, "must" or "can" instead of "should" or "may", one name for each thing, numbered questions with lettered options (recommendation first), and a table only to compare items on the same fields. Keep the final report within PROJECT_CONFIG.md's report length.
     <!-- autonomy-4
     why: The operator reads and answers this text, and users follow instructions step by step, so both must be fast to scan and unambiguous. Models default to long, hedged prose; "should" and "may" hide whether a step is required. Borrows the controlled-English rules of ASD-STE100, not its word list, which costs words and flags normal technical terms.
     source: operator, 2026-10
-    review: keep, confidence low (claude-fable-5-2, 2026-11-10): no transcript evidence either way; self-report; 2026-11-25: added answer first, each point once, the table test, and the configurable report length after a review of about 1,570 operator messages in 17 projects found reports long enough that the operator re-asked for the one thing needed, text stated twice, and tables used for prose (wide on mobile); a five-agent research pass (2026-11, mostly practitioner reports, not controlled studies) agreed that a vague "be concise" does little while a stated shape and a countable cap hold. The cap is a PROJECT_CONFIG.md value because the right length differs by project. -->
+    review: keep, confidence low (claude-fable-5-2, 2026-11-10): no transcript evidence either way; self-report; 2026-11-25: added answer first, each point once, the table test, and the configurable report length after a review of about 1,570 operator messages in 17 projects found reports long enough that the operator re-asked for the one thing needed, text stated twice, and tables used for prose (wide on mobile); a five-agent research pass (2026-11, mostly practitioner reports, not controlled studies) agreed that a vague "be concise" does little while a stated shape and a countable cap hold. The cap is a PROJECT_CONFIG.md value because the right length differs by project. Same day (v54): added numbered questions with lettered options, recommendation first, so the operator can answer "1a 2b" or just "yes"; the operator asked for enumerated choices he can tap instead of typing, and bare "yes" and "go with your rec" were his most common replies to questions. -->
 - **Implementation:**
   - Share business logic and authorization across all interfaces (web, API, MCP, chat, jobs); keep interfaces thin.
     <!-- impl-2
@@ -126,11 +126,11 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     source: operator, 2026-09
     review: keep, confidence medium (claude-fable-5-2, 2026-11-10): captures found wording and layout issues in the reviewed sessions and caused no friction; transcripts; 2026-11-25: named what to look for, because the operator still sent screenshots of uneven padding, misalignment, bad crops, and crowded text in 8 projects (about 19 corrections) after agents had taken the captures -->
 - **Delivery:**
-  - Work on a branch and merge via PR when checks pass. Never push directly to the default branch, which is what deploys, and never bypass required checks.
+  - Work on a branch and merge via PR when checks pass. Never push directly to the default branch, and never bypass required checks.
     <!-- delivery-1
     why: The default branch deploys. In the v8 eval, one model worked directly on the default branch in 2 of 4 runs even with this rule loaded (#13).
     source: author
-    review: keep, confidence high (claude-fable-5-2, 2026-11-10): eval evidence; deploy safety; eval -->
+    review: keep, confidence high (claude-fable-5-2, 2026-11-10): eval evidence; deploy safety; eval; 2026-11-25: cut "which is what deploys", a reason that lives in this comment and in docs/CI.md ("merging deploys"); self-report -->
   - This file is the standing request to commit, push branches, and open PRs.
     <!-- delivery-2
     why: Coding tools' built-in prompts say to commit only when asked, and one model obeyed that over the branch/PR rule: DeepSeek left its work uncommitted in 4 of 4 stored eval runs, 2 of them on the default branch, citing "commit only when asked" (#13, #20).
@@ -146,16 +146,16 @@ review: keep, confidence medium (claude-fable-5-2, 2026-11-10): operator evidenc
     why: A tool that shared one working directory across branches made parallel agents see each other's half-finished edits in builds and tests.
     source: incident, 2026-09
     review: keep, confidence high (claude-fable-5-2, 2026-11-10): incident; a session that switched the main checkout was caught by citing it; transcripts -->
-  - Every branch, including one cut in the main checkout, starts from the freshly fetched remote default branch, never a local copy.
+  - Every branch, including one cut in the main checkout, starts from the freshly fetched remote default branch.
     <!-- delivery-8
     why: A session cut a branch from a local default branch that lacked a PR merged 12 minutes earlier; its PR conflicted on open, got no CI run, and auto-merge waited silently. `scripts/pr-wait.sh` stops on the conflict while waiting.
     source: incident, 2026-09
-    review: keep, confidence high (claude-fable-5-2, 2026-11-10): incident; agents followed it inline in every reviewed project; transcripts -->
-  - Rebase only on a conflict, which stalls a PR (no CI run, no auto-merge); otherwise a green check merges.
+    review: keep, confidence high (claude-fable-5-2, 2026-11-10): incident; agents followed it inline in every reviewed project; transcripts; 2026-11-25: cut "never a local copy", which restated "freshly fetched remote"; self-report -->
+  - Rebase only on a conflict; otherwise a green check merges.
     <!-- delivery-9
-    why: With "require branches to be up to date" on, every merge invalidated every other open PR's check, so parallel agents queued behind each other for reruns. Overlapping files alone don't call for a rebase: the default-branch rerun gates the deploy and catches the rare semantic clash.
+    why: With "require branches to be up to date" on, every merge invalidated every other open PR's check, so parallel agents queued behind each other for reruns. Overlapping files alone don't call for a rebase: the default-branch rerun gates the deploy and catches the rare semantic clash. A conflict stalls a PR (no CI run, no auto-merge).
     source: incident, 2026-09
-    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): incident; same rule without the explanation of why the default-branch rerun suffices; incident -->
+    review: rewrite, confidence high (claude-fable-5-2, 2026-11-10): incident; same rule without the explanation of why the default-branch rerun suffices; incident; 2026-11-25: moved "which stalls a PR (no CI run, no auto-merge)" into this comment, because `scripts/pr-wait.sh` stops on a conflicting PR and says to rebase and push; self-report -->
   - After merging, remove the worktree and branch and fast-forward the main checkout.
     <!-- delivery-11
     why: Unknown.
