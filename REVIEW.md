@@ -45,9 +45,9 @@ cuttable. Cite the vendor guide wherever it informs a verdict, including a keep.
 
 Revisit the previous review's changes against any failure evidence, and note in the new
 log row whether any need revision: "unknown" without evidence, "n/a" if no earlier
-review changed rules. Run [EVAL.md](EVAL.md) twice per task on the current and the proposed
-harness, scored by [eval/check.mjs](eval/check.mjs), and cite the stored results in
-[eval/runs/](eval/runs/) as evidence.
+review changed rules. Run [EVAL.md](EVAL.md) only when the operator asks (twice per task on the current
+and the proposed harness, scored by [eval/check.mjs](eval/check.mjs), results in
+[eval/runs/](eval/runs/)); otherwise write "no eval run" in the log row.
 
 ## Don't cut
 
@@ -55,10 +55,8 @@ harness, scored by [eval/check.mjs](eval/check.mjs), and cite the stored results
   Secrets rules.
   These are safety boundaries set by the operator, not crutches for weak models.
   You may propose clearer wording, never removal or loosening.
-- Anything the `harness` CLI parses: "Set during setup", the `**Merge policy:**` and
-  `**Maintenance tracking issue:**` labels, and the "## <List>: ... N or more days ago"
-  headings in `docs/MAINTENANCE.md` with their "<List> last completed:" fields in the
-  tracking issue. Changing those needs a matching change to the `harness` CLI.
+- Anything the `harness` CLI parses: the strings under **Parsed strings** in `AGENTS.md`.
+  Changing those needs a matching change to the `harness` CLI.
 
 ## Also check
 
